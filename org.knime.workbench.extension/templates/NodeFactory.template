@@ -1,0 +1,53 @@
+package __BASE_PACKAGE__;
+
+import de.unikn.knime.core.node.NodeDialogPane;
+import de.unikn.knime.core.node.NodeFactory;
+import de.unikn.knime.core.node.NodeModel;
+import de.unikn.knime.core.node.NodeView;
+
+/**
+ * <code>NodeFactory</code> for the "__NODE_NAME__" Node.
+ * __DESCRIPTION__
+ *
+ * @author __VENDOR_NAME__
+ */
+public class __NODE_NAME__NodeFactory extends NodeFactory {
+
+    /**
+     * @see de.unikn.knime.core.node.NodeFactory#createNodeModel()
+     */
+    public NodeModel createNodeModel() {
+        return new __NODE_NAME__NodeModel();
+    }
+
+    /**
+     * @see de.unikn.knime.core.node.NodeFactory#getNrNodeViews()
+     */
+    public int getNrNodeViews() {
+        return 1;
+    }
+
+    /**
+     * @see de.unikn.knime.core.node.NodeFactory#createNodeView(int,
+     *      de.unikn.knime.core.node.NodeModel)
+     */
+    public NodeView createNodeView(final int viewIndex,
+            final NodeModel nodeModel) {
+        return new __NODE_NAME__NodeView(nodeModel);
+    }
+
+    /**
+     * @see de.unikn.knime.core.node.NodeFactory#hasDialog()
+     */
+    public boolean hasDialog() {
+        return true;
+    }
+
+    /**
+     * @see de.unikn.knime.core.node.NodeFactory#createNodeDialogPane()
+     */
+    public NodeDialogPane createNodeDialogPane() {
+        return new __NODE_NAME__NodeDialog();
+    }
+
+}

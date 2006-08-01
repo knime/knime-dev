@@ -1,0 +1,57 @@
+package __BASE_PACKAGE__;
+
+import de.unikn.knime.core.node.NodeModel;
+import de.unikn.knime.core.node.NodeView;
+
+/**
+ * <code>NodeView</code> for the "__NODE_NAME__" Node.
+ * __DESCRIPTION__
+ *
+ * @author __VENDOR_NAME__
+ */
+public class __NODE_NAME__NodeView extends NodeView {
+
+    private __NODE_NAME__NodeModel m_model;
+
+    /**
+     * Creates a new view.
+     * 
+     * @param nodeModel The model (class: {@link __NODE_NAME__NodeModel})
+     */
+    protected __NODE_NAME__NodeView(final NodeModel nodeModel) {
+        super(nodeModel);
+
+        m_model = (__NODE_NAME__NodeModel) nodeModel;
+        
+        // TODO implement the view here
+    }
+
+    /**
+     * @see de.unikn.knime.core.node.NodeView#modelChanged()
+     */
+    protected void modelChanged() {
+    
+    	// if problems arise with this assert statement switch to 
+    	// java 1.5 and turn on assertions
+        assert m_model != null;
+
+		// TODO update the view once the model has changed
+    }
+
+    /**
+     * @see de.unikn.knime.core.node.NodeView#onClose()
+     */
+    protected void onClose() {
+    
+    	// TODO things to do when closing the view
+    }
+
+    /**
+     * @see de.unikn.knime.core.node.NodeView#onOpen()
+     */
+    protected void onOpen() {
+
+    	// TODO things to do when opening the view
+    }
+
+}

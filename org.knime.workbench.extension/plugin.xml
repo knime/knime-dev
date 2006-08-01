@@ -5,13 +5,13 @@
    <extension
          point="org.eclipse.ui.newWizards">
       <wizard
-            category="de.unikn.knime.workbench.ui.wizards.category"
-            class="de.unikn.knime.workbench.extension.wizards.NewKNIMEPluginWizard"
+            category="org.knime.workbench.ui.wizards.category"
+            class="org.knime.workbench.extension.wizards.NewKNIMEPluginWizard"
             descriptionImage="icons/pluginWizard32x32.png"
             finalPerspective="org.eclipse.pde.ui.PDEPerspective"
             hasPages="true"
             icon="icons/pluginWizard16x16.png"
-            id="de.unikn.knime.workbench.extension.wizards.NewKNIMEPluginWizard"
+            id="org.knime.workbench.extension.wizards.NewKNIMEPluginWizard"
             name="Create a new KNIME Node-Extension"
             preferredPerspectives="org.eclipse.pde.ui.PDEPerspective"
             project="true">

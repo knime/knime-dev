@@ -1,4 +1,4 @@
-package de.unikn.knime.workbench.extension.wizards;
+package org.knime.workbench.extension.wizards;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -38,7 +38,7 @@ import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.ide.IDE;
 
-import de.unikn.knime.workbench.plugin.KNIMEExtensionPlugin;
+import org.knime.workbench.plugin.KNIMEExtensionPlugin;
 
 /**
  * Wizard for creating a new Plugin-Project, containing a "stub implementation"

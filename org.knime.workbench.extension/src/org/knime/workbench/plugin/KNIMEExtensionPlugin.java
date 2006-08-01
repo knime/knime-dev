@@ -1,4 +1,4 @@
-package de.unikn.knime.workbench.plugin;
+package org.knime.workbench.plugin;
 
 import org.eclipse.ui.plugin.*;
 import org.eclipse.jface.resource.ImageDescriptor;

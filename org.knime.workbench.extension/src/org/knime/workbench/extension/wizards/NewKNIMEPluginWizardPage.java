@@ -1,4 +1,4 @@
-package de.unikn.knime.workbench.extension.wizards;
+package org.knime.workbench.extension.wizards;
 
 import java.util.Properties;
 

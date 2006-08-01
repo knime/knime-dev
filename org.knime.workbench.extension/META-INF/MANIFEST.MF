@@ -28,7 +28,7 @@ Require-Bundle: org.eclipse.ui,
  org.eclipse.jdt.launching,
  org.eclipse.jdt.source,
  org.eclipse.jdt.ui,
- de.unikn.knime.core
-Eclipse-AutoStart: true
+ org.knime.core
+Eclipse-LazyStart: true
 Bundle-ClassPath: workbench-extension.jar
 Bundle-Vendor: University of Konstanz, Germany

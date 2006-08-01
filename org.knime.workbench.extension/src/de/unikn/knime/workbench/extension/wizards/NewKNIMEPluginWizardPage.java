@@ -14,9 +14,9 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.dialogs.WizardNewProjectCreationPage;
+import org.knime.core.node.NodeFactory;
+import org.knime.core.node.NodeFactory.NodeType;
 
-import de.unikn.knime.core.node.NodeFactory;
-import de.unikn.knime.core.node.NodeFactory.NodeType;
 
 /**
  * This page enables the user to enter the information needed to create the

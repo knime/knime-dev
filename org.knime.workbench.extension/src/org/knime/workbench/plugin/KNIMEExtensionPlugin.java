@@ -51,6 +51,6 @@ public class KNIMEExtensionPlugin extends AbstractUIPlugin {
 	 * @return the image descriptor
 	 */
 	public static ImageDescriptor getImageDescriptor(String path) {
-		return AbstractUIPlugin.imageDescriptorFromPlugin("de.unikn.knime.workbench.extension", path);
+		return AbstractUIPlugin.imageDescriptorFromPlugin("org.knime.workbench.extension", path);
 	}
 }

@@ -32,3 +32,5 @@ Require-Bundle: org.eclipse.ui,
 Eclipse-LazyStart: true
 Bundle-ClassPath: workbench-extension.jar
 Bundle-Vendor: University of Konstanz, Germany
+Export-Package: org.knime.workbench.extension.wizards,
+ org.knime.workbench.plugin

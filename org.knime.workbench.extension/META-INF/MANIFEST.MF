@@ -31,6 +31,6 @@ Require-Bundle: org.eclipse.ui,
  org.knime.core
 Eclipse-AutoStart: true
 Bundle-ClassPath: workbench-extension.jar
-Bundle-Vendor: University of Konstanz, Germany
+Bundle-Vendor: Chair for Bioinformatics and Information Mining, University of Konstanz, Germany
 Export-Package: org.knime.workbench.extension.wizards,
  org.knime.workbench.plugin

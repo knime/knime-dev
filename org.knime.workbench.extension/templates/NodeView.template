@@ -1,7 +1,7 @@
 package __BASE_PACKAGE__;
 
-import de.unikn.knime.core.node.NodeModel;
-import de.unikn.knime.core.node.NodeView;
+import org.knime.core.node.NodeModel;
+import org.knime.core.node.NodeView;
 
 /**
  * <code>NodeView</code> for the "__NODE_NAME__" Node.
@@ -27,7 +27,7 @@ public class __NODE_NAME__NodeView extends NodeView {
     }
 
     /**
-     * @see de.unikn.knime.core.node.NodeView#modelChanged()
+     * @see org.knime.core.node.NodeView#modelChanged()
      */
     protected void modelChanged() {
     
@@ -39,7 +39,7 @@ public class __NODE_NAME__NodeView extends NodeView {
     }
 
     /**
-     * @see de.unikn.knime.core.node.NodeView#onClose()
+     * @see org.knime.core.node.NodeView#onClose()
      */
     protected void onClose() {
     
@@ -47,7 +47,7 @@ public class __NODE_NAME__NodeView extends NodeView {
     }
 
     /**
-     * @see de.unikn.knime.core.node.NodeView#onOpen()
+     * @see org.knime.core.node.NodeView#onOpen()
      */
     protected void onOpen() {
 

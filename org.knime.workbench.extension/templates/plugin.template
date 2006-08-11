@@ -4,7 +4,7 @@
 
    <!-- This is an example for providing an own category 
       <extension
-         point="de.unikn.knime.workbench.repository.categories">
+         point="org.knime.workbench.repository.categories">
       <category
             description="Category containing my nodes"
             icon="icons/default.png"
@@ -15,7 +15,7 @@
    -->
    
    <extension
-         point="de.unikn.knime.workbench.repository.nodes">
+         point="org.knime.workbench.repository.nodes">
       <node
             category-path="/"
             factory-class="__BASE_PACKAGE__.__NODE_NAME__NodeFactory"

@@ -1,0 +1,32 @@
+package __BASE_PACKAGE__;
+
+import org.knime.core.node.defaultnodedialog.DefaultNodeDialogPane;
+import org.knime.core.node.defaultnodedialog.DialogComponentNumber;
+
+/**
+ * <code>NodeDialog</code> for the "__NODE_NAME__" Node.
+ * __DESCRIPTION__
+ *
+ * This node dialog derives fromt he <code>DefaultNodeDialogPane</code>
+ * to create standard dialogs. If you want to create more complex non-standard
+ * dialogs please derive directly from 
+ * {@link org.knime.core.node.NodeDialogPane}.
+ * 
+ * @author __VENDOR_NAME__
+ */
+public class __NODE_NAME__NodeDialog extends DefaultNodeDialogPane {
+
+    /**
+     * New pane for configuring __NODE_NAME__ node dialog.
+     * This is just a suggestion to demonstrate possible default dialog
+     * components. Add or remove components.
+     */
+    protected __NODE_NAME__NodeDialog() {
+        super();
+        
+        addDialogComponent(new DialogComponentNumber(
+                __NODE_NAME__NodeModel.CFGKEY_COUNT, "Counter:",
+                Integer.MIN_VALUE, Integer.MAX_VALUE,
+                __NODE_NAME__NodeModel.DEFAULT_COUNT));
+    }
+}

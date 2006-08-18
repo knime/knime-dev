@@ -1,0 +1,198 @@
+package __BASE_PACKAGE__;
+
+import java.io.File;
+import java.io.IOException;
+
+import org.knime.core.data.DataCell;
+import org.knime.core.data.DataColumnSpec;
+import org.knime.core.data.DataColumnSpecCreator;
+import org.knime.core.data.DataRow;
+import org.knime.core.data.DataTableSpec;
+import org.knime.core.data.RowKey;
+import org.knime.core.data.def.DefaultRow;
+import org.knime.core.data.def.DoubleCell;
+import org.knime.core.data.def.IntCell;
+import org.knime.core.data.def.StringCell;
+import org.knime.core.node.BufferedDataContainer;
+import org.knime.core.node.BufferedDataTable;
+import org.knime.core.node.CanceledExecutionException;
+import org.knime.core.node.ExecutionContext;
+import org.knime.core.node.ExecutionMonitor;
+import org.knime.core.node.InvalidSettingsException;
+import org.knime.core.node.NodeLogger;
+import org.knime.core.node.NodeModel;
+import org.knime.core.node.NodeSettingsRO;
+import org.knime.core.node.NodeSettingsWO;
+
+/**
+ * This is the model implementation of __NODE_NAME__.
+ * __DESCRIPTION__
+ *
+ * @author __VENDOR_NAME__
+ */
+public class __NODE_NAME__NodeModel extends NodeModel {
+    
+    // the logger instance
+    private static final NodeLogger logger = NodeLogger
+            .getLogger(__NODE_NAME__NodeModel.class);
+        
+    // the settings key which is used to retrieve and 
+    // store the settings (from the dialog or from a settings file)    
+    // (package visibility to be usable from the dialog)
+	static final String CFGKEY_COUNT = "Count";
+
+	// initial default count value
+	static final int DEFAULT_COUNT = 100;
+
+	// example value: the models count variable filled from the dialog 
+	// and used in the models execution method
+	private int m_count;
+
+    /**
+     * Constructor for the node model.
+     */
+    protected __NODE_NAME__NodeModel() {
+    
+        // TODO one incoming port and one outgoing port is assumed
+        super(1, 1);
+        
+        m_count = DEFAULT_COUNT;
+    }
+
+    /**
+     * @see org.knime.core.node.NodeModel
+     *      #execute(org.knime.core.data.DataTable[],
+     *      org.knime.core.node.ExecutionMonitor)
+     */
+    protected BufferedDataTable[] execute(final BufferedDataTable[] inData,
+            final ExecutionContext exec) throws Exception {
+
+        // TODO do something here
+        logger.info("Node Model Stub... this is not yet implemented !");
+
+        
+        // the data table spec of the single output table, 
+        // the table will have three columns:
+        DataColumnSpec[] allColSpecs = new DataColumnSpec[3];
+        allColSpecs[0] = 
+            new DataColumnSpecCreator("Column 0", StringCell.TYPE).createSpec();
+        allColSpecs[1] = 
+            new DataColumnSpecCreator("Column 1", DoubleCell.TYPE).createSpec();
+        allColSpecs[2] = 
+            new DataColumnSpecCreator("Column 2", IntCell.TYPE).createSpec();
+        DataTableSpec outputSpec = new DataTableSpec(allColSpecs);
+        // the execution context will provide us with storage capacity, in this
+        // case a data container to which we will add rows sequentially
+        // Note, this container can also handle arbitrary big data tables, it
+        // will buffer to disc if necessary.
+        BufferedDataContainer container = exec.createDataContainer(outputSpec);
+        // let's add m_count rows to it
+        for (int i = 0; i < m_count; i++) {
+            RowKey key = new RowKey("Row " + i);
+            // the cells of the current row, the types of the cells must match
+            // the column spec (see above)
+            DataCell[] cells = new DataCell[3];
+            cells[0] = new StringCell("String_" + i); 
+            cells[1] = new DoubleCell(0.5 * i); 
+            cells[2] = new IntCell(i);
+            DataRow row = new DefaultRow(key, cells);
+            container.addRowToTable(row);
+            
+            // check if the execution monitor was canceled
+            exec.checkCanceled();
+            exec.setProgress(i / (double)m_count, "Adding row " + i);
+        }
+        // once we are done, we close the container and return its table
+        container.close();
+        BufferedDataTable out = container.getTable();
+        return new BufferedDataTable[]{out};
+    }
+
+    /**
+     * @see org.knime.core.node.NodeModel#reset()
+     */
+    protected void reset() {
+    
+        // TODO Code executed on reset
+        // In most cases an underlying model is reseted
+    }
+
+    /**
+     * @see org.knime.core.node.NodeModel
+     *      #configure(org.knime.core.data.DataTableSpec[])
+     */
+    protected DataTableSpec[] configure(final DataTableSpec[] inSpecs)
+            throws InvalidSettingsException {
+        
+        // TODO configure the node with the specs from its connected 
+        // predecessors.
+        return null;
+    }
+
+    /**
+     * @see org.knime.core.node.NodeModel
+     *      #saveSettingsTo(org.knime.core.node.NodeSettings)
+     */
+    protected void saveSettingsTo(final NodeSettingsWO settings) {
+        // TODO save dialog settings to the config object.
+
+    }
+
+    /**
+     * @see org.knime.core.node.NodeModel
+     *      #loadValidatedSettingsFrom(org.knime.core.node.NodeSettingsRO)
+     */
+    protected void loadValidatedSettingsFrom(final NodeSettingsRO settings)
+            throws InvalidSettingsException {
+            
+        // TODO load (valid) settings from the config object.
+        // e.g. if the count is in a certain range
+		readSettings(settings, false);
+    }
+
+    /**
+     * @see org.knime.core.node.NodeModel
+     *      #validateSettings(org.knime.core.node.NodeSettingsRO)
+     */
+    protected void validateSettings(final NodeSettingsRO settings)
+            throws InvalidSettingsException {
+            
+        // TODO check if the settings can be applied to our model
+        // e.g. if the count is in a certain range
+  		readSettings(settings, true);
+
+    }
+    
+    /**
+     * Helper method to avoid double coding.
+     * Checks the settings and optionally set them to the model.
+     */
+    private void readSettings(final NodeSettingsRO settings,
+            final boolean validateOnly) throws InvalidSettingsException {
+
+		int count = settings.getInt(CFGKEY_COUNT);
+		
+        if(!validateOnly) {
+        	m_count = count;
+        }
+    }
+    
+    protected void loadInternals(final File internDir,
+            final ExecutionMonitor exec) throws IOException,
+            CanceledExecutionException {
+        
+		// TODO load internal models. This is all stuff that is 
+		// not written to the outputports (and thus saved automatically)
+		// E.g. data used to visuallize the view
+    }
+    
+    protected void saveInternals(final File internDir,
+            final ExecutionMonitor exec) throws IOException,
+            CanceledExecutionException {
+       
+       	// TODO save internal models. This is all stuff that is 
+		// not written to the outputports (and thus saved automatically)
+		// E.g. data used to visuallize the view
+    }
+
+}

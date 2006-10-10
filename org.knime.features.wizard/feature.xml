@@ -291,6 +291,10 @@ terms of this License.
       <import plugin="org.knime.core"/>
       <import plugin="org.eclipse.jdt.debug"/>
    </requires>
+   
+   <url>
+      <update label="KNIME Update Site" url="http://www.knime.org/update"/>
+   </url>
 
    <plugin
          id="org.knime.workbench.extension"

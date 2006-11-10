@@ -182,8 +182,8 @@ public class __NODE_NAME__NodeModel extends NodeModel {
             CanceledExecutionException {
         
 		// TODO load internal models. This is all stuff that is 
-		// not written to the outputports (and thus saved automatically)
-		// E.g. data used to visuallize the view
+		// not written to the output ports (and thus saved automatically)
+		// E.g. data used to visualize the view
     }
     
     protected void saveInternals(final File internDir,
@@ -191,8 +191,8 @@ public class __NODE_NAME__NodeModel extends NodeModel {
             CanceledExecutionException {
        
        	// TODO save internal models. This is all stuff that is 
-		// not written to the outputports (and thus saved automatically)
-		// E.g. data used to visuallize the view
+		// not written to the output ports (and thus saved automatically)
+		// E.g. data used to visualize the view
     }
 
 }

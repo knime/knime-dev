@@ -19,8 +19,8 @@
 		<dataIn index="0" name="In-Port name">Description of first input port...</dataIn>
 		<!-- possibly more ports here-->
 		<dataOut index="0" name="Out-Port name">Description of first output port...</dataOut>
-		<!--predParamIn index="0">Description of first model input port...</predParamIn-->
-		<!--predParamOut index="0">Description of first model output port...</predParamOut-->
+		<!--modelIn index="0">Description of first model input port...</modelIn-->
+		<!--modelOut index="0">Description of first model output port...</modelOut-->
 	</ports>	
 	<views>
 		<view index="0" name="name of first view">Description of first view...</view>

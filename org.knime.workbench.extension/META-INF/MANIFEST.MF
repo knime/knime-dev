@@ -1,0 +1,36 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: KNIME Workbench Extensions
+Bundle-SymbolicName: org.knime.workbench.extension; singleton:=true
+Bundle-Version: 1.2.0
+Bundle-Activator: org.knime.workbench.plugin.KNIMEExtensionPlugin
+Bundle-Localization: plugin
+Require-Bundle: org.eclipse.ui,
+ org.eclipse.core.runtime,
+ org.eclipse.core.resources,
+ org.eclipse.ui.ide,
+ org.eclipse.pde,
+ org.eclipse.pde.build,
+ org.eclipse.pde.core,
+ org.eclipse.pde.doc.user,
+ org.eclipse.pde.junit.runtime,
+ org.eclipse.pde.runtime,
+ org.eclipse.pde.source,
+ org.eclipse.pde.ui,
+ org.eclipse.jdt,
+ org.eclipse.jdt.core,
+ org.eclipse.jdt.debug,
+ org.eclipse.jdt.debug.ui,
+ org.eclipse.jdt.doc.isv,
+ org.eclipse.jdt.doc.user,
+ org.eclipse.jdt.junit,
+ org.eclipse.jdt.junit.runtime,
+ org.eclipse.jdt.launching,
+ org.eclipse.jdt.source,
+ org.eclipse.jdt.ui,
+ org.knime.core
+Eclipse-AutoStart: true
+Bundle-ClassPath: workbench-extension.jar
+Bundle-Vendor: Chair for Bioinformatics and Information Mining, University of Konstanz, Germany
+Export-Package: org.knime.workbench.extension.wizards,
+ org.knime.workbench.plugin

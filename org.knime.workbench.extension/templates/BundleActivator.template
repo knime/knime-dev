@@ -9,10 +9,10 @@ import org.osgi.framework.BundleContext;
 
 /**
  * This is the eclipse bundle activator.
- * Note: KNIME node vendors probably won't have to do anything here, 
+ * Note: KNIME node developers probably won't have to do anything in here, 
  * as this class is only needed by the eclipse platform/plugin mechanism.
- * If you add new nodes manually to a plugin project, you need not copy or
- * change this file.
+ * If you want to move/rename this file, make sure to change the plugin.xml
+ * file in the project root directory accordingly.
  *
  * @author __VENDOR_NAME__
  */
@@ -38,6 +38,7 @@ public class __NODE_NAME__NodePlugin extends Plugin {
      * @param context The OSGI bundle context
      * @throws Exception If this plugin could not be started
      */
+    @Override
     public void start(final BundleContext context) throws Exception {
         super.start(context);
 
@@ -49,6 +50,7 @@ public class __NODE_NAME__NodePlugin extends Plugin {
      * @param context The OSGI bundle context
      * @throws Exception If this plugin could not be stopped
      */
+    @Override
     public void stop(final BundleContext context) throws Exception {
         super.stop(context);
         plugin = null;

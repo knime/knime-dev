@@ -16,6 +16,7 @@ public class __NODE_NAME__NodeFactory extends NodeFactory {
     /**
      * @see org.knime.core.node.NodeFactory#createNodeModel()
      */
+    @Override
     public NodeModel createNodeModel() {
         return new __NODE_NAME__NodeModel();
     }
@@ -23,6 +24,7 @@ public class __NODE_NAME__NodeFactory extends NodeFactory {
     /**
      * @see org.knime.core.node.NodeFactory#getNrNodeViews()
      */
+    @Override
     public int getNrNodeViews() {
         return 1;
     }
@@ -31,6 +33,7 @@ public class __NODE_NAME__NodeFactory extends NodeFactory {
      * @see org.knime.core.node.NodeFactory#createNodeView(int,
      *      org.knime.core.node.NodeModel)
      */
+    @Override
     public NodeView createNodeView(final int viewIndex,
             final NodeModel nodeModel) {
         return new __NODE_NAME__NodeView(nodeModel);
@@ -39,6 +42,7 @@ public class __NODE_NAME__NodeFactory extends NodeFactory {
     /**
      * @see org.knime.core.node.NodeFactory#hasDialog()
      */
+    @Override
     public boolean hasDialog() {
         return true;
     }
@@ -46,6 +50,7 @@ public class __NODE_NAME__NodeFactory extends NodeFactory {
     /**
      * @see org.knime.core.node.NodeFactory#createNodeDialogPane()
      */
+    @Override
     public NodeDialogPane createNodeDialogPane() {
         return new __NODE_NAME__NodeDialog();
     }

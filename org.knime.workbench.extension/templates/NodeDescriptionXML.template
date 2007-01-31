@@ -8,7 +8,7 @@
 	</shortDescription>
 	
 	<fullDescription>
-		<intro>Insert long description here...<p/></intro>
+		<intro>Insert long description here...</intro>
 		
 		
 		<option name="short name of first option (like in the dialog)">description of first option</option>

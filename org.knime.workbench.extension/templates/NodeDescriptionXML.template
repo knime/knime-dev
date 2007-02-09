@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE knimeNode PUBLIC "-//UNIKN//DTD KNIME Node 1.0//EN" "http://www.inf.uni-konstanz.de/bioml/research/knime/Node.dtd">
+<!DOCTYPE knimeNode PUBLIC "-//UNIKN//DTD KNIME Node 1.0//EN" "http://www.knime.org/Node.dtd">
 <knimeNode icon="./default.png" type="__NODE_TYPE__">
 	<name>__NODE_NAME__</name>
 	
@@ -8,7 +8,7 @@
 	</shortDescription>
 	
 	<fullDescription>
-		<intro>Insert long description here...<p/></intro>
+		<intro>Insert long description here...</intro>
 		
 		
 		<option name="short name of first option (like in the dialog)">description of first option</option>

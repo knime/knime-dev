@@ -112,9 +112,7 @@ public class NewKNIMEPluginWizardPage extends WizardNewProjectCreationPage
     }
 
     /**
-     * 
-     * @see org.eclipse.jface.dialogs.IDialogPage
-     *      #createControl(org.eclipse.swt.widgets.Composite)
+     * {@inheritDoc}
      */
     @Override
     public void createControl(final Composite parent) {

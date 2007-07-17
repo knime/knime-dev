@@ -16,7 +16,7 @@
             preferredPerspectives="org.eclipse.pde.ui.PDEPerspective"
             project="true">
          <description>
-            This wizards creates a new plugin project with a initial project layout suitable for writing new nodes that can be used in the KNIME Workbench.
+            This wizards creates a new KNIME Node-Extension (optionally with an initial plugin project layout) suitable for adding own functionality to the KNIME Workbench.
          </description>
       </wizard>
    </extension>

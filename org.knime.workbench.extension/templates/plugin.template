@@ -19,7 +19,7 @@
       <node
             category-path="/"
             factory-class="__BASE_PACKAGE__.__NODE_NAME__NodeFactory"
-            id="__BASE_PACKAGE__.node"/>
+            id="__BASE_PACKAGE__.__NODE_NAME__NodeFactory"/>
    </extension>
    
 </plugin>

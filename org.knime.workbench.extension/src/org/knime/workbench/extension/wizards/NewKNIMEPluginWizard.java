@@ -35,6 +35,15 @@ import java.util.GregorianCalendar;
 import java.util.Iterator;
 import java.util.Properties;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Result;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+
 import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IFolder;
@@ -58,14 +67,21 @@ import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.ide.IDE;
-
+import org.eclipse.ui.internal.ide.IDEWorkbenchPlugin;
 import org.knime.workbench.plugin.KNIMEExtensionPlugin;
+import org.w3c.dom.Attr;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 /**
  * Wizard for creating a new Plugin-Project, containing a "stub implementation"
  * of NodeModel/Dialog/View.
  * 
  * @author Florian Georg, University of Konstanz
+ * @author Christoph Sieb, University of Konstanz
  */
 public class NewKNIMEPluginWizard extends Wizard implements INewWizard {
     private NewKNIMEPluginWizardPage m_page;
@@ -96,7 +112,12 @@ public class NewKNIMEPluginWizard extends Wizard implements INewWizard {
      */
     @Override
     public boolean performFinish() {
-        final String projectName = m_page.getProjectName();
+        final String projectName;
+        if (m_page.addToExistingProject()) {
+            projectName = m_page.getExistingProjectName();
+        } else {
+            projectName = m_page.getProjectName();
+        }
         final Properties substitutions = m_page.getSubstitutionMap();
 
         IRunnableWithProgress op = new IRunnableWithProgress() {
@@ -140,6 +161,53 @@ public class NewKNIMEPluginWizard extends Wizard implements INewWizard {
     }
 
     /**
+     * Determine if the project with the given name is in the current workspace.
+     * 
+     * @param projectName String the project name to check
+     * @return boolean true if the project with the given name is in this
+     *         workspace
+     */
+    static boolean isProjectInWorkspace(String projectName) {
+        IProject project = getProjectForName(projectName);
+        if (project != null) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * Gets the project for the given project name. <code>null</code> if the
+     * project is not in the workspace.
+     * 
+     * @param projectName String the project name to check
+     * @return {@link IProject} if the project with the given name is in this
+     *         workspace, <code>null</code> otherwise
+     */
+    static IProject getProjectForName(String projectName) {
+        if (projectName == null) {
+            return null;
+        }
+        IProject[] workspaceProjects = getProjectsInWorkspace();
+        for (int i = 0; i < workspaceProjects.length; i++) {
+            if (projectName.equals(workspaceProjects[i].getName())) {
+                return workspaceProjects[i];
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Retrieve all the projects in the current workspace.
+     * 
+     * @return IProject[] array of IProject in the current workspace
+     */
+    static IProject[] getProjectsInWorkspace() {
+        return IDEWorkbenchPlugin.getPluginWorkspace().getRoot().getProjects();
+
+    }
+
+    /**
      * The worker method. It will find the container, create the file if missing
      * or just replace its contents, and open the editor on the newly created
      * file.
@@ -151,61 +219,83 @@ public class NewKNIMEPluginWizard extends Wizard implements INewWizard {
     private void doFinish(final String projectName,
             final Properties substitutions, final IProgressMonitor monitor)
             throws CoreException {
-        
+
         // set the current year in the substitutions
         Calendar cal = new GregorianCalendar();
         substitutions.setProperty(NewKNIMEPluginWizardPage.SUBST_CURRENT_YEAR,
                 Integer.toString(cal.get(Calendar.YEAR)));
 
-        String packageName = substitutions.getProperty(
-                NewKNIMEPluginWizardPage.SUBST_BASE_PACKAGE, "knime.dummy");
-        String nodeName = substitutions.getProperty(
-                NewKNIMEPluginWizardPage.SUBST_NODE_NAME, "Dummy");
+        String packageName =
+                substitutions.getProperty(
+                        NewKNIMEPluginWizardPage.SUBST_BASE_PACKAGE,
+                        "knime.dummy");
+        String nodeName =
+                substitutions.getProperty(
+                        NewKNIMEPluginWizardPage.SUBST_NODE_NAME, "Dummy");
 
-        // create the hosting project
-        monitor.beginTask("Creating " + projectName, 20);
-        IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
-        IProject project = root.getProject(projectName);
-        if (project.exists()) {
-            throwCoreException("Project \"" + projectName + "\" already exist.");
+        boolean createNewProject = !isProjectInWorkspace(projectName);
+
+        // the project, the plugin.xml, the manifest, the src/bin folder
+        // are only created if a new project is requested
+        IContainer container;
+        if (createNewProject) {
+            // create the hosting project
+            monitor.beginTask("Creating " + projectName, 20);
+            IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
+            IProject project = root.getProject(projectName);
+            if (project.exists()) {
+                throwCoreException("Project \"" + projectName
+                        + "\" already exist.");
+            }
+            project.create(monitor);
+            project.open(monitor);
+
+            container = project;
+            monitor.worked(2);
+
+            // 1. create plugin.xml / plugin.properties
+            monitor.beginTask("Creating plugin descriptor/properties ....", 6);
+            createFile("plugin.xml", "plugin.template", substitutions, monitor,
+                    container);
+            createFile("plugin.properties", "plugin.properties.template",
+                    substitutions, monitor, container);
+            createFile("build.properties", "build.properties.template",
+                    substitutions, monitor, container);
+            createFile(".classpath", "classpath.template", substitutions,
+                    monitor, container);
+            createFile(".cvsignore", "cvsignore.template", substitutions,
+                    monitor, container);
+            createFile(".project", "project.template", substitutions, monitor,
+                    container);
+
+            monitor.worked(6);
+
+            // 2. create Manifest.MF
+            monitor.beginTask("Creating OSGI Manifest file ....", 2);
+            final IFolder metaContainer =
+                    container.getFolder(new Path("META-INF"));
+            metaContainer.create(true, true, monitor);
+            createFile("MANIFEST.MF", "MANIFEST.template", substitutions,
+                    monitor, metaContainer);
+            monitor.worked(2);
+        } else {
+            container = getProjectForName(projectName);
+            // extend the plugin.xml with the new node extension entry
+            addNodeExtensionToPlugin((IProject)container, packageName + "."
+                    + nodeName + "Factory");
         }
-        project.create(monitor);
-        project.open(monitor);
-
-        IContainer container = project;
-        monitor.worked(2);
-
-        // 1. create plugin.xml / plugin.properties
-        monitor.beginTask("Creating plugin descriptor/properties ....", 6);
-        createFile("plugin.xml", "plugin.template", substitutions, monitor,
-                container);
-        createFile("plugin.properties", "plugin.properties.template",
-                substitutions, monitor, container);
-        createFile("build.properties", "build.properties.template",
-                substitutions, monitor, container);
-        createFile(".classpath", "classpath.template", substitutions, monitor,
-                container);
-        createFile(".cvsignore", "cvsignore.template", substitutions, monitor,
-                container);
-        createFile(".project", "project.template", substitutions, monitor,
-                container);
-
-        monitor.worked(6);
-
-        // 2. create Manifest.MF
-        monitor.beginTask("Creating OSGI Manifest file ....", 2);
-        final IFolder metaContainer = container.getFolder(new Path("META-INF"));
-        metaContainer.create(true, true, monitor);
-        createFile("MANIFEST.MF", "MANIFEST.template", substitutions, monitor,
-                metaContainer);
-        monitor.worked(2);
 
         // 3. create src/bin folders
-        monitor.beginTask("Creating src/bin folders ....", 2);
         final IFolder srcContainer = container.getFolder(new Path("src"));
         final IFolder binContainer = container.getFolder(new Path("bin"));
-        srcContainer.create(true, true, monitor);
-        binContainer.create(true, true, monitor);
+        if (!srcContainer.exists()) {
+            monitor.beginTask("Creating src folder ....", 2);
+            srcContainer.create(true, true, monitor);
+        }
+        if (!binContainer.exists()) {
+            monitor.beginTask("Creating bin folder ....", 2);
+            binContainer.create(true, true, monitor);
+        }
 
         monitor.worked(2);
 
@@ -215,17 +305,21 @@ public class NewKNIMEPluginWizard extends Wizard implements INewWizard {
                 pathSegments.length);
         IFolder packageContainer = container.getFolder(new Path("src"));
         for (int i = 0; i < pathSegments.length; i++) {
-            packageContainer = packageContainer.getFolder(new Path(
-                    pathSegments[i]));
-            packageContainer.create(true, true, monitor);
+            packageContainer =
+                    packageContainer.getFolder(new Path(pathSegments[i]));
+            if (!packageContainer.exists()) {
+                packageContainer.create(true, true, monitor);
+            }
             monitor.worked(1);
         }
 
-        // 4.1. create Bundel Activator
-        monitor.beginTask("Creating Bundle Activator....", 1);
-        createFile(nodeName + "NodePlugin.java", "BundleActivator.template",
-                substitutions, monitor, packageContainer);
-
+        // 4.1. create Bundel Activator if this is a new project
+        if (createNewProject) {
+            monitor.beginTask("Creating Bundle Activator....", 1);
+            createFile(nodeName + "NodePlugin.java",
+                    "BundleActivator.template", substitutions, monitor,
+                    packageContainer);
+        }
         monitor.worked(1);
 
         // 5. create node factory
@@ -237,8 +331,9 @@ public class NewKNIMEPluginWizard extends Wizard implements INewWizard {
 
         // 6. create node model
         monitor.beginTask("Creating node model ....", 1);
-        final IFile nodeModelFile = createFile(nodeName + "NodeModel.java",
-                "NodeModel.template", substitutions, monitor, packageContainer);
+        final IFile nodeModelFile =
+                createFile(nodeName + "NodeModel.java", "NodeModel.template",
+                        substitutions, monitor, packageContainer);
         monitor.worked(1);
 
         // 7. create node dialog
@@ -259,28 +354,33 @@ public class NewKNIMEPluginWizard extends Wizard implements INewWizard {
                 substitutions, monitor, packageContainer);
 
         monitor.worked(1);
-        
-        // 10. create node description xml file
-        monitor.beginTask("Creating package.html file ....", 1);
-        createFile("package.html", "packageHTML.template",
-                substitutions, monitor, packageContainer);
+
+        // 10. create package.html file
+        if (!packageContainer.getFile("package.html").exists()) {
+            monitor.beginTask("Creating package.html file ....", 1);
+            createFile("package.html", "packageHTML.template", substitutions,
+                    monitor, packageContainer);
+        }
 
         monitor.worked(1);
 
         // 11. copy additional files (icon, ...)
-        monitor.beginTask("Adding additional files....", 2);
-        IFile defIcon = packageContainer.getFile("default.png");
+        if (!packageContainer.getFile("default.png").exists()) {
+            monitor.beginTask("Adding additional files....", 2);
+            IFile defIcon = packageContainer.getFile("default.png");
 
-        // copy default.png
-        URL url = KNIMEExtensionPlugin.getDefault().getBundle().getEntry(
-                "templates/default.png");
-        File iconFile;
-        try {
-            iconFile = new File(Platform.resolve(url).getFile());
-            defIcon.create(new FileInputStream(iconFile), true, monitor);
-        } catch (IOException e1) {
-            e1.printStackTrace();
-            throwCoreException(e1.getMessage());
+            // copy default.png
+            URL url =
+                    KNIMEExtensionPlugin.getDefault().getBundle().getEntry(
+                            "templates/default.png");
+            File iconFile;
+            try {
+                iconFile = new File(Platform.resolve(url).getFile());
+                defIcon.create(new FileInputStream(iconFile), true, monitor);
+            } catch (IOException e1) {
+                e1.printStackTrace();
+                throwCoreException(e1.getMessage());
+            }
         }
 
         monitor.worked(2);
@@ -289,8 +389,9 @@ public class NewKNIMEPluginWizard extends Wizard implements INewWizard {
         monitor.setTaskName("Opening file for editing...");
         getShell().getDisplay().asyncExec(new Runnable() {
             public void run() {
-                IWorkbenchPage page = PlatformUI.getWorkbench()
-                        .getActiveWorkbenchWindow().getActivePage();
+                IWorkbenchPage page =
+                        PlatformUI.getWorkbench().getActiveWorkbenchWindow()
+                                .getActivePage();
                 try {
                     IDE.openEditor(page, nodeModelFile, true);
                 } catch (PartInitException e) {
@@ -298,6 +399,78 @@ public class NewKNIMEPluginWizard extends Wizard implements INewWizard {
             }
         });
         monitor.worked(1);
+    }
+
+    private static void addNodeExtensionToPlugin(final IProject project,
+            final String factoryClassName) {
+        project.getFile("plugin.xml").exists();
+        File pluginXml = project.getFile("plugin.xml").getLocation().toFile();
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        try {
+            DocumentBuilder builder = factory.newDocumentBuilder();
+            Document document = builder.parse(pluginXml);
+            NodeList rootElements = document.getChildNodes();
+            Node rootElement = null;
+            for (int i = 0; i < rootElements.getLength(); i++) {
+                Node element = rootElements.item(i);
+                if (element.getNodeName().equals("plugin")) {
+                    rootElement = element;
+                    break;
+                }
+            }
+            if (rootElement == null) {
+                throw new RuntimeException(
+                        "Project does not contain a valid plugin.xml");
+            }
+
+            NodeList children = rootElement.getChildNodes();
+            Node nodeExtensionElement = null;
+            for (int i = 0; i < children.getLength(); i++) {
+                Node element = children.item(i);
+                if (element.getNodeName().equals("extension")) {
+                    NamedNodeMap attributes = element.getAttributes();
+                    if (attributes.getNamedItem("point").getNodeValue().equals(
+                            "org.knime.workbench.repository.nodes")) {
+                        nodeExtensionElement = element;
+                        break;
+                    }
+
+                }
+            }
+            // if a node extension point did not exist, create one
+            if (nodeExtensionElement == null) {
+                nodeExtensionElement = document.createElement("extension");
+                Attr pointAttr = document.createAttribute("point");
+                pointAttr.setValue("org.knime.workbench.repository.nodes");
+                nodeExtensionElement.appendChild(pointAttr);
+                rootElement.appendChild(nodeExtensionElement);
+            }
+            // now create a new node element
+            Node newNodeElement = document.createElement("node");
+            ((Element)newNodeElement).setAttribute("category-path", "/");
+            ((Element)newNodeElement).setAttribute("factory-class",
+                    factoryClassName);
+            ((Element)newNodeElement).setAttribute("id", factoryClassName);
+            nodeExtensionElement.appendChild(newNodeElement);
+            // Prepare the DOM document for writing
+            document.normalize();
+            document.normalizeDocument();
+            DOMSource source = new DOMSource(document);
+            // Prepare the output file
+            Result result = new StreamResult(pluginXml);
+
+            // Write the DOM document to the file
+            Transformer xformer =
+                    TransformerFactory.newInstance().newTransformer();
+            xformer.setOutputProperty(OutputKeys.METHOD, "xml");
+            xformer.setOutputProperty(OutputKeys.INDENT, "yes");
+            xformer.transform(source, result);
+            // XMLSerializer serializer = new XMLSerializer();
+            // serializer.setOutputCharStream(new FileWriter(pluginXml));
+            // serializer.serialize(document);
+        } catch (Exception pce) {
+            throw new RuntimeException(pce);
+        }
     }
 
     /**
@@ -311,8 +484,8 @@ public class NewKNIMEPluginWizard extends Wizard implements INewWizard {
             IContainer container) throws CoreException {
         final IFile file = container.getFile(new Path(filename));
         try {
-            InputStream stream = openSubstitutedContentStream(templateFile,
-                    substitutions);
+            InputStream stream =
+                    openSubstitutedContentStream(templateFile, substitutions);
             if (file.exists()) {
                 file.setContents(stream, true, true, monitor);
             } else {
@@ -333,15 +506,16 @@ public class NewKNIMEPluginWizard extends Wizard implements INewWizard {
     private InputStream openSubstitutedContentStream(
             final String templateFileName, final Properties substitutions)
             throws CoreException {
-        URL url = KNIMEExtensionPlugin.getDefault().getBundle().getEntry(
-                "templates/" + templateFileName);
+        URL url =
+                KNIMEExtensionPlugin.getDefault().getBundle().getEntry(
+                        "templates/" + templateFileName);
         File templateFile = null;
         String contents = "";
         try {
             templateFile = new File(Platform.resolve(url).getFile());
 
-            BufferedReader reader = new BufferedReader(new FileReader(
-                    templateFile));
+            BufferedReader reader =
+                    new BufferedReader(new FileReader(templateFile));
             String line = reader.readLine();
             StringBuffer buf = new StringBuffer();
             while (line != null) {
@@ -357,8 +531,9 @@ public class NewKNIMEPluginWizard extends Wizard implements INewWizard {
             for (Iterator it = substitutions.keySet().iterator(); it.hasNext();) {
                 String key = (String)it.next();
 
-                contents = contents.replaceAll(key, substitutions.getProperty(
-                        key, "??" + key + "??"));
+                contents =
+                        contents.replaceAll(key, substitutions.getProperty(key,
+                                "??" + key + "??"));
             }
 
         } catch (Exception e) {
@@ -376,8 +551,9 @@ public class NewKNIMEPluginWizard extends Wizard implements INewWizard {
      * @throws CoreException
      */
     private void throwCoreException(final String message) throws CoreException {
-        IStatus status = new Status(IStatus.ERROR,
-                "org.knime.workbench.extension", IStatus.OK, message, null);
+        IStatus status =
+                new Status(IStatus.ERROR, "org.knime.workbench.extension",
+                        IStatus.OK, message, null);
         throw new CoreException(status);
     }
 
@@ -386,8 +562,7 @@ public class NewKNIMEPluginWizard extends Wizard implements INewWizard {
      */
     public void init(final IWorkbench workbench,
             final IStructuredSelection selection) {
-        // TODO Auto-generated method stub
-
+        m_selection = selection;
     }
 
 }

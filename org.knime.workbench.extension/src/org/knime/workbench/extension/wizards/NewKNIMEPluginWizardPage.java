@@ -156,7 +156,6 @@ public class NewKNIMEPluginWizardPage extends WizardPage implements Listener {
     /**
      * {@inheritDoc}
      */
-    @Override
     public void createControl(final Composite parent) {
 
         Composite composite = new Composite(parent, SWT.NULL);

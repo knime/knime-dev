@@ -304,6 +304,7 @@ public class NewKNIMEPluginWizardPage extends WizardPage implements Listener {
         layout.numColumns = 2;
         layout.marginLeft = 0;
         layout.marginRight = 0;
+        layout.marginWidth = 0;
         data.horizontalIndent = 0;
         compo.setLayout(layout);
         compo.setLayoutData(data);

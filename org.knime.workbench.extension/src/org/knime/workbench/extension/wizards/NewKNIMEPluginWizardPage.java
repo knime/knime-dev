@@ -58,13 +58,13 @@ import org.eclipse.ui.internal.ide.IDEWorkbenchMessages;
 import org.eclipse.ui.internal.ide.IDEWorkbenchPlugin;
 import org.eclipse.ui.internal.ide.IIDEHelpContextIds;
 import org.knime.core.node.NodeFactory;
-import org.knime.core.node.NodeFactory.NodeType;
+import org.knime.core.node.GenericNodeFactory.NodeType;
 
 /**
  * This page enables the user to enter the information needed to create the
  * extension plugin project. The Wizard collects the values via a substitution
  * map, that is used to fill out the templates.
- * 
+ *
  * @author Florian Georg, University of Konstanz
  * @author Christoph Sieb, University of Konstanz
  */
@@ -116,7 +116,7 @@ public class NewKNIMEPluginWizardPage extends WizardPage implements Listener {
 
     /**
      * Constructor for WizardPage.
-     * 
+     *
      * @param selection The initial selection
      */
     public NewKNIMEPluginWizardPage(final ISelection selection) {
@@ -130,7 +130,7 @@ public class NewKNIMEPluginWizardPage extends WizardPage implements Listener {
     }
 
     /**
-     * 
+     *
      * @return The substitution map
      */
     public Properties getSubstitutionMap() {
@@ -140,7 +140,7 @@ public class NewKNIMEPluginWizardPage extends WizardPage implements Listener {
         map.put(SUBST_BASE_PACKAGE, m_textBasePackage.getText());
         map.put(SUBST_NODE_NAME, m_textNodeName.getText());
         // the description is preprocessed here
-        // not so nice, format the created java file instead (this also 
+        // not so nice, format the created java file instead (this also
         // reflects then the users preferences!)
         map.put(SUBST_DESCRIPTION, m_textDescription.getText().replaceAll(
                 "\\n", " * \\n"));
@@ -193,11 +193,11 @@ public class NewKNIMEPluginWizardPage extends WizardPage implements Listener {
         m_newProjectRadio = new Button(projectGroup, SWT.RADIO);
         m_newProjectRadio.addSelectionListener(new SelectionListener() {
 
-            public void widgetDefaultSelected(SelectionEvent e) {
+            public void widgetDefaultSelected(final SelectionEvent e) {
                 widgetSelected(e);
             }
 
-            public void widgetSelected(SelectionEvent e) {
+            public void widgetSelected(final SelectionEvent e) {
                 m_existingProjectRadio.setSelection(false);
                 m_comboExistingProjects.setEnabled(false);
                 m_projectNameField.setEnabled(true);
@@ -223,7 +223,7 @@ public class NewKNIMEPluginWizardPage extends WizardPage implements Listener {
         m_projectNameField.setLayoutData(data);
         m_projectNameField.setFont(projectGroup.getFont());
         m_projectNameField.addListener(SWT.Modify, new Listener() {
-            public void handleEvent(Event e) {
+            public void handleEvent(final Event e) {
                 boolean valid = validatePage();
                 setPageComplete(valid);
 
@@ -234,11 +234,11 @@ public class NewKNIMEPluginWizardPage extends WizardPage implements Listener {
         m_existingProjectRadio = new Button(existProjectGroup, SWT.RADIO);
         m_existingProjectRadio.addSelectionListener(new SelectionListener() {
 
-            public void widgetDefaultSelected(SelectionEvent e) {
+            public void widgetDefaultSelected(final SelectionEvent e) {
                 widgetSelected(e);
             }
 
-            public void widgetSelected(SelectionEvent e) {
+            public void widgetSelected(final SelectionEvent e) {
                 m_newProjectRadio.setSelection(false);
                 m_projectNameField.setEnabled(false);
                 m_comboExistingProjects.setEnabled(true);
@@ -318,11 +318,11 @@ public class NewKNIMEPluginWizardPage extends WizardPage implements Listener {
         m_packageBrowseButton.setText("Browse");
         m_packageBrowseButton.addSelectionListener(new SelectionListener() {
 
-            public void widgetDefaultSelected(SelectionEvent e) {
+            public void widgetDefaultSelected(final SelectionEvent e) {
                 widgetSelected(e);
             }
 
-            public void widgetSelected(SelectionEvent e) {
+            public void widgetSelected(final SelectionEvent e) {
                 if (m_currentJavaProject != null) {
                     try {
                         SelectionDialog dialog =
@@ -432,12 +432,12 @@ public class NewKNIMEPluginWizardPage extends WizardPage implements Listener {
     /**
      * Creates the combo box with the possible node types. Uses the information
      * from the core factory defining the types.
-     * 
+     *
      * @param parent the parent composite of the combo box
-     * 
+     *
      * @return the created combo box
      */
-    private static Combo createCategoryCombo(Composite parent) {
+    private static Combo createCategoryCombo(final Composite parent) {
 
         Combo typeCombo = new Combo(parent, SWT.READ_ONLY | SWT.BORDER);
 
@@ -460,12 +460,12 @@ public class NewKNIMEPluginWizardPage extends WizardPage implements Listener {
     /**
      * Creates the combo box with the possible node types. Uses the information
      * from the core factory defining the types.
-     * 
+     *
      * @param parent the parent composite of the combo box
-     * 
+     *
      * @return the created combo box
      */
-    private Combo createProjectsCombo(Composite parent) {
+    private Combo createProjectsCombo(final Composite parent) {
         Combo projectsCombo = new Combo(parent, SWT.READ_ONLY | SWT.BORDER);
 
         int i = 0;
@@ -504,7 +504,7 @@ public class NewKNIMEPluginWizardPage extends WizardPage implements Listener {
      * This checks the text fields after a modify event and sets the
      * errormessage if necessary. This calls <code>validatePage</code> to
      * actually validate the fields.
-     * 
+     *
      * @param event
      */
     public void handleEvent(final Event event) {
@@ -518,7 +518,7 @@ public class NewKNIMEPluginWizardPage extends WizardPage implements Listener {
     /**
      * Validates the page, e.g. checks whether the textfields contain valid
      * values
-     * 
+     *
      * @see org.eclipse.ui.dialogs.WizardNewProjectCreationPage#validatePage()
      */
     protected boolean validatePage() {

@@ -58,7 +58,7 @@ import org.eclipse.ui.internal.ide.IDEWorkbenchMessages;
 import org.eclipse.ui.internal.ide.IDEWorkbenchPlugin;
 import org.eclipse.ui.internal.ide.IIDEHelpContextIds;
 import org.knime.core.node.NodeFactory;
-import org.knime.core.node.GenericNodeFactory.NodeType;
+import org.knime.core.node.NodeFactory.NodeType;
 
 /**
  * This page enables the user to enter the information needed to create the

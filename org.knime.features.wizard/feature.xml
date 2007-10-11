@@ -279,6 +279,7 @@ terms of this License.
       <import plugin="org.eclipse.ui.views.properties.tabbed"/>
       <import plugin="org.eclipse.core.runtime.compatibility"/>
       <import plugin="org.eclipse.gef"/>
+      <import feature="org.eclipse.pde"/>
    </requires>
 
    <plugin

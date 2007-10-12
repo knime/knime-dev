@@ -104,6 +104,8 @@ public class NewKNIMEPluginWizardPage extends WizardPage implements Listener {
 
     private Combo m_comboNodeType;
 
+    private Button m_includeSampleCode;
+
     private TreeSelection m_selection;
 
     private String m_newPackageTempStore = "";
@@ -151,6 +153,14 @@ public class NewKNIMEPluginWizardPage extends WizardPage implements Listener {
         map.put(SUBST_NODE_TYPE, m_comboNodeType.getText());
         return map;
 
+    }
+
+    /**
+     * Return the status of the checkmark.
+     * @return true if sample code should be included in the templates.
+     */
+    public boolean getIncludeSampleCode() {
+        return m_includeSampleCode.getSelection();
     }
 
     /**
@@ -403,6 +413,19 @@ public class NewKNIMEPluginWizardPage extends WizardPage implements Listener {
         } else {
             m_packageBrowseButton.setEnabled(false);
         }
+
+        //
+        // include sample code checkbox
+        // new project label
+        m_includeSampleCode = new Button(composite, SWT.CHECK);
+        m_includeSampleCode.setText("Include sample code in generated classes");
+        m_includeSampleCode.setFont(projectGroup.getFont());
+        data = new GridData(GridData.FILL_BOTH);
+        data.verticalIndent = 10;
+        data.horizontalIndent = 7;
+//        data.horizontalAlignment = SWT.CENTER;
+        m_includeSampleCode.setLayoutData(data);
+        m_includeSampleCode.setSelection(true);
     }
 
     private String getSelectedPackage() {

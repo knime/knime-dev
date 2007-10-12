@@ -79,7 +79,7 @@ import org.w3c.dom.NodeList;
 /**
  * Wizard for creating a new Plugin-Project, containing a "stub implementation"
  * of NodeModel/Dialog/View.
- * 
+ *
  * @author Florian Georg, University of Konstanz
  * @author Christoph Sieb, University of Konstanz
  */
@@ -109,6 +109,7 @@ public class NewKNIMEPluginWizard extends Wizard implements INewWizard {
     /**
      * This method is called when 'Finish' button is pressed in the wizard. We
      * will create an operation and run it using wizard as execution context.
+     * {@inheritDoc}
      */
     @Override
     public boolean performFinish() {
@@ -119,12 +120,14 @@ public class NewKNIMEPluginWizard extends Wizard implements INewWizard {
             projectName = m_page.getProjectName();
         }
         final Properties substitutions = m_page.getSubstitutionMap();
+        final boolean includeSampleCode = m_page.getIncludeSampleCode();
 
         IRunnableWithProgress op = new IRunnableWithProgress() {
             public void run(IProgressMonitor monitor)
                     throws InvocationTargetException {
                 try {
-                    doFinish(projectName, substitutions, monitor);
+                    doFinish(projectName, substitutions, includeSampleCode,
+                            monitor);
                 } catch (CoreException e) {
                     throw new InvocationTargetException(e);
                 } finally {
@@ -150,10 +153,10 @@ public class NewKNIMEPluginWizard extends Wizard implements INewWizard {
 
     /**
      * Logs an error
-     * 
+     *
      * @param e the exception
      */
-    private void logError(Exception e) {
+    private void logError(final Exception e) {
         KNIMEExtensionPlugin.getDefault().getLog().log(
                 new Status(IStatus.ERROR, KNIMEExtensionPlugin.getDefault()
                         .getBundle().getSymbolicName(), 0, e.getMessage() + "",
@@ -162,12 +165,12 @@ public class NewKNIMEPluginWizard extends Wizard implements INewWizard {
 
     /**
      * Determine if the project with the given name is in the current workspace.
-     * 
+     *
      * @param projectName String the project name to check
      * @return boolean true if the project with the given name is in this
      *         workspace
      */
-    static boolean isProjectInWorkspace(String projectName) {
+    static boolean isProjectInWorkspace(final String projectName) {
         IProject project = getProjectForName(projectName);
         if (project != null) {
             return true;
@@ -179,12 +182,12 @@ public class NewKNIMEPluginWizard extends Wizard implements INewWizard {
     /**
      * Gets the project for the given project name. <code>null</code> if the
      * project is not in the workspace.
-     * 
+     *
      * @param projectName String the project name to check
      * @return {@link IProject} if the project with the given name is in this
      *         workspace, <code>null</code> otherwise
      */
-    static IProject getProjectForName(String projectName) {
+    static IProject getProjectForName(final String projectName) {
         if (projectName == null) {
             return null;
         }
@@ -199,7 +202,7 @@ public class NewKNIMEPluginWizard extends Wizard implements INewWizard {
 
     /**
      * Retrieve all the projects in the current workspace.
-     * 
+     *
      * @return IProject[] array of IProject in the current workspace
      */
     static IProject[] getProjectsInWorkspace() {
@@ -211,14 +214,14 @@ public class NewKNIMEPluginWizard extends Wizard implements INewWizard {
      * The worker method. It will find the container, create the file if missing
      * or just replace its contents, and open the editor on the newly created
      * file.
-     * 
+     *
      * @param provider
      * @param description
      * @param factoryClassName
      */
     private void doFinish(final String projectName,
-            final Properties substitutions, final IProgressMonitor monitor)
-            throws CoreException {
+            final Properties substitutions, final boolean includeSampleCode,
+            final IProgressMonitor monitor) throws CoreException {
 
         // set the current year in the substitutions
         Calendar cal = new GregorianCalendar();
@@ -282,7 +285,7 @@ public class NewKNIMEPluginWizard extends Wizard implements INewWizard {
             container = getProjectForName(projectName);
             // extend the plugin.xml with the new node extension entry
             addNodeExtensionToPlugin((IProject)container, packageName + "."
-                    + nodeName + "Factory");
+                    + nodeName + "NodeFactory");
         }
 
         // 3. create src/bin folders
@@ -331,20 +334,32 @@ public class NewKNIMEPluginWizard extends Wizard implements INewWizard {
 
         // 6. create node model
         monitor.beginTask("Creating node model ....", 1);
+        String nodeModelTemplate = "NodeModel.template";
+        if (!includeSampleCode) {
+            nodeModelTemplate = "NodeModelEmpty.template";
+        }
         final IFile nodeModelFile =
-                createFile(nodeName + "NodeModel.java", "NodeModel.template",
+                createFile(nodeName + "NodeModel.java", nodeModelTemplate,
                         substitutions, monitor, packageContainer);
         monitor.worked(1);
 
         // 7. create node dialog
         monitor.beginTask("Creating node dialog ....", 1);
-        createFile(nodeName + "NodeDialog.java", "NodeDialog.template",
+        String nodeDialogTemplate = "NodeDialog.template";
+        if (!includeSampleCode) {
+            nodeDialogTemplate = "NodeDialogEmpty.template";
+        }
+        createFile(nodeName + "NodeDialog.java", nodeDialogTemplate,
                 substitutions, monitor, packageContainer);
         monitor.worked(1);
 
         // 8. create node view
         monitor.beginTask("Creating node view ....", 1);
-        createFile(nodeName + "NodeView.java", "NodeView.template",
+        String nodeViewTemplate = "NodeView.template";
+        if (!includeSampleCode) {
+            nodeViewTemplate = "NodeViewEmpty.template";
+        }
+        createFile(nodeName + "NodeView.java", nodeViewTemplate,
                 substitutions, monitor, packageContainer);
         monitor.worked(1);
 
@@ -481,7 +496,7 @@ public class NewKNIMEPluginWizard extends Wizard implements INewWizard {
      */
     private IFile createFile(final String filename, final String templateFile,
             final Properties substitutions, final IProgressMonitor monitor,
-            IContainer container) throws CoreException {
+            final IContainer container) throws CoreException {
         final IFile file = container.getFile(new Path(filename));
         try {
             InputStream stream =
@@ -500,7 +515,7 @@ public class NewKNIMEPluginWizard extends Wizard implements INewWizard {
 
     /**
      * We will initialize file contents with an empty String
-     * 
+     *
      * @throws CoreException
      */
     private InputStream openSubstitutedContentStream(
@@ -546,7 +561,7 @@ public class NewKNIMEPluginWizard extends Wizard implements INewWizard {
     }
 
     /**
-     * 
+     *
      * @param message
      * @throws CoreException
      */

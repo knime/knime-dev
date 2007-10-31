@@ -34,6 +34,7 @@ import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.Iterator;
 import java.util.Properties;
+import java.util.regex.Matcher;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -546,9 +547,8 @@ public class NewKNIMEPluginWizard extends Wizard implements INewWizard {
             for (Iterator it = substitutions.keySet().iterator(); it.hasNext();) {
                 String key = (String)it.next();
 
-                contents =
-                        contents.replaceAll(key, substitutions.getProperty(key,
-                                "??" + key + "??"));
+                String sub = substitutions.getProperty(key, "??" + key + "??");
+                contents = contents.replaceAll(key, Matcher.quoteReplacement(sub));
             }
 
         } catch (Exception e) {

@@ -277,6 +277,8 @@ terms of this License.
       <import feature="org.eclipse.pde"/>
    </requires>
 
+   <plugin id="org.knime.features.wizard.source" version="0.0.0"/>
+
    <plugin download-size="0" id="org.knime.workbench.extension" install-size="0" version="0.0.0"/>
 
 </feature>

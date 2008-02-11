@@ -124,7 +124,7 @@ public class NewKNIMEPluginWizard extends Wizard implements INewWizard {
         final boolean includeSampleCode = m_page.getIncludeSampleCode();
 
         IRunnableWithProgress op = new IRunnableWithProgress() {
-            public void run(IProgressMonitor monitor)
+            public void run(final IProgressMonitor monitor)
                     throws InvocationTargetException {
                 try {
                     doFinish(projectName, substitutions, includeSampleCode,
@@ -153,7 +153,7 @@ public class NewKNIMEPluginWizard extends Wizard implements INewWizard {
     }
 
     /**
-     * Logs an error
+     * Logs an error.
      *
      * @param e the exception
      */
@@ -223,7 +223,6 @@ public class NewKNIMEPluginWizard extends Wizard implements INewWizard {
     private void doFinish(final String projectName,
             final Properties substitutions, final boolean includeSampleCode,
             final IProgressMonitor monitor) throws CoreException {
-
         // set the current year in the substitutions
         Calendar cal = new GregorianCalendar();
         substitutions.setProperty(NewKNIMEPluginWizardPage.SUBST_CURRENT_YEAR,
@@ -253,10 +252,8 @@ public class NewKNIMEPluginWizard extends Wizard implements INewWizard {
             }
             project.create(monitor);
             project.open(monitor);
-
             container = project;
             monitor.worked(2);
-
             // 1. create plugin.xml / plugin.properties
             monitor.beginTask("Creating plugin descriptor/properties ....", 6);
             createFile("plugin.xml", "plugin.template", substitutions, monitor,
@@ -271,7 +268,6 @@ public class NewKNIMEPluginWizard extends Wizard implements INewWizard {
                     monitor, container);
             createFile(".project", "project.template", substitutions, monitor,
                     container);
-
             monitor.worked(6);
 
             // 2. create Manifest.MF
@@ -342,6 +338,7 @@ public class NewKNIMEPluginWizard extends Wizard implements INewWizard {
         final IFile nodeModelFile =
                 createFile(nodeName + "NodeModel.java", nodeModelTemplate,
                         substitutions, monitor, packageContainer);
+
         monitor.worked(1);
 
         // 7. create node dialog
@@ -515,7 +512,7 @@ public class NewKNIMEPluginWizard extends Wizard implements INewWizard {
     }
 
     /**
-     * We will initialize file contents with an empty String
+     * We will initialize file contents with an empty String.
      *
      * @throws CoreException
      */
@@ -544,11 +541,12 @@ public class NewKNIMEPluginWizard extends Wizard implements INewWizard {
 
             // substitute all placeholders
             // TODO this eats memory... make it more beautiful
-            for (Iterator it = substitutions.keySet().iterator(); it.hasNext();) {
+            for (Iterator it = substitutions.keySet().iterator(); 
+                it.hasNext();) {
                 String key = (String)it.next();
-
                 String sub = substitutions.getProperty(key, "??" + key + "??");
-                contents = contents.replaceAll(key, Matcher.quoteReplacement(sub));
+                contents = contents.replaceAll(key, 
+                        Matcher.quoteReplacement(sub));
             }
 
         } catch (Exception e) {

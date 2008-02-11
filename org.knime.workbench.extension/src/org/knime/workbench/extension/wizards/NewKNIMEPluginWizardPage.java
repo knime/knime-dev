@@ -59,7 +59,6 @@ import org.eclipse.ui.internal.ide.IDEWorkbenchPlugin;
 import org.eclipse.ui.internal.ide.IIDEHelpContextIds;
 import org.knime.core.node.NodeFactory;
 import org.knime.core.node.NodeFactory.NodeType;
-
 /**
  * This page enables the user to enter the information needed to create the
  * extension plugin project. The Wizard collects the values via a substitution
@@ -115,6 +114,7 @@ public class NewKNIMEPluginWizardPage extends WizardPage implements Listener {
     private Button m_packageBrowseButton;
 
     private IJavaProject m_currentJavaProject;
+
 
     /**
      * Constructor for WizardPage.

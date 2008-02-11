@@ -58,7 +58,7 @@ import org.eclipse.ui.internal.ide.IDEWorkbenchMessages;
 import org.eclipse.ui.internal.ide.IDEWorkbenchPlugin;
 import org.eclipse.ui.internal.ide.IIDEHelpContextIds;
 import org.knime.core.node.NodeFactory;
-import org.knime.core.node.NodeFactory.NodeType;
+import org.knime.core.node.GenericNodeFactory.NodeType;
 /**
  * This page enables the user to enter the information needed to create the
  * extension plugin project. The Wizard collects the values via a substitution

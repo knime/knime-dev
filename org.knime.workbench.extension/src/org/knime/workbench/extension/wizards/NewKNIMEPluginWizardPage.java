@@ -605,7 +605,7 @@ public class NewKNIMEPluginWizardPage extends WizardPage implements Listener {
         }
         if ((!Character.isLetter(nodeName.charAt(0)))
                 || (nodeName.charAt(0) != nodeName.toUpperCase().charAt(0))) {
-            setErrorMessage("Node name should start with an uppercase letter");
+            setErrorMessage("Node name must start with an uppercase letter");
             return false;
         }
         for (int i = 0; i < nodeName.length(); i++) {

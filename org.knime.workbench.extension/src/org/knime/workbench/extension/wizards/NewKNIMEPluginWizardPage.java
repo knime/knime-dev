@@ -591,7 +591,7 @@ public class NewKNIMEPluginWizardPage extends WizardPage implements Listener {
                 && m_existingProjectRadio.getSelection()) {
             if (getExistingProjectName().equals("") && m_existingProjectRadio.getSelection()) { //$NON-NLS-1$
                 setErrorMessage(null);
-                setMessage("Select an existign project.");
+                setMessage("Select an existing project.");
                 return false;
             }
         }

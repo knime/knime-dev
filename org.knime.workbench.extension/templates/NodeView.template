@@ -1,6 +1,5 @@
 package __BASE_PACKAGE__;
 
-import org.knime.core.node.NodeModel;
 import org.knime.core.node.NodeView;
 
 /**
@@ -9,14 +8,14 @@ import org.knime.core.node.NodeView;
  *
  * @author __VENDOR_NAME__
  */
-public class __NODE_NAME__NodeView extends NodeView {
+public class __NODE_NAME__NodeView extends NodeView<__NODE_NAME__NodeModel> {
 
     /**
      * Creates a new view.
      * 
      * @param nodeModel The model (class: {@link __NODE_NAME__NodeModel})
      */
-    protected __NODE_NAME__NodeView(final NodeModel nodeModel) {
+    protected __NODE_NAME__NodeView(final __NODE_NAME__NodeModel nodeModel) {
         super(nodeModel);
 
         // TODO instantiate the components of the view here.

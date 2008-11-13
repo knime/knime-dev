@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<feature id="org.knime.features.wizard" label="KNIME Node Wizard" plugin="org.knime.workbench.extension" provider-name="Chair for Bioinformatics and Information Mining, Prof. Berthold, University of Konstanz, Germany" version="2.1.0.0018128">
+<feature
+      id="org.knime.features.wizard"
+      label="KNIME Node Wizard"
+      version="2.1.0.0018128"
+      provider-name="Chair for Bioinformatics and Information Mining, Prof. Berthold, University of Konstanz, Germany"
+      plugin="org.knime.workbench.extension">
+      
    <description url="http://www.knime.org/">
       This feature contains the Node wizard for KNIME that helps you
 creating new nodes. Note: This feature requires the eclipse Java development plugins! The standalone product of KNIME does not contain these plugins. Use a normal eclipse installation with the Java development plugins and check out this feature.
@@ -260,8 +266,8 @@ terms of this License.
    </license>
 
    <url>
-      <update label="KNIME Update Site" url="http://www.knime.org/update_2.x/development"/>
-      <discovery label="KNIME Development" url="http://www.knime.org/update_2.x_development"/>
+      <update label="KNIME Development" url="http://www.knime.org/update_2.x/development"/>
+      <discovery label="KNIME Development" url="http://www.knime.org/update_2.x/development"/>
    </url>
 
    <requires>

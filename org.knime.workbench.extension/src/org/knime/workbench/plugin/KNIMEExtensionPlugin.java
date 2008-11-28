@@ -21,8 +21,7 @@
  */
 package org.knime.workbench.plugin;
 
-import org.eclipse.ui.plugin.*;
-import org.eclipse.jface.resource.ImageDescriptor;
+import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.osgi.framework.BundleContext;
 
 /**
@@ -30,48 +29,41 @@ import org.osgi.framework.BundleContext;
  */
 public class KNIMEExtensionPlugin extends AbstractUIPlugin {
 
-	//The shared instance.
-	private static KNIMEExtensionPlugin plugin;
-	
-	/**
-	 * The constructor.
-	 */
-	public KNIMEExtensionPlugin() {
-		plugin = this;
-	}
+    // The shared instance.
+    private static KNIMEExtensionPlugin plugin;
 
-	/**
-	 * This method is called upon plug-in activation
-	 */
-	@Override
-    public void start(BundleContext context) throws Exception {
-		super.start(context);
-	}
+    /** Plugin ID as defined in plugin XML. */
+    public static final String ID = "org.knime.workbench.extension";
 
-	/**
-	 * This method is called when the plug-in is stopped
-	 */
-	@Override
-    public void stop(BundleContext context) throws Exception {
-		super.stop(context);
-		plugin = null;
-	}
+    /**
+     * The constructor.
+     */
+    public KNIMEExtensionPlugin() {
+        plugin = this;
+    }
 
-	/**
-	 * Returns the shared instance.
-	 */
-	public static KNIMEExtensionPlugin getDefault() {
-		return plugin;
-	}
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void start(final BundleContext context) throws Exception {
+        super.start(context);
+    }
 
-	/**
-	 * Returns an image descriptor for the image file at the given
-	 * plug-in relative path.
-	 *
-	 * @param path the path
-	 * @return the image descriptor
-	 */
-	public static ImageDescriptor getImageDescriptor(String path) {
-		return AbstractUIPlugin.imageDescriptorFromPlugin("org.knime.workbench.extension", path);
-	}
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void stop(final BundleContext context) throws Exception {
+        super.stop(context);
+        plugin = null;
+    }
+
+    /**
+     * @return the shared instance
+     */
+    public static KNIMEExtensionPlugin getDefault() {
+        return plugin;
+    }
+
 }

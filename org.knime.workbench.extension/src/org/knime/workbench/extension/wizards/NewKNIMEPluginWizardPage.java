@@ -36,6 +36,7 @@ import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.internal.core.JavaModelManager;
 import org.eclipse.jdt.ui.IJavaElementSearchConstants;
 import org.eclipse.jdt.ui.JavaUI;
+import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.TreeSelection;
 import org.eclipse.jface.wizard.WizardPage;
@@ -59,6 +60,7 @@ import org.eclipse.ui.internal.ide.IDEWorkbenchPlugin;
 import org.eclipse.ui.internal.ide.IIDEHelpContextIds;
 import org.knime.core.node.NodeFactory;
 import org.knime.core.node.NodeFactory.NodeType;
+import org.knime.workbench.plugin.KNIMEExtensionPlugin;
 /**
  * This page enables the user to enter the information needed to create the
  * extension plugin project. The Wizard collects the values via a substitution
@@ -114,6 +116,11 @@ public class NewKNIMEPluginWizardPage extends WizardPage implements Listener {
     private Button m_packageBrowseButton;
 
     private IJavaProject m_currentJavaProject;
+    
+    // load this icon only once per session (static)
+    private static final ImageDescriptor ICON = 
+        KNIMEExtensionPlugin.imageDescriptorFromPlugin(
+                KNIMEExtensionPlugin.ID, "icons/knime_extension55.png");
 
 
     /**
@@ -126,6 +133,7 @@ public class NewKNIMEPluginWizardPage extends WizardPage implements Listener {
         setTitle("Create new KNIME Node-Extension");
         setDescription("This wizard creates a KNIME Node-Extension "
                 + "(optionally with an initial plugin project ");
+        setImageDescriptor(ICON);
         if (selection instanceof TreeSelection) {
             m_selection = (TreeSelection)selection;
         }

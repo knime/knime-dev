@@ -1,7 +1,7 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: KNIME Workbench Extensions
-Bundle-SymbolicName: org.knime.workbench.extension; singleton:=true
+Bundle-SymbolicName: org.knime.workbench.extension;singleton:=true
 Bundle-Version: 2.1.0.0018128
 Bundle-Activator: org.knime.workbench.plugin.KNIMEExtensionPlugin
 Require-Bundle: org.eclipse.core.resources,

@@ -15,6 +15,6 @@ Require-Bundle: org.eclipse.core.resources,
 Eclipse-LazyStart: true
 Bundle-ClassPath: workbench-extension-patches.jar,
  workbench-extension.jar
-Bundle-Vendor: Chair for Bioinformatics and Information Mining, University of Konstanz, Germany
+Bundle-Vendor: KNIME GmbH, Konstanz, Germany
 Export-Package: org.knime.workbench.extension.wizards,
  org.knime.workbench.plugin

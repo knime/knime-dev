@@ -271,6 +271,12 @@ terms of this License.
          id="org.knime.features.wizard.source"
          version="0.0.0"/>
 
+   <requires>
+      <import plugin="org.eclipse.jdt.core"/>
+      <import plugin="org.eclipse.jdt.ui"/>
+      <import plugin="org.eclipse.pde"/>
+   </requires>
+
    <plugin
          id="org.knime.workbench.extension"
          download-size="0"

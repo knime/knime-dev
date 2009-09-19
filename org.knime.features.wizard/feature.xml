@@ -272,9 +272,8 @@ terms of this License.
          version="0.0.0"/>
 
    <requires>
-      <import plugin="org.eclipse.jdt.core"/>
-      <import plugin="org.eclipse.jdt.ui"/>
-      <import plugin="org.eclipse.pde"/>
+      <import feature="org.eclipse.jdt" version="3.4.2.r342_v20081217-7o7tEAoEEDWEm5HTrKn-svO4BbDI"/>
+      <import feature="org.eclipse.pde" version="3.4.2.R342_v20090122-7T7U1E9imVKz-A8Vz-p_jRS"/>
    </requires>
 
    <plugin

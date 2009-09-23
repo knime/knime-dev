@@ -1,0 +1,10 @@
+source.__JAR_NAME__ = src/
+output.__JAR_NAME__ = bin/
+bin.includes = plugin.xml,\
+               plugin.properties,\
+               META-INF/,\
+               __JAR_NAME__
+src.includes = src/,\
+               plugin.xml,\
+               plugin.properties,\
+               META-INF/

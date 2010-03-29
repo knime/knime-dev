@@ -730,8 +730,8 @@ propagated with or for interoperation with KNIME.
    <includes id="org.knime.features.wizard.source" version="0.0.0"/>
 
    <requires>
-      <import feature="org.eclipse.jdt" version="3.4.2.r342_v20081217-7o7tEAoEEDWEm5HTrKn-svO4BbDI"/>
-      <import feature="org.eclipse.pde" version="3.4.2.R342_v20090122-7T7U1E9imVKz-A8Vz-p_jRS"/>
+      <import feature="org.eclipse.jdt" version="3.4.2.r342_v20081217-7o7tEAoEEDWEm5HTrKn-svO4BbDI" match="compatible"/>
+      <import feature="org.eclipse.pde" version="3.4.2.R342_v20090122-7T7U1E9imVKz-A8Vz-p_jRS" match="compatible"/>
    </requires>
 
    <plugin download-size="0" id="org.knime.workbench.extension" install-size="0" version="0.0.0"/>

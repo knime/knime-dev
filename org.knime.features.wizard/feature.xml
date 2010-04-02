@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<feature id="org.knime.features.wizard" label="%featureName" plugin="org.knime.workbench.extension" provider-name="KNIME GmbH, Konstanz, Germany" version="2.1.2.0024319">
+<feature id="org.knime.features.wizard" label="%featureName" plugin="org.knime.workbench.extension" provider-name="KNIME GmbH, Konstanz, Germany" version="2.1.3.0025224">
 
    <description url="http://www.knime.org/">
       %description
@@ -730,8 +730,8 @@ propagated with or for interoperation with KNIME.
    <includes id="org.knime.features.wizard.source" version="0.0.0"/>
 
    <requires>
-      <import feature="org.eclipse.jdt" version="3.4.2.r342_v20081217-7o7tEAoEEDWEm5HTrKn-svO4BbDI" match="compatible"/>
-      <import feature="org.eclipse.pde" version="3.4.2.R342_v20090122-7T7U1E9imVKz-A8Vz-p_jRS" match="compatible"/>
+      <import feature="org.eclipse.jdt" match="compatible" version="3.4.2.r342_v20081217-7o7tEAoEEDWEm5HTrKn-svO4BbDI"/>
+      <import feature="org.eclipse.pde" match="compatible" version="3.4.2.R342_v20090122-7T7U1E9imVKz-A8Vz-p_jRS"/>
    </requires>
 
    <plugin download-size="0" id="org.knime.workbench.extension" install-size="0" version="0.0.0"/>

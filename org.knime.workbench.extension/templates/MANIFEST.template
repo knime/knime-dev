@@ -6,11 +6,10 @@ Bundle-Version: 1.0.0
 Bundle-ClassPath: __JAR_NAME__
 Bundle-Activator: __BASE_PACKAGE__.__NODE_NAME__NodePlugin
 Bundle-Vendor: __VENDOR_NAME__
-Bundle-Localization: plugin
 Require-Bundle: org.eclipse.core.runtime,
  org.knime.workbench.core,
  org.knime.workbench.repository,
  org.knime.base
-Eclipse-LazyStart: true
+Bundle-ActivationPolicy: lazy
 Export-Package: __BASE_PACKAGE__
 

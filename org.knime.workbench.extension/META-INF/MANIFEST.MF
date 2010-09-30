@@ -7,11 +7,11 @@ Require-Bundle: org.eclipse.core.resources,org.eclipse.ui.ide,org.ecli
  ef,org.eclipse.pde
 Bundle-Vendor: KNIME GmbH, Konstanz, Germany
 Bundle-ActivationPolicy: lazy
-Bundle-ClassPath: workbench-extension-patches.jar,workbench-extension.
- jar
-Bundle-Version: 2.2.2.0026408
+Bundle-ClassPath: workbench-extension.jar
+Bundle-Version: 2.3.0.qualifier
 Bundle-Name: KNIME Workbench Extensions
 Bundle-Activator: org.knime.workbench.plugin.KNIMEExtensionPlugin
 Bundle-ManifestVersion: 2
 Bundle-SymbolicName: org.knime.workbench.extension;singleton:=true
+Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 

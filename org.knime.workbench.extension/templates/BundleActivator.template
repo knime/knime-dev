@@ -17,10 +17,6 @@ import org.osgi.framework.BundleContext;
  * @author __VENDOR_NAME__
  */
 public class __NODE_NAME__NodePlugin extends Plugin {
-
-    /** Make sure that this *always* matches the ID in plugin.xml. */
-    public static final String PLUGIN_ID = "__BASE_PACKAGE__";
-
     // The shared instance.
     private static __NODE_NAME__NodePlugin plugin;
 

@@ -150,6 +150,7 @@ public class NewKNIMEPluginWizard extends Wizard implements INewWizard {
         final boolean includeSampleCode = m_page.getIncludeSampleCode();
 
         IRunnableWithProgress op = new IRunnableWithProgress() {
+            @Override
             public void run(final IProgressMonitor monitor)
                     throws InvocationTargetException {
                 try {
@@ -284,13 +285,9 @@ public class NewKNIMEPluginWizard extends Wizard implements INewWizard {
             monitor.beginTask("Creating plugin descriptor/properties ....", 6);
             createFile("plugin.xml", "plugin.template", substitutions, monitor,
                     container);
-            createFile("plugin.properties", "plugin.properties.template",
-                    substitutions, monitor, container);
             createFile("build.properties", "build.properties.template",
                     substitutions, monitor, container);
             createFile(".classpath", "classpath.template", substitutions,
-                    monitor, container);
-            createFile(".cvsignore", "cvsignore.template", substitutions,
                     monitor, container);
             createFile(".project", "project.template", substitutions, monitor,
                     container);
@@ -427,6 +424,7 @@ public class NewKNIMEPluginWizard extends Wizard implements INewWizard {
         // open the model file in the editor
         monitor.setTaskName("Opening file for editing...");
         getShell().getDisplay().asyncExec(new Runnable() {
+            @Override
             public void run() {
                 IWorkbenchPage page =
                         PlatformUI.getWorkbench().getActiveWorkbenchWindow()
@@ -567,11 +565,11 @@ public class NewKNIMEPluginWizard extends Wizard implements INewWizard {
 
             // substitute all placeholders
             // TODO this eats memory... make it more beautiful
-            for (Iterator it = substitutions.keySet().iterator(); 
+            for (Iterator it = substitutions.keySet().iterator();
                 it.hasNext();) {
                 String key = (String)it.next();
                 String sub = substitutions.getProperty(key, "??" + key + "??");
-                contents = contents.replaceAll(key, 
+                contents = contents.replaceAll(key,
                         Matcher.quoteReplacement(sub));
             }
 
@@ -599,6 +597,7 @@ public class NewKNIMEPluginWizard extends Wizard implements INewWizard {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void init(final IWorkbench workbench,
             final IStructuredSelection selection) {
         m_selection = selection;

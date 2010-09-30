@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<cspecExtension xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:bc="http://www.eclipse.org/buckminster/Common-1.0" xmlns="http://www.eclipse.org/buckminster/CSpec-1.0">
+	<actions>
+		<public name="build.javadoc" actor="ant">
+			<actorProperties>
+				<property key="buildFileId" value="knime.javadoc" />
+				<property key="targets" value="build.javadoc" />
+			</actorProperties>
+			<properties>
+				<property key="javadoc.sourcePath"
+					value="${project_loc:/org.knime.base}/src:${project_loc:/org.knime.core}/src" />
+				<property key="javadoc.additionalClassPathRoot" value="${workspace_loc}" />
+				<property key="javadoc.stylesheet"
+					value="${project_loc:/org.knime.build}/files/stylesheet_knime.css" />
+				<property key="javadoc.packageNames" value="org.knime.core.*,org.knime.base.*" />
+			</properties>
+			<products alias="destination" base="${buckminster.home}/rootfiles/knime_doc"
+				upToDatePolicy="ACTOR">
+				<path path="javadoc/" />
+			</products>
+		</public>
+	</actions>
+	<alterActions>
+		<private name="feature.jar">
+			<prerequisites>
+				<attribute name="build.javadoc" />
+			</prerequisites>
+		</private>
+	</alterActions>
+</cspecExtension>

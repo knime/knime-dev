@@ -50,10 +50,9 @@ package org.knime.workbench.extension.wizards;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.util.Calendar;
@@ -81,7 +80,6 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Path;
-import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.operation.IRunnableWithProgress;
@@ -110,7 +108,10 @@ import org.w3c.dom.NodeList;
  * @author Florian Georg, University of Konstanz
  * @author Christoph Sieb, University of Konstanz
  */
+@SuppressWarnings("restriction")
 public class NewKNIMEPluginWizard extends Wizard implements INewWizard {
+    private static final String EOL = System.getProperty("line.separator");
+
     private NewKNIMEPluginWizardPage m_page;
 
     private ISelection m_selection;
@@ -409,10 +410,8 @@ public class NewKNIMEPluginWizard extends Wizard implements INewWizard {
             URL url =
                     KNIMEExtensionPlugin.getDefault().getBundle().getEntry(
                             "templates/default.png");
-            File iconFile;
             try {
-                iconFile = new File(Platform.resolve(url).getFile());
-                defIcon.create(new FileInputStream(iconFile), true, monitor);
+                defIcon.create(url.openStream(), true, monitor);
             } catch (IOException e1) {
                 e1.printStackTrace();
                 throwCoreException(e1.getMessage());
@@ -546,26 +545,21 @@ public class NewKNIMEPluginWizard extends Wizard implements INewWizard {
         URL url =
                 KNIMEExtensionPlugin.getDefault().getBundle().getEntry(
                         "templates/" + templateFileName);
-        File templateFile = null;
         String contents = "";
         try {
-            templateFile = new File(Platform.resolve(url).getFile());
-
             BufferedReader reader =
-                    new BufferedReader(new FileReader(templateFile));
-            String line = reader.readLine();
+                    new BufferedReader(new InputStreamReader(url.openStream()));
+            String line;
             StringBuffer buf = new StringBuffer();
-            while (line != null) {
-                buf.append(line);
-                buf.append("\n");
-                line = reader.readLine();
+            while ((line = reader.readLine()) != null) {
+                buf.append(line).append(EOL);
             }
             reader.close();
             contents = buf.toString();
 
             // substitute all placeholders
             // TODO this eats memory... make it more beautiful
-            for (Iterator it = substitutions.keySet().iterator();
+            for (Iterator<Object> it = substitutions.keySet().iterator();
                 it.hasNext();) {
                 String key = (String)it.next();
                 String sub = substitutions.getProperty(key, "??" + key + "??");
@@ -576,7 +570,7 @@ public class NewKNIMEPluginWizard extends Wizard implements INewWizard {
         } catch (Exception e) {
             logError(e);
             throwCoreException("Can't process template file: url=" + url
-                    + " ;file=" + templateFile);
+                    + " ;file=" + templateFileName);
         }
 
         return new ByteArrayInputStream(contents.getBytes());

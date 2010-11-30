@@ -84,6 +84,7 @@ import org.eclipse.ui.dialogs.SelectionDialog;
 import org.eclipse.ui.internal.ide.IDEWorkbenchMessages;
 import org.eclipse.ui.internal.ide.IDEWorkbenchPlugin;
 import org.eclipse.ui.internal.ide.IIDEHelpContextIds;
+import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.knime.core.node.NodeFactory;
 import org.knime.core.node.NodeFactory.NodeType;
 import org.knime.workbench.plugin.KNIMEExtensionPlugin;
@@ -95,6 +96,7 @@ import org.knime.workbench.plugin.KNIMEExtensionPlugin;
  * @author Florian Georg, University of Konstanz
  * @author Christoph Sieb, University of Konstanz
  */
+@SuppressWarnings("restriction")
 public class NewKNIMEPluginWizardPage extends WizardPage implements Listener {
 
     static final String SUBST_PROJECT_NAME = "__PROJECT_NAME__";
@@ -142,10 +144,10 @@ public class NewKNIMEPluginWizardPage extends WizardPage implements Listener {
     private Button m_packageBrowseButton;
 
     private IJavaProject m_currentJavaProject;
-    
+
     // load this icon only once per session (static)
-    private static final ImageDescriptor ICON = 
-        KNIMEExtensionPlugin.imageDescriptorFromPlugin(
+    private static final ImageDescriptor ICON =
+        AbstractUIPlugin.imageDescriptorFromPlugin(
                 KNIMEExtensionPlugin.ID, "icons/knime_extension55.png");
 
 
@@ -200,6 +202,7 @@ public class NewKNIMEPluginWizardPage extends WizardPage implements Listener {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void createControl(final Composite parent) {
 
         Composite composite = new Composite(parent, SWT.NULL);
@@ -237,10 +240,12 @@ public class NewKNIMEPluginWizardPage extends WizardPage implements Listener {
         m_newProjectRadio = new Button(projectGroup, SWT.RADIO);
         m_newProjectRadio.addSelectionListener(new SelectionListener() {
 
+            @Override
             public void widgetDefaultSelected(final SelectionEvent e) {
                 widgetSelected(e);
             }
 
+            @Override
             public void widgetSelected(final SelectionEvent e) {
                 m_existingProjectRadio.setSelection(false);
                 m_comboExistingProjects.setEnabled(false);
@@ -267,6 +272,7 @@ public class NewKNIMEPluginWizardPage extends WizardPage implements Listener {
         m_projectNameField.setLayoutData(data);
         m_projectNameField.setFont(projectGroup.getFont());
         m_projectNameField.addListener(SWT.Modify, new Listener() {
+            @Override
             public void handleEvent(final Event e) {
                 boolean valid = validatePage();
                 setPageComplete(valid);
@@ -278,10 +284,12 @@ public class NewKNIMEPluginWizardPage extends WizardPage implements Listener {
         m_existingProjectRadio = new Button(existProjectGroup, SWT.RADIO);
         m_existingProjectRadio.addSelectionListener(new SelectionListener() {
 
+            @Override
             public void widgetDefaultSelected(final SelectionEvent e) {
                 widgetSelected(e);
             }
 
+            @Override
             public void widgetSelected(final SelectionEvent e) {
                 m_newProjectRadio.setSelection(false);
                 m_projectNameField.setEnabled(false);
@@ -362,10 +370,12 @@ public class NewKNIMEPluginWizardPage extends WizardPage implements Listener {
         m_packageBrowseButton.setText("Browse");
         m_packageBrowseButton.addSelectionListener(new SelectionListener() {
 
+            @Override
             public void widgetDefaultSelected(final SelectionEvent e) {
                 widgetSelected(e);
             }
 
+            @Override
             public void widgetSelected(final SelectionEvent e) {
                 if (m_currentJavaProject != null) {
                     try {
@@ -477,9 +487,7 @@ public class NewKNIMEPluginWizardPage extends WizardPage implements Listener {
                         && !(je.getParent() instanceof IPackageFragment)) {
                     je = je.getParent();
                 }
-                if (je != null) {
-                    return je.getElementName();
-                }
+                return je.getElementName();
             }
         }
 
@@ -564,6 +572,7 @@ public class NewKNIMEPluginWizardPage extends WizardPage implements Listener {
      *
      * @param event
      */
+    @Override
     public void handleEvent(final Event event) {
         if (event.type != SWT.Modify) {
             return;
@@ -695,7 +704,8 @@ public class NewKNIMEPluginWizardPage extends WizardPage implements Listener {
     }
 
     Listener m_existingProjectChangedListener = new Listener() {
-        public void handleEvent(Event e) {
+        @Override
+        public void handleEvent(final Event e) {
             m_currentJavaProject =
                     JavaModelManager.getJavaModelManager().getJavaModel()
                             .getJavaProject(m_comboExistingProjects.getText());

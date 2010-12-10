@@ -17,7 +17,7 @@
    </copyright>
 
    <license>
-GNU GENERAL PUBLIC LICENSE with Additional Permissions according to Sec. 7
+      GNU GENERAL PUBLIC LICENSE with Additional Permissions according to Sec. 7
 *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** 
 Please see below the General Public License (GPL), Version 3, 
 and the Additional Permissions according to Sec. 7 
@@ -741,5 +741,9 @@ propagated with or for interoperation with KNIME.
    <includes
          id="org.knime.features.base"
          version="0.0.0"/>
+
+   <requires>
+      <import feature="com.knime.features.enterprise.client.exampleserver" version="2.3.0.qualifier"/>
+   </requires>
 
 </feature>

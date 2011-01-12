@@ -2,7 +2,7 @@
 <feature
       id="org.knime.features.sdk"
       label="KNIME SDK"
-      version="2.4.0.qualifier"
+      version="2.3.1.qualifier"
       provider-name="KNIME GmbH, Konstanz, Germany"
       plugin="org.knime.workbench.extension">
 
@@ -11,7 +11,7 @@
    </description>
 
    <copyright>
-      Copyright, 2003 - 2010
+      Copyright, 2003 - 2011
       University of Konstanz, Germany
       KNIME GmbH, Konstanz, Germany
    </copyright>
@@ -731,7 +731,7 @@ propagated with or for interoperation with KNIME.
    </license>
 
    <url>
-      <update label="KNIME Update Site" url="http://www.knime.org/update/2.4"/>
+      <update label="KNIME Update Site" url="http://www.knime.org/update/2.3"/>
    </url>
 
    <includes
@@ -743,7 +743,7 @@ propagated with or for interoperation with KNIME.
          version="0.0.0"/>
 
    <requires>
-      <import feature="com.knime.features.enterprise.client.exampleserver" version="2.3.0" match="greaterOrEqual"/>
+      <import feature="com.knime.features.enterprise.client.exampleserver" version="2.3.0.qualifier"/>
    </requires>
 
 </feature>

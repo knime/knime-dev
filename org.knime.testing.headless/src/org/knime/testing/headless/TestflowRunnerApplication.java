@@ -19,7 +19,7 @@
  * ---------------------------------------------------------------------
  *
  */
-package org.knime.testing.core;
+package org.knime.testing.headless;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -40,6 +40,8 @@ import org.eclipse.equinox.app.IApplicationContext;
 import org.knime.core.node.KNIMEConstants;
 import org.knime.core.node.NodeLogger;
 import org.knime.core.util.FileUtil;
+import org.knime.testing.core.AnalyzeLogFile;
+import org.knime.testing.core.KnimeTestRegistry;
 import org.knime.workbench.repository.RepositoryManager;
 
 import com.knime.enterprise.client.filesystem.util.WorkflowDownloadApplication;

@@ -19,7 +19,7 @@
  * ---------------------------------------------------------------------
  *
  */
-package org.knime.testing.core;
+package org.knime.testing.headless;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -34,6 +34,7 @@ import org.eclipse.core.runtime.IExtensionRegistry;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.equinox.app.IApplication;
 import org.eclipse.equinox.app.IApplicationContext;
+import org.knime.testing.core.AbstractTestcaseCollector;
 
 /**
  * This application runs all Unit tests it can find. It collects all classes by

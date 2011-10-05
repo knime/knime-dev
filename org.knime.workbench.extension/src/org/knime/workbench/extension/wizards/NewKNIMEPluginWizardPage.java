@@ -88,6 +88,7 @@ import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.knime.core.node.NodeFactory;
 import org.knime.core.node.NodeFactory.NodeType;
 import org.knime.workbench.plugin.KNIMEExtensionPlugin;
+
 /**
  * This page enables the user to enter the information needed to create the
  * extension plugin project. The Wizard collects the values via a substitution
@@ -146,10 +147,9 @@ public class NewKNIMEPluginWizardPage extends WizardPage implements Listener {
     private IJavaProject m_currentJavaProject;
 
     // load this icon only once per session (static)
-    private static final ImageDescriptor ICON =
-        AbstractUIPlugin.imageDescriptorFromPlugin(
-                KNIMEExtensionPlugin.ID, "icons/knime_extension55.png");
-
+    private static final ImageDescriptor ICON = AbstractUIPlugin
+            .imageDescriptorFromPlugin(KNIMEExtensionPlugin.ID,
+                    "icons/knime_extension55.png");
 
     /**
      * Constructor for WizardPage.
@@ -180,12 +180,10 @@ public class NewKNIMEPluginWizardPage extends WizardPage implements Listener {
         // the description is preprocessed here
         // not so nice, format the created java file instead (this also
         // reflects then the users preferences!)
-        map.put(SUBST_DESCRIPTION, m_textDescription.getText().replaceAll(
-                "\\n", " * \\n"));
+        map.put(SUBST_DESCRIPTION,
+                m_textDescription.getText().replaceAll("\\n", " * \\n"));
         map.put(SUBST_VENDOR_NAME, m_textVendor.getText());
-        map
-                .put(SUBST_JAR_NAME, m_textNodeName.getText().toLowerCase()
-                        + ".jar");
+        map.put(SUBST_JAR_NAME, m_textNodeName.getText().toLowerCase() + ".jar");
         map.put(SUBST_NODE_TYPE, m_comboNodeType.getText());
         return map;
 
@@ -193,6 +191,7 @@ public class NewKNIMEPluginWizardPage extends WizardPage implements Listener {
 
     /**
      * Return the status of the checkmark.
+     *
      * @return true if sample code should be included in the templates.
      */
     public boolean getIncludeSampleCode() {
@@ -210,8 +209,8 @@ public class NewKNIMEPluginWizardPage extends WizardPage implements Listener {
 
         initializeDialogUnits(parent);
 
-        PlatformUI.getWorkbench().getHelpSystem().setHelp(composite,
-                IIDEHelpContextIds.NEW_PROJECT_WIZARD_PAGE);
+        PlatformUI.getWorkbench().getHelpSystem()
+                .setHelp(composite, IIDEHelpContextIds.NEW_PROJECT_WIZARD_PAGE);
 
         composite.setLayout(new GridLayout());
         composite.setLayoutData(new GridData(GridData.FILL_BOTH));
@@ -380,11 +379,10 @@ public class NewKNIMEPluginWizardPage extends WizardPage implements Listener {
                 if (m_currentJavaProject != null) {
                     try {
                         SelectionDialog dialog =
-                                JavaUI
-                                        .createPackageDialog(
-                                                getShell(),
-                                                m_currentJavaProject,
-                                                IJavaElementSearchConstants.CONSIDER_REQUIRED_PROJECTS);
+                                JavaUI.createPackageDialog(
+                                        getShell(),
+                                        m_currentJavaProject,
+                                        IJavaElementSearchConstants.CONSIDER_REQUIRED_PROJECTS);
                         dialog.open();
                         Object[] results = dialog.getResult();
                         if (results.length >= 1) {
@@ -467,7 +465,7 @@ public class NewKNIMEPluginWizardPage extends WizardPage implements Listener {
         data = new GridData(GridData.FILL_BOTH);
         data.verticalIndent = 10;
         data.horizontalIndent = 7;
-//        data.horizontalAlignment = SWT.CENTER;
+        // data.horizontalAlignment = SWT.CENTER;
         m_includeSampleCode.setLayoutData(data);
         m_includeSampleCode.setSelection(true);
     }
@@ -583,9 +581,10 @@ public class NewKNIMEPluginWizardPage extends WizardPage implements Listener {
 
     /**
      * Validates the page, e.g. checks whether the textfields contain valid
-     * values
+     * values.
      *
-     * @see org.eclipse.ui.dialogs.WizardNewProjectCreationPage#validatePage()
+     * @return <code>true</code> if all values are valid, <code>false</code>
+     *         otherwise
      */
     protected boolean validatePage() {
 
@@ -622,8 +621,8 @@ public class NewKNIMEPluginWizardPage extends WizardPage implements Listener {
             }
 
             IProject handle =
-                    ResourcesPlugin.getWorkspace().getRoot().getProject(
-                            getProjectName());
+                    ResourcesPlugin.getWorkspace().getRoot()
+                            .getProject(getProjectName());
             if (handle.exists()) {
                 setErrorMessage(IDEWorkbenchMessages.WizardNewProjectCreationPage_projectExistsMessage);
                 return false;
@@ -679,9 +678,13 @@ public class NewKNIMEPluginWizardPage extends WizardPage implements Listener {
             setMessage("Please provide a package name");
             return false;
         }
-        for (int i = 0; i < basePackage.length(); i++) {
+        if (!Character.isJavaIdentifierStart(basePackage.charAt(0))) {
+            setErrorMessage("The package name '" + basePackage + "' is invalid");
+            return false;
+        }
+        for (int i = 1; i < basePackage.length(); i++) {
             char c = basePackage.charAt(i);
-            if (!(Character.isLowerCase(c) || Character.isDigit(c) || c == '.' || c == '_')) {
+            if (!Character.isJavaIdentifierPart(c)) {
                 setErrorMessage("The package name '" + basePackage
                         + "' is invalid");
                 return false;

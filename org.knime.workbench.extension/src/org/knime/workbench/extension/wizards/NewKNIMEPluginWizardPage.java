@@ -48,6 +48,7 @@
 package org.knime.workbench.extension.wizards;
 
 import java.util.Properties;
+import java.util.regex.Pattern;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
@@ -99,6 +100,9 @@ import org.knime.workbench.plugin.KNIMEExtensionPlugin;
  */
 @SuppressWarnings("restriction")
 public class NewKNIMEPluginWizardPage extends WizardPage implements Listener {
+    private static final Pattern PACKAGE_RE =
+        Pattern.compile("^[a-z][a-zA-Z0-9_]*(?:\\.[a-z][a-zA-Z0-9_]*)*$");
+
 
     static final String SUBST_PROJECT_NAME = "__PROJECT_NAME__";
 
@@ -678,17 +682,9 @@ public class NewKNIMEPluginWizardPage extends WizardPage implements Listener {
             setMessage("Please provide a package name");
             return false;
         }
-        if (!Character.isJavaIdentifierStart(basePackage.charAt(0))) {
+        if (!PACKAGE_RE.matcher(basePackage).matches()) {
             setErrorMessage("The package name '" + basePackage + "' is invalid");
             return false;
-        }
-        for (int i = 1; i < basePackage.length(); i++) {
-            char c = basePackage.charAt(i);
-            if (!Character.isJavaIdentifierPart(c)) {
-                setErrorMessage("The package name '" + basePackage
-                        + "' is invalid");
-                return false;
-            }
         }
 
         // everything ok

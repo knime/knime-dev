@@ -101,7 +101,7 @@ import org.knime.workbench.plugin.KNIMEExtensionPlugin;
 @SuppressWarnings("restriction")
 public class NewKNIMEPluginWizardPage extends WizardPage implements Listener {
     private static final Pattern PACKAGE_RE =
-        Pattern.compile("^[a-z][a-zA-Z0-9_]*(?:\\.[a-z][a-zA-Z0-9_]*)*$");
+        Pattern.compile("^[a-z][a-z0-9_]*(?:\\.[a-zA-Z_][a-zA-Z0-9_]*)*$");
 
 
     static final String SUBST_PROJECT_NAME = "__PROJECT_NAME__";

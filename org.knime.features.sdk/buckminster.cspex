@@ -3,6 +3,7 @@
 	xmlns:bc="http://www.eclipse.org/buckminster/Common-1.0" xmlns="http://www.eclipse.org/buckminster/CSpec-1.0">
 	<dependencies>
         <dependency name="org.knime.core" componentType="osgi.bundle" />
+        <dependency name="org.knime.core.util" componentType="osgi.bundle" />
         <dependency name="org.knime.base" componentType="osgi.bundle" />
     </dependencies>    
     <actions>
@@ -19,6 +20,7 @@
 			</properties>
             <prerequisites alias="action.requirements">
                 <attribute name="knime.source" component="org.knime.core" alias="core-source" />
+                <attribute name="knime.source" component="org.knime.core.util" alias="core-util-source" />
                 <attribute name="knime.source" component="org.knime.base" alias="base-source" />
             </prerequisites>
 			<products alias="destination" base="${buckminster.home}/rootfiles/knime_doc"

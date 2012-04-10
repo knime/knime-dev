@@ -34,6 +34,7 @@ import org.eclipse.core.runtime.IExtensionRegistry;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.equinox.app.IApplication;
 import org.eclipse.equinox.app.IApplicationContext;
+import org.eclipse.ui.PlatformUI;
 import org.knime.testing.core.AbstractTestcaseCollector;
 
 /**
@@ -55,6 +56,8 @@ public class UnittestRunnerApplication implements IApplication {
 
     @Override
     public Object start(final IApplicationContext context) throws Exception {
+        PlatformUI.createDisplay(); // create a display because some tests
+        // may need it
         context.applicationRunning();
         Object args =
                 context.getArguments()

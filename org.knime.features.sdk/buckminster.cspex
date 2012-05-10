@@ -19,8 +19,8 @@
 				<property key="javadoc.packageNames" value="org.knime.core.*,org.knime.base.*" />
 			</properties>
             <prerequisites alias="action.requirements">
-                <attribute name="knime.source" component="org.knime.core" alias="core-source" />
                 <attribute name="knime.source" component="org.knime.core.util" alias="core-util-source" />
+                <attribute name="knime.source" component="org.knime.core" alias="core-source" />
                 <attribute name="knime.source" component="org.knime.base" alias="base-source" />
             </prerequisites>
 			<products alias="destination" base="${buckminster.home}/rootfiles/knime_doc"

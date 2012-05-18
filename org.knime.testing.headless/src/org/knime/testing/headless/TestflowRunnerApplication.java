@@ -29,6 +29,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.Writer;
 
 import junit.framework.Test;
 
@@ -39,9 +40,12 @@ import org.eclipse.equinox.app.IApplication;
 import org.eclipse.equinox.app.IApplicationContext;
 import org.knime.core.node.KNIMEConstants;
 import org.knime.core.node.NodeLogger;
+import org.knime.core.node.NodeLogger.LEVEL;
 import org.knime.core.util.FileUtil;
 import org.knime.testing.core.AnalyzeLogFile;
+import org.knime.testing.core.FullWorkflowTest;
 import org.knime.testing.core.KnimeTestRegistry;
+import org.knime.testing.core.SimpleWorkflowTest;
 import org.knime.workbench.repository.RepositoryManager;
 
 import com.knime.enterprise.client.filesystem.util.WorkflowDownloadApplication;
@@ -65,6 +69,8 @@ public class TestflowRunnerApplication implements IApplication {
     private String m_xmlResult;
 
     private File m_analyzeOutputDir;
+
+    private boolean m_simpleTests;
 
     private static Test testSuite;
 
@@ -107,20 +113,59 @@ public class TestflowRunnerApplication implements IApplication {
         KnimeTestRegistry registry =
                 new KnimeTestRegistry(m_testNamePattern, new File(m_rootDir),
                         null);
-        testSuite = registry.collectTestCases();
+        testSuite = registry.collectTestCases(m_simpleTests
+                ? SimpleWorkflowTest.factory
+                : FullWorkflowTest.factory);
         // TODO add analysis of log file via junit tests
 
         JUnitTest junitTest =
                 new JUnitTest(TestflowRunnerApplication.class.getName());
 
-        JUnitTestRunner runner =
+        final JUnitTestRunner runner =
                 new JUnitTestRunner(junitTest, false, false, false, this
                         .getClass().getClassLoader());
         XMLJUnitResultFormatter formatter = new XMLJUnitResultFormatter();
         OutputStream out = new FileOutputStream(new File(m_xmlResult));
         formatter.setOutput(out);
         runner.addFormatter(formatter);
+
+        Writer stdout = new Writer() {
+            @Override
+            public void write(final char[] cbuf, final int off, final int len) throws IOException {
+                runner.handleOutput(new String(cbuf, off, len));
+            }
+
+            @Override
+            public void flush() throws IOException {
+            }
+
+            @Override
+            public void close() throws IOException {
+            }
+        };
+        Writer stderr = new Writer() {
+
+            @Override
+            public void write(final char[] cbuf, final int off, final int len) throws IOException {
+                runner.handleErrorOutput(new String(cbuf, off, len));
+            }
+
+            @Override
+            public void flush() throws IOException {
+            }
+
+            @Override
+            public void close() throws IOException {
+            }
+        };
+
+        NodeLogger.addWriter(stdout, LEVEL.INFO, LEVEL.WARN);
+        NodeLogger.addWriter(stderr, LEVEL.ERROR, LEVEL.ERROR);
         runner.run();
+        NodeLogger.removeWriter(stderr);
+        NodeLogger.removeWriter(stdout);
+
+
         out.close();
 
         if (m_analyzeLogFile) {
@@ -254,6 +299,11 @@ public class TestflowRunnerApplication implements IApplication {
                             + "options at the command line");
                     return false;
                 }
+                if (m_simpleTests) {
+                    System.err.println("-analyze and -simple cannot be used "
+                            + "together");
+                    return false;
+                }
 
                 i++;
                 m_analyzeLogFile = true;
@@ -329,6 +379,19 @@ public class TestflowRunnerApplication implements IApplication {
                 continue;
             }
 
+
+            if ((stringArgs[i] != null) && stringArgs[i].equals("-simple")) {
+                if (m_analyzeLogFile) {
+                    System.err.println("-analyze and -simple cannot be used "
+                            + "together");
+                    return false;
+                }
+
+                m_simpleTests = true;
+                i++;
+                continue;
+            }
+
             System.err.println("Invalid option: '" + stringArgs[i] + "'\n");
             printUsage();
             return false;
@@ -356,6 +419,8 @@ public class TestflowRunnerApplication implements IApplication {
                 + "<dir_name> is omitted the Java temp dir is used.");
         System.err.println("    -xmlResult <file_name>: specifies the XML "
                 + " file where the test results are written to.");
+        System.err.println("    -simple: only checks if all nodes are "
+                + " executed in the end.");
     }
 
     @Override

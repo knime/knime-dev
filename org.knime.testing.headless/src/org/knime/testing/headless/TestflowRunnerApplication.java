@@ -30,6 +30,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.Writer;
+import java.util.ArrayList;
+import java.util.Collection;
 
 import junit.framework.Test;
 
@@ -62,7 +64,7 @@ public class TestflowRunnerApplication implements IApplication {
 
     private String m_testNamePattern;
 
-    private String m_rootDir;
+    private Collection<File> m_rootDirs = new ArrayList<File>();
 
     private String m_serverUri;
 
@@ -99,7 +101,7 @@ public class TestflowRunnerApplication implements IApplication {
                         .get(IApplicationContext.APPLICATION_ARGS);
 
         if (!extractCommandLineArgs(args) || (m_testNamePattern == null)
-                || ((m_rootDir == null) && (m_serverUri == null))
+                || (m_rootDirs.isEmpty() && (m_serverUri == null))
                 || (m_xmlResult == null)) {
             printUsage();
             return EXIT_OK;
@@ -107,12 +109,10 @@ public class TestflowRunnerApplication implements IApplication {
 
 
         if (m_serverUri != null) {
-            downloadWorkflows();
+            m_rootDirs.add(downloadWorkflows());
         }
 
-        KnimeTestRegistry registry =
-                new KnimeTestRegistry(m_testNamePattern, new File(m_rootDir),
-                        null);
+        KnimeTestRegistry registry = new KnimeTestRegistry(m_testNamePattern, m_rootDirs, null);
         testSuite = registry.collectTestCases(m_simpleTests
                 ? SimpleWorkflowTest.factory
                 : FullWorkflowTest.factory);
@@ -320,12 +320,6 @@ public class TestflowRunnerApplication implements IApplication {
 
             // "-root" specifies the root dir of all testcases
             if ((stringArgs[i] != null) && stringArgs[i].equals("-root")) {
-                if (m_rootDir != null) {
-                    System.err.println("You can't specify multiple -root "
-                            + "options at the command line");
-                    return false;
-                }
-
                 i++;
                 // requires another argument
                 if ((i >= stringArgs.length) || (stringArgs[i] == null)
@@ -334,7 +328,7 @@ public class TestflowRunnerApplication implements IApplication {
                     printUsage();
                     return false;
                 }
-                m_rootDir = stringArgs[i++];
+                m_rootDirs.add(new File(stringArgs[i++]));
                 continue;
             }
 
@@ -406,7 +400,8 @@ public class TestflowRunnerApplication implements IApplication {
         System.err.println("    -pattern <reg_exp>: "
                 + "only test matching <reg_exp> will be run.");
         System.err.println("    -root <dir_name>: optional, specifies the"
-                + " root dir where all testcases are located in.");
+                + " root dir where all testcases are located in. Multiple "
+                + " root arguments may be present.");
         System.err.println("    -server <uri>: optional, a KNIME server "
                 + "from which workflows should be downloaded first.");
         System.err.println("                   Example: "
@@ -427,9 +422,9 @@ public class TestflowRunnerApplication implements IApplication {
     public void stop() {
     }
 
-    private void downloadWorkflows() throws Exception {
+    private File downloadWorkflows() throws Exception {
         File tempDir = FileUtil.createTempDir("KNIME Testflow");
         WorkflowDownloadApplication.downloadWorkflows(m_serverUri, tempDir);
-        m_rootDir = tempDir.getCanonicalPath();
+        return tempDir;
     }
 }

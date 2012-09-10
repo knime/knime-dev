@@ -74,6 +74,10 @@ public class TestflowRunnerApplication implements IApplication {
 
     private boolean m_simpleTests;
 
+    private boolean m_testDialogs;
+
+    private boolean m_testViews;
+
     private static Test testSuite;
 
     /**
@@ -112,7 +116,8 @@ public class TestflowRunnerApplication implements IApplication {
             m_rootDirs.add(downloadWorkflows());
         }
 
-        KnimeTestRegistry registry = new KnimeTestRegistry(m_testNamePattern, m_rootDirs, null);
+        KnimeTestRegistry registry = new KnimeTestRegistry(m_testNamePattern, m_rootDirs, null, m_testDialogs,
+                m_testViews);
         testSuite = registry.collectTestCases(m_simpleTests
                 ? SimpleWorkflowTest.factory
                 : FullWorkflowTest.factory);
@@ -386,6 +391,18 @@ public class TestflowRunnerApplication implements IApplication {
                 continue;
             }
 
+            if ((stringArgs[i] != null) && stringArgs[i].equals("-dialogs")) {
+                m_testDialogs = true;
+                i++;
+                continue;
+            }
+
+            if ((stringArgs[i] != null) && stringArgs[i].equals("-views")) {
+                m_testViews = true;
+                i++;
+                continue;
+            }
+
             System.err.println("Invalid option: '" + stringArgs[i] + "'\n");
             printUsage();
             return false;
@@ -414,6 +431,8 @@ public class TestflowRunnerApplication implements IApplication {
                 + "<dir_name> is omitted the Java temp dir is used.");
         System.err.println("    -xmlResult <file_name>: specifies the XML "
                 + " file where the test results are written to.");
+        System.err.println("    -dialogs: additional tests all node dialogs.");
+        System.err.println("    -views: opens all views during a workflow test.");
         System.err.println("    -simple: only checks if all nodes are "
                 + " executed in the end.");
     }

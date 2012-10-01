@@ -2,7 +2,7 @@
 <feature
       id="org.knime.features.wizard"
       label="KNIME Node Wizard"
-      version="2.6.0.qualifier"
+      version="2.7.0.qualifier"
       provider-name="KNIME GmbH, Konstanz, Germany"
       plugin="org.knime.workbench.extension">
 
@@ -733,10 +733,6 @@ interoperation with KNIME.  The owner of a Node may freely choose the
 license terms applicable to such Node, including when such Node is
 propagated with or for interoperation with KNIME.
    </license>
-
-   <url>
-      <update label="KNIME Development" url="http://www.knime.org/update/2.6"/>
-   </url>
 
    <requires>
       <import feature="org.eclipse.jdt" version="3.4.2" match="greaterOrEqual"/>

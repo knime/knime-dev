@@ -40,6 +40,7 @@ import org.apache.tools.ant.taskdefs.optional.junit.JUnitTestRunner;
 import org.apache.tools.ant.taskdefs.optional.junit.XMLJUnitResultFormatter;
 import org.eclipse.equinox.app.IApplication;
 import org.eclipse.equinox.app.IApplicationContext;
+import org.eclipse.ui.PlatformUI;
 import org.knime.core.node.KNIMEConstants;
 import org.knime.core.node.NodeLogger;
 import org.knime.core.node.NodeLogger.LEVEL;
@@ -92,6 +93,10 @@ public class TestflowRunnerApplication implements IApplication {
 
     @Override
     public Object start(final IApplicationContext context) throws Exception {
+        // we need a display, initialized as early as possible, otherwise closing JFrames may result
+        // in X errors (BadWindow) under Linux
+        PlatformUI.createDisplay();
+
         // make sure the logfile doesn't get split.
         System.setProperty(KNIMEConstants.PROPERTY_MAX_LOGFILESIZE, "-1");
 

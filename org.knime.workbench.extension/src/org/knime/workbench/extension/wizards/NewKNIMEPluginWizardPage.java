@@ -511,7 +511,7 @@ public class NewKNIMEPluginWizardPage extends WizardPage implements Listener {
         for (NodeType type : NodeFactory.NodeType.values()) {
 
             // unknown is just an internal type
-            if (!type.equals(NodeType.Unknown)) {
+            if (!type.equals(NodeType.Unknown) && !type.equals(NodeType.Missing)) {
                 typeCombo.add(type.toString());
 
                 if (typeCombo.getText() == null

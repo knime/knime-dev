@@ -15,7 +15,7 @@
 			<properties>
 				<property key="javadoc.additionalClassPathRoot" value="${workspace_loc}" />
 				<property key="javadoc.stylesheet"
-					value="${project_loc:/org.knime.build}/stylesheet_knime.css" />
+					value="${project_loc:/org.knime.build.config}/stylesheet_knime.css" />
 				<property key="javadoc.packageNames" value="org.knime.core.*,org.knime.base.*" />
 			</properties>
             <prerequisites alias="action.requirements">

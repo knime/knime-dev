@@ -79,6 +79,8 @@ public class TestflowRunnerApplication implements IApplication {
 
     private boolean m_testViews;
 
+    private int m_timeout = FullWorkflowTest.TIMEOUT;
+
     private static Test testSuite;
 
     /**
@@ -122,7 +124,7 @@ public class TestflowRunnerApplication implements IApplication {
         }
 
         KnimeTestRegistry registry = new KnimeTestRegistry(m_testNamePattern, m_rootDirs, null, m_testDialogs,
-                m_testViews);
+                m_testViews, m_timeout);
         testSuite = registry.collectTestCases(m_simpleTests
                 ? SimpleWorkflowTest.factory
                 : FullWorkflowTest.factory);
@@ -383,6 +385,18 @@ public class TestflowRunnerApplication implements IApplication {
                 continue;
             }
 
+            if ((stringArgs[i] != null) && stringArgs[i].equals("-timeout")) {
+                i++;
+                // requires another argument
+                if ((i >= stringArgs.length) || (stringArgs[i] == null)
+                        || (stringArgs[i].length() == 0)) {
+                    System.err.println("Missing <seconds> for option -timeout.");
+                    printUsage();
+                    return false;
+                }
+                m_timeout = Integer.parseInt(stringArgs[i++]);
+                continue;
+            }
 
             if ((stringArgs[i] != null) && stringArgs[i].equals("-simple")) {
                 if (m_analyzeLogFile) {
@@ -438,6 +452,7 @@ public class TestflowRunnerApplication implements IApplication {
                 + " file where the test results are written to.");
         System.err.println("    -dialogs: additional tests all node dialogs.");
         System.err.println("    -views: opens all views during a workflow test.");
+        System.err.println("    -timeout <seconds>: optional, specifies the timeout for each individual workflow.");
         System.err.println("    -simple: only checks if all nodes are "
                 + " executed in the end.");
     }

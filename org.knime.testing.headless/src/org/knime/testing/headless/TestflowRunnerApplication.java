@@ -224,6 +224,7 @@ public class TestflowRunnerApplication implements IApplication {
         } catch (IOException ioe) {
             System.err.println("Couldn't access logfile! (in "
                     + logfile.getAbsolutePath() + ")");
+            ioe.printStackTrace();
             return false;
         }
     }

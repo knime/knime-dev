@@ -50,7 +50,7 @@ public class UnittestRunnerApplication implements IApplication {
 
     private static final String EXT_POINT_ATTR_DF = "TestcaseCollector";
 
-    private boolean m_stopped;
+    private volatile boolean m_stopped;
 
     private File m_destDir;
 
@@ -119,7 +119,7 @@ public class UnittestRunnerApplication implements IApplication {
     }
 
     @Override
-    public synchronized void stop() {
+    public void stop() {
         m_stopped = true;
     }
 

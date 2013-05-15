@@ -24,12 +24,15 @@ package org.knime.testing.headless;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.net.URISyntaxException;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collection;
 
@@ -38,6 +41,7 @@ import junit.framework.Test;
 import org.apache.tools.ant.taskdefs.optional.junit.JUnitTest;
 import org.apache.tools.ant.taskdefs.optional.junit.JUnitTestRunner;
 import org.apache.tools.ant.taskdefs.optional.junit.XMLJUnitResultFormatter;
+import org.eclipse.core.runtime.CoreException;
 import org.eclipse.equinox.app.IApplication;
 import org.eclipse.equinox.app.IApplicationContext;
 import org.eclipse.ui.PlatformUI;
@@ -239,17 +243,21 @@ public class TestflowRunnerApplication implements IApplication {
         File copyFile =
                 new File(logFile.getParent(), "KNIMELastRunLogCopy.log");
 
-        BufferedReader reader = new BufferedReader(new FileReader(logFile));
+        BufferedReader reader =
+            new BufferedReader(new InputStreamReader(new FileInputStream(logFile), Charset.forName("UTF-8")));
         String line;
-        BufferedWriter writer = new BufferedWriter(new FileWriter(copyFile));
+        BufferedWriter writer =
+            new BufferedWriter(new OutputStreamWriter(new FileOutputStream(copyFile), Charset.forName("UTF-8")));
 
         while ((line = reader.readLine()) != null) {
             if (line.contains(startLine) && line.endsWith("#")) {
                 // (re-) open the output file, overriding any previous content
-                writer = new BufferedWriter(new FileWriter(copyFile));
+                writer =
+                    new BufferedWriter(new OutputStreamWriter(new FileOutputStream(copyFile), Charset.forName("UTF-8")));
             }
             writer.write(line + "\n");
         }
+        reader.close();
         writer.close();
 
         return copyFile;
@@ -461,7 +469,7 @@ public class TestflowRunnerApplication implements IApplication {
     public void stop() {
     }
 
-    private File downloadWorkflows() throws Exception {
+    private File downloadWorkflows() throws IOException, CoreException, URISyntaxException {
         File tempDir = FileUtil.createTempDir("KNIME Testflow");
         WorkflowDownloadApplication.downloadWorkflows(m_serverUri, tempDir);
         return tempDir;

@@ -121,6 +121,10 @@ public class TestflowRunnerApplication implements IApplication {
             printUsage();
             return EXIT_OK;
         }
+        File xmlResultFile = new File(m_xmlResult);
+        if (!xmlResultFile.getParentFile().exists() && ! xmlResultFile.getParentFile().mkdirs()) {
+            throw new IOException("Can not create directory for results file " + m_xmlResult);
+        }
 
 
         if (m_serverUri != null) {

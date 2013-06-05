@@ -23,15 +23,12 @@ package org.knime.testing.headless;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.OutputStream;
 
 import org.apache.tools.ant.taskdefs.optional.junit.JUnitTest;
 import org.apache.tools.ant.taskdefs.optional.junit.JUnitTestRunner;
 import org.apache.tools.ant.taskdefs.optional.junit.XMLJUnitResultFormatter;
-import org.eclipse.core.runtime.IConfigurationElement;
-import org.eclipse.core.runtime.IExtensionPoint;
-import org.eclipse.core.runtime.IExtensionRegistry;
-import org.eclipse.core.runtime.Platform;
 import org.eclipse.equinox.app.IApplication;
 import org.eclipse.equinox.app.IApplicationContext;
 import org.eclipse.ui.PlatformUI;
@@ -45,19 +42,13 @@ import org.knime.testing.core.AbstractTestcaseCollector;
  * @author Thorsten Meinl, University of Konstanz
  */
 public class UnittestRunnerApplication implements IApplication {
-    private static final String EXT_POINT_ID =
-            "org.knime.testing.TestcaseCollector";
-
-    private static final String EXT_POINT_ATTR_DF = "TestcaseCollector";
-
     private volatile boolean m_stopped;
 
     private File m_destDir;
 
     @Override
     public Object start(final IApplicationContext context) throws Exception {
-        PlatformUI.createDisplay(); // create a display because some tests
-        // may need it
+        PlatformUI.createDisplay(); // create a display because some tests may need it
         context.applicationRunning();
         Object args =
                 context.getArguments()
@@ -67,52 +58,26 @@ public class UnittestRunnerApplication implements IApplication {
             printUsage();
             return EXIT_OK;
         }
-        m_destDir.mkdirs();
-
-        IExtensionRegistry registry = Platform.getExtensionRegistry();
-        IExtensionPoint point = registry.getExtensionPoint(EXT_POINT_ID);
-        if (point == null) {
-            throw new IllegalStateException("ACTIVATION ERROR: "
-                    + " --> Invalid extension point: " + EXT_POINT_ID);
+        if (!m_destDir.mkdirs()) {
+            throw new IOException("Could not create destination directory '" + m_destDir + "'");
         }
 
-        for (IConfigurationElement elem : point.getConfigurationElements()) {
-            String collectorName = elem.getAttribute(EXT_POINT_ATTR_DF);
-            String decl = elem.getDeclaringExtension().getUniqueIdentifier();
-
-            if (collectorName == null || collectorName.isEmpty()) {
-                throw new Exception("The extension '" + decl
-                        + "' doesn't provide the required attribute '"
-                        + EXT_POINT_ATTR_DF + "', ignoring it");
+        // run the tests
+        for (Class<?> testClass : AllJUnitTests.getAllJunitTests()) {
+            if (m_stopped) {
+                System.err.println("Tests aborted");
+                break;
             }
 
-            AbstractTestcaseCollector collector =
-                    (AbstractTestcaseCollector)elem
-                            .createExecutableExtension(EXT_POINT_ATTR_DF);
-
-            // run the tests
-            for (String className : collector.getUnittestsClasses()) {
-                if (m_stopped) {
-                    System.err.println("Tests aborted");
-                    break;
-                }
-
-                System.out.println("======= Running " + className + " =======");
-                JUnitTest junitTest = new JUnitTest(className);
-                JUnitTestRunner runner =
-                        new JUnitTestRunner(junitTest, false, false, false,
-                                collector.getClass().getClassLoader());
-                XMLJUnitResultFormatter formatter =
-                        new XMLJUnitResultFormatter();
-                OutputStream out =
-                        new FileOutputStream(new File(m_destDir, className
-                                + ".xml"));
-                formatter.setOutput(out);
-                runner.addFormatter(formatter);
-                runner.run();
-                out.close();
-            }
-
+            System.out.println("======= Running " + testClass.getName() + " =======");
+            JUnitTest junitTest = new JUnitTest(testClass.getName());
+            JUnitTestRunner runner = new JUnitTestRunner(junitTest, false, false, false, testClass.getClassLoader());
+            XMLJUnitResultFormatter formatter = new XMLJUnitResultFormatter();
+            OutputStream out = new FileOutputStream(new File(m_destDir, testClass.getName() + ".xml"));
+            formatter.setOutput(out);
+            runner.addFormatter(formatter);
+            runner.run();
+            out.close();
         }
 
         return EXIT_OK;

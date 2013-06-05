@@ -58,7 +58,7 @@ public class UnittestRunnerApplication implements IApplication {
             printUsage();
             return EXIT_OK;
         }
-        if (!m_destDir.mkdirs()) {
+        if (!m_destDir.isDirectory() && !m_destDir.mkdirs()) {
             throw new IOException("Could not create destination directory '" + m_destDir + "'");
         }
 

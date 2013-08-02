@@ -25,6 +25,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.Writer;
 
 import org.apache.tools.ant.taskdefs.optional.junit.JUnitTest;
 import org.apache.tools.ant.taskdefs.optional.junit.JUnitTestRunner;
@@ -32,6 +33,8 @@ import org.apache.tools.ant.taskdefs.optional.junit.XMLJUnitResultFormatter;
 import org.eclipse.equinox.app.IApplication;
 import org.eclipse.equinox.app.IApplicationContext;
 import org.eclipse.ui.PlatformUI;
+import org.knime.core.node.NodeLogger;
+import org.knime.core.node.NodeLogger.LEVEL;
 import org.knime.testing.core.AbstractTestcaseCollector;
 
 /**
@@ -71,12 +74,48 @@ public class UnittestRunnerApplication implements IApplication {
 
             System.out.println("======= Running " + testClass.getName() + " =======");
             JUnitTest junitTest = new JUnitTest(testClass.getName());
-            JUnitTestRunner runner = new JUnitTestRunner(junitTest, false, false, false, testClass.getClassLoader());
+            final JUnitTestRunner runner = new JUnitTestRunner(junitTest, false, false, false, testClass.getClassLoader());
             XMLJUnitResultFormatter formatter = new XMLJUnitResultFormatter();
             OutputStream out = new FileOutputStream(new File(m_destDir, testClass.getName() + ".xml"));
             formatter.setOutput(out);
             runner.addFormatter(formatter);
+
+            Writer stdout = new Writer() {
+                @Override
+                public void write(final char[] cbuf, final int off, final int len) throws IOException {
+                    runner.handleOutput(new String(cbuf, off, len));
+                }
+
+                @Override
+                public void flush() throws IOException {
+                }
+
+                @Override
+                public void close() throws IOException {
+                }
+            };
+            Writer stderr = new Writer() {
+
+                @Override
+                public void write(final char[] cbuf, final int off, final int len) throws IOException {
+                    runner.handleErrorOutput(new String(cbuf, off, len));
+                }
+
+                @Override
+                public void flush() throws IOException {
+                }
+
+                @Override
+                public void close() throws IOException {
+                }
+            };
+
+            NodeLogger.addWriter(stdout, LEVEL.DEBUG, LEVEL.WARN);
+            NodeLogger.addWriter(stderr, LEVEL.ERROR, LEVEL.FATAL);
             runner.run();
+            NodeLogger.removeWriter(stderr);
+            NodeLogger.removeWriter(stdout);
+
             out.close();
         }
 

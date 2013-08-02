@@ -35,8 +35,10 @@ import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Enumeration;
 
 import junit.framework.Test;
+import junit.framework.TestSuite;
 
 import org.apache.tools.ant.taskdefs.optional.junit.JUnitTest;
 import org.apache.tools.ant.taskdefs.optional.junit.JUnitTestRunner;
@@ -53,6 +55,7 @@ import org.knime.testing.core.AnalyzeLogFile;
 import org.knime.testing.core.FullWorkflowTest;
 import org.knime.testing.core.KnimeTestRegistry;
 import org.knime.testing.core.SimpleWorkflowTest;
+import org.knime.testing.core.WorkflowTest;
 import org.knime.workbench.repository.RepositoryManager;
 
 import com.knime.enterprise.client.filesystem.util.WorkflowDownloadApplication;
@@ -73,7 +76,10 @@ public class TestflowRunnerApplication implements IApplication {
 
     private String m_serverUri;
 
-    private String m_xmlResult;
+    private String m_xmlResultFile;
+
+    private String m_xmlResultDir;
+
 
     private File m_analyzeOutputDir;
 
@@ -85,7 +91,7 @@ public class TestflowRunnerApplication implements IApplication {
 
     private int m_timeout = FullWorkflowTest.TIMEOUT;
 
-    private static Test testSuite;
+    private static Test staticTestSuite;
 
     /**
      * This method is called by {@link JUnitTestRunner} to retrieve the tests to
@@ -94,7 +100,7 @@ public class TestflowRunnerApplication implements IApplication {
      * @return a test suite
      */
     public static Test suite() {
-        return testSuite;
+        return staticTestSuite;
     }
 
     @Override
@@ -117,13 +123,20 @@ public class TestflowRunnerApplication implements IApplication {
 
         if (!extractCommandLineArgs(args) || (m_testNamePattern == null)
                 || (m_rootDirs.isEmpty() && (m_serverUri == null))
-                || (m_xmlResult == null)) {
+                || ((m_xmlResultFile == null) && (m_xmlResultDir == null))) {
             printUsage();
             return EXIT_OK;
         }
-        File xmlResultFile = new File(m_xmlResult);
-        if (!xmlResultFile.getParentFile().exists() && ! xmlResultFile.getParentFile().mkdirs()) {
-            throw new IOException("Can not create directory for results file " + m_xmlResult);
+        if (m_xmlResultDir != null) {
+            File xmlResultDir = new File(m_xmlResultDir);
+            if (!xmlResultDir.exists() && ! xmlResultDir.mkdirs()) {
+                throw new IOException("Can not create directory for result files " + m_xmlResultDir);
+            }
+        } else {
+            File xmlResultFile = new File(m_xmlResultFile);
+            if (!xmlResultFile.getParentFile().exists() && ! xmlResultFile.getParentFile().mkdirs()) {
+                throw new IOException("Can not create directory for results file " + m_xmlResultFile);
+            }
         }
 
 
@@ -133,61 +146,21 @@ public class TestflowRunnerApplication implements IApplication {
 
         KnimeTestRegistry registry = new KnimeTestRegistry(m_testNamePattern, m_rootDirs, null, m_testDialogs,
                 m_testViews, m_timeout);
-        testSuite = registry.collectTestCases(m_simpleTests
+        TestSuite testSuite = registry.collectTestCases(m_simpleTests
                 ? SimpleWorkflowTest.factory
                 : FullWorkflowTest.factory);
+
+        if (m_xmlResultDir != null) {
+            Enumeration<Test> testEnum = testSuite.tests();
+            while (testEnum.hasMoreElements()) {
+                WorkflowTest test = (WorkflowTest)testEnum.nextElement();
+                runTest(test, new File(m_xmlResultDir, test.getName() + ".xml"));
+            }
+        } else {
+            runTest(testSuite, new File(m_xmlResultFile));
+        }
+
         // TODO add analysis of log file via junit tests
-
-        JUnitTest junitTest =
-                new JUnitTest(TestflowRunnerApplication.class.getName());
-
-        final JUnitTestRunner runner =
-                new JUnitTestRunner(junitTest, false, false, false, this
-                        .getClass().getClassLoader());
-        XMLJUnitResultFormatter formatter = new XMLJUnitResultFormatter();
-        OutputStream out = new FileOutputStream(new File(m_xmlResult));
-        formatter.setOutput(out);
-        runner.addFormatter(formatter);
-
-        Writer stdout = new Writer() {
-            @Override
-            public void write(final char[] cbuf, final int off, final int len) throws IOException {
-                runner.handleOutput(new String(cbuf, off, len));
-            }
-
-            @Override
-            public void flush() throws IOException {
-            }
-
-            @Override
-            public void close() throws IOException {
-            }
-        };
-        Writer stderr = new Writer() {
-
-            @Override
-            public void write(final char[] cbuf, final int off, final int len) throws IOException {
-                runner.handleErrorOutput(new String(cbuf, off, len));
-            }
-
-            @Override
-            public void flush() throws IOException {
-            }
-
-            @Override
-            public void close() throws IOException {
-            }
-        };
-
-        NodeLogger.addWriter(stdout, LEVEL.INFO, LEVEL.WARN);
-        NodeLogger.addWriter(stderr, LEVEL.ERROR, LEVEL.ERROR);
-        runner.run();
-        NodeLogger.removeWriter(stderr);
-        NodeLogger.removeWriter(stdout);
-
-
-        out.close();
-
         if (m_analyzeLogFile) {
             analyzeLogFile();
         }
@@ -379,7 +352,7 @@ public class TestflowRunnerApplication implements IApplication {
 
             // "-xmlResult" specifies the result file
             if ((stringArgs[i] != null) && stringArgs[i].equals("-xmlResult")) {
-                if (m_xmlResult != null) {
+                if (m_xmlResultFile != null) {
                     System.err.println("You can't specify multiple -xmlResult "
                             + "options at the command line");
                     return false;
@@ -394,7 +367,25 @@ public class TestflowRunnerApplication implements IApplication {
                     printUsage();
                     return false;
                 }
-                m_xmlResult = stringArgs[i++];
+                m_xmlResultFile = stringArgs[i++];
+                continue;
+            }
+
+            // "-xmlResultDir" specifies the result directory
+            if ((stringArgs[i] != null) && stringArgs[i].equals("-xmlResultDir")) {
+                if (m_xmlResultDir != null) {
+                    System.err.println("You can't specify multiple -xmlResultDir options at the command line");
+                    return false;
+                }
+
+                i++;
+                // requires another argument
+                if ((i >= stringArgs.length) || (stringArgs[i] == null) || (stringArgs[i].length() == 0)) {
+                    System.err.println("Missing <directory_name> for option -xmlResultDir.");
+                    printUsage();
+                    return false;
+                }
+                m_xmlResultDir = stringArgs[i++];
                 continue;
             }
 
@@ -461,8 +452,10 @@ public class TestflowRunnerApplication implements IApplication {
                 + "be placed in a directory in the " + "specified dir.");
         System.err.println("                         If "
                 + "<dir_name> is omitted the Java temp dir is used.");
-        System.err.println("    -xmlResult <file_name>: specifies the XML "
+        System.err.println("    -xmlResult <file_name>: specifies a single XML "
                 + " file where the test results are written to.");
+        System.err.println("    -xmlResultDir <directory_name>: specifies the directory "
+                + " into which each test result is written to as an XML files.");
         System.err.println("    -dialogs: additional tests all node dialogs.");
         System.err.println("    -views: opens all views during a workflow test.");
         System.err.println("    -timeout <seconds>: optional, specifies the timeout for each individual workflow.");
@@ -473,6 +466,58 @@ public class TestflowRunnerApplication implements IApplication {
     @Override
     public void stop() {
     }
+
+
+    private void runTest(final Test test, final File resultFile) throws IOException {
+        staticTestSuite = test;
+        JUnitTest junitTest = new JUnitTest(TestflowRunnerApplication.class.getName());
+
+        final JUnitTestRunner runner =
+            new JUnitTestRunner(junitTest, false, false, false, this.getClass().getClassLoader());
+        XMLJUnitResultFormatter formatter = new XMLJUnitResultFormatter();
+        OutputStream out = new FileOutputStream(resultFile);
+        formatter.setOutput(out);
+        runner.addFormatter(formatter);
+
+        Writer stdout = new Writer() {
+            @Override
+            public void write(final char[] cbuf, final int off, final int len) throws IOException {
+                runner.handleOutput(new String(cbuf, off, len));
+            }
+
+            @Override
+            public void flush() throws IOException {
+            }
+
+            @Override
+            public void close() throws IOException {
+            }
+        };
+        Writer stderr = new Writer() {
+
+            @Override
+            public void write(final char[] cbuf, final int off, final int len) throws IOException {
+                runner.handleErrorOutput(new String(cbuf, off, len));
+            }
+
+            @Override
+            public void flush() throws IOException {
+            }
+
+            @Override
+            public void close() throws IOException {
+            }
+        };
+
+        NodeLogger.addWriter(stdout, LEVEL.DEBUG, LEVEL.WARN);
+        NodeLogger.addWriter(stderr, LEVEL.ERROR, LEVEL.FATAL);
+        runner.run();
+        NodeLogger.removeWriter(stderr);
+        NodeLogger.removeWriter(stdout);
+
+        out.close();
+    }
+
 
     private File downloadWorkflows() throws IOException, CoreException, URISyntaxException {
         File tempDir = FileUtil.createTempDir("KNIME Testflow");

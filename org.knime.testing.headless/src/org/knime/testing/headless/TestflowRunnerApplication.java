@@ -154,6 +154,7 @@ public class TestflowRunnerApplication implements IApplication {
             Enumeration<Test> testEnum = testSuite.tests();
             while (testEnum.hasMoreElements()) {
                 WorkflowTest test = (WorkflowTest)testEnum.nextElement();
+                System.out.println("======= Running " + test.getName() + " =======");
                 runTest(test, new File(m_xmlResultDir, test.getName() + ".xml"));
             }
         } else {

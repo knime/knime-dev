@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.Writer;
 
+import org.apache.tools.ant.taskdefs.optional.junit.JUnitTaskMirror.JUnitTestRunnerMirror;
 import org.apache.tools.ant.taskdefs.optional.junit.JUnitTest;
 import org.apache.tools.ant.taskdefs.optional.junit.JUnitTestRunner;
 import org.apache.tools.ant.taskdefs.optional.junit.XMLJUnitResultFormatter;
@@ -72,7 +73,7 @@ public class UnittestRunnerApplication implements IApplication {
                 break;
             }
 
-            System.out.println("======= Running " + testClass.getName() + " =======");
+            System.out.print("=> Running " + testClass.getName() + " ");
             JUnitTest junitTest = new JUnitTest(testClass.getName());
             final JUnitTestRunner runner = new JUnitTestRunner(junitTest, false, false, false, testClass.getClassLoader());
             XMLJUnitResultFormatter formatter = new XMLJUnitResultFormatter();
@@ -117,6 +118,21 @@ public class UnittestRunnerApplication implements IApplication {
             NodeLogger.removeWriter(stdout);
 
             out.close();
+
+            switch (runner.getRetCode()) {
+                case JUnitTestRunnerMirror.SUCCESS:
+                    System.out.println("[  OK   ]");
+                    break;
+                case JUnitTestRunnerMirror.FAILURES:
+                    System.out.println("[FAILURE]");
+                    break;
+                case JUnitTestRunnerMirror.ERRORS:
+                    System.out.println("[ ERROR ]");
+                    break;
+                default:
+                    System.out.println("[  ???  ]");
+                    break;
+            }
         }
 
         return EXIT_OK;

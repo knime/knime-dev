@@ -26,6 +26,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.Writer;
+import java.util.Collection;
 
 import org.apache.tools.ant.taskdefs.optional.junit.JUnitTaskMirror.JUnitTestRunnerMirror;
 import org.apache.tools.ant.taskdefs.optional.junit.JUnitTest;
@@ -66,14 +67,21 @@ public class UnittestRunnerApplication implements IApplication {
             throw new IOException("Could not create destination directory '" + m_destDir + "'");
         }
 
+        Collection<Class<?>> allTests = AllJUnitTests.getAllJunitTests();
+        int maxNameLength = 0;
+        for (Class<?> testClass : allTests) {
+            maxNameLength = Math.max(maxNameLength, testClass.getName().length());
+        }
+
+
         // run the tests
-        for (Class<?> testClass : AllJUnitTests.getAllJunitTests()) {
+        for (Class<?> testClass : allTests) {
             if (m_stopped) {
                 System.err.println("Tests aborted");
                 break;
             }
 
-            System.out.print("=> Running " + testClass.getName() + " ");
+            System.out.printf("=> Running %-" + maxNameLength + "s ...", testClass.getName());
             JUnitTest junitTest = new JUnitTest(testClass.getName());
             final JUnitTestRunner runner = new JUnitTestRunner(junitTest, false, false, false, testClass.getClassLoader());
             XMLJUnitResultFormatter formatter = new XMLJUnitResultFormatter();
@@ -121,13 +129,13 @@ public class UnittestRunnerApplication implements IApplication {
 
             switch (runner.getRetCode()) {
                 case JUnitTestRunnerMirror.SUCCESS:
-                    System.out.println("[  OK   ]");
+                    System.out.println("OK");
                     break;
                 case JUnitTestRunnerMirror.FAILURES:
-                    System.out.println("[FAILURE]");
+                    System.out.println("FAILURE");
                     break;
                 case JUnitTestRunnerMirror.ERRORS:
-                    System.out.println("[ ERROR ]");
+                    System.out.println("ERROR");
                     break;
                 default:
                     System.out.println("[  ???  ]");

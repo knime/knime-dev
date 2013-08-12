@@ -119,7 +119,7 @@ public class UnittestRunnerApplication implements IApplication {
                 }
             };
 
-            NodeLogger.addWriter(stdout, LEVEL.DEBUG, LEVEL.WARN);
+            NodeLogger.addWriter(stdout, LEVEL.DEBUG, LEVEL.FATAL);
             NodeLogger.addWriter(stderr, LEVEL.ERROR, LEVEL.FATAL);
             runner.run();
             NodeLogger.removeWriter(stderr);

@@ -40,6 +40,7 @@ import java.util.Enumeration;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 
+import org.apache.tools.ant.taskdefs.optional.junit.JUnitTaskMirror.JUnitTestRunnerMirror;
 import org.apache.tools.ant.taskdefs.optional.junit.JUnitTest;
 import org.apache.tools.ant.taskdefs.optional.junit.JUnitTestRunner;
 import org.apache.tools.ant.taskdefs.optional.junit.XMLJUnitResultFormatter;
@@ -152,10 +153,32 @@ public class TestflowRunnerApplication implements IApplication {
 
         if (m_xmlResultDir != null) {
             Enumeration<Test> testEnum = testSuite.tests();
+
+            int maxNameLength = 0;
             while (testEnum.hasMoreElements()) {
                 WorkflowTest test = (WorkflowTest)testEnum.nextElement();
-                System.out.println("======= Running " + test.getName() + " =======");
-                runTest(test, new File(m_xmlResultDir, test.getName() + ".xml"));
+                maxNameLength = Math.max(maxNameLength, test.getName().length());
+            }
+
+            while (testEnum.hasMoreElements()) {
+                WorkflowTest test = (WorkflowTest)testEnum.nextElement();
+                System.out.printf("=> Running %-" + maxNameLength + "s...", test.getName());
+                int ret = runTest(test, new File(m_xmlResultDir, test.getName() + ".xml"));
+                switch (ret) {
+                    case JUnitTestRunnerMirror.SUCCESS:
+                        System.out.println("OK");
+                        break;
+                    case JUnitTestRunnerMirror.FAILURES:
+                        System.out.println("FAILURE");
+                        break;
+                    case JUnitTestRunnerMirror.ERRORS:
+                        System.out.println("ERROR");
+                        break;
+                    default:
+                        System.out.println("UNKNOWN");
+                        break;
+                }
+
             }
         } else {
             runTest(testSuite, new File(m_xmlResultFile));
@@ -469,7 +492,7 @@ public class TestflowRunnerApplication implements IApplication {
     }
 
 
-    private void runTest(final Test test, final File resultFile) throws IOException {
+    private int runTest(final Test test, final File resultFile) throws IOException {
         staticTestSuite = test;
         JUnitTest junitTest = new JUnitTest(TestflowRunnerApplication.class.getName());
 
@@ -517,6 +540,7 @@ public class TestflowRunnerApplication implements IApplication {
         NodeLogger.removeWriter(stdout);
 
         out.close();
+        return runner.getRetCode();
     }
 
 

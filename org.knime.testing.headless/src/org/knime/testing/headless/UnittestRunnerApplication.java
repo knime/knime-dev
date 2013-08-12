@@ -138,7 +138,7 @@ public class UnittestRunnerApplication implements IApplication {
                     System.out.println("ERROR");
                     break;
                 default:
-                    System.out.println("[  ???  ]");
+                    System.out.println("UNKNOWN");
                     break;
             }
         }

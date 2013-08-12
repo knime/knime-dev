@@ -160,6 +160,7 @@ public class TestflowRunnerApplication implements IApplication {
                 maxNameLength = Math.max(maxNameLength, test.getName().length());
             }
 
+            testEnum = testSuite.tests();
             while (testEnum.hasMoreElements()) {
                 WorkflowTest test = (WorkflowTest)testEnum.nextElement();
                 System.out.printf("=> Running %-" + maxNameLength + "s...", test.getName());

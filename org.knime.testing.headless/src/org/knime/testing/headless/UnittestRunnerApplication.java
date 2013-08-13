@@ -25,6 +25,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.PrintStream;
 import java.io.Writer;
 import java.util.Collection;
 
@@ -121,7 +122,17 @@ public class UnittestRunnerApplication implements IApplication {
 
             NodeLogger.addWriter(stdout, LEVEL.DEBUG, LEVEL.FATAL);
             NodeLogger.addWriter(stderr, LEVEL.ERROR, LEVEL.FATAL);
-            runner.run();
+
+            PrintStream oldOut = System.out;
+            PrintStream oldErr = System.err;
+            try {
+                System.setOut(new PrintStream(new WriterOutputStream(stdout)));
+                System.setErr(new PrintStream(new WriterOutputStream(stderr)));
+                runner.run();
+            } finally {
+                System.setOut(oldOut);
+                System.setErr(oldErr);
+            }
             NodeLogger.removeWriter(stderr);
             NodeLogger.removeWriter(stdout);
 
@@ -216,5 +227,22 @@ public class UnittestRunnerApplication implements IApplication {
 
         System.err.println("    -destDir <dir_name>: specifies the"
                 + " directory into which the test results are written.");
+    }
+
+
+    private static class WriterOutputStream extends OutputStream {
+        private final Writer m_writer;
+
+        public WriterOutputStream(final Writer writer) {
+            m_writer = writer;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public void write(final int b) throws IOException {
+            m_writer.write(b);
+        }
     }
 }

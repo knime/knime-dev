@@ -91,10 +91,14 @@ class TestflowJob extends Job {
 
     private final DateFormat m_dateFormatter = new SimpleDateFormat("yy-MM-dd_hh:mm:ss", Locale.US);
 
-    TestflowJob(final String name, final LocalExplorerFileStore workflowFilestore, final WorkflowManager wfm) {
+    private final TestrunConfiguration m_runConfig;
+
+    TestflowJob(final String name, final LocalExplorerFileStore workflowFilestore, final WorkflowManager wfm,
+        final TestrunConfiguration runConfig) {
         super(name);
         m_filestore = workflowFilestore;
         m_manager = wfm;
+        m_runConfig = runConfig;
     }
 
     /**
@@ -107,22 +111,21 @@ class TestflowJob extends Job {
             return Status.OK_STATUS;
         } catch (Exception ex) {
             Status status =
-                    new Status(IStatus.ERROR, FrameworkUtil.getBundle(getClass()).getSymbolicName(),
-                            "Error while executing the testflow", ex);
+                new Status(IStatus.ERROR, FrameworkUtil.getBundle(getClass()).getSymbolicName(),
+                    "Error while executing the testflow", ex);
             return status;
         }
     }
 
     private void executeTestflow(final IProgressMonitor monitor) throws CoreException, IOException,
-            ParserConfigurationException, TransformerException {
+        ParserConfigurationException, TransformerException {
         File workflowDir = m_filestore.toLocalFile();
         File mountPointRoot = m_filestore.getContentProvider().getFileStore("/").toLocalFile();
 
-        TestrunConfiguration runConfig = new TestrunConfiguration();
-        runConfig.setCloseWorkflowAfterTest(false);
-        WorkflowTestSuite suite = new WorkflowTestSuite(m_manager, workflowDir, mountPointRoot, runConfig, monitor);
+        m_runConfig.setCloseWorkflowAfterTest(false);
+        WorkflowTestSuite suite = new WorkflowTestSuite(m_manager, workflowDir, mountPointRoot, m_runConfig, monitor);
         File resultFile =
-                FileUtil.createTempFile(m_filestore.getName() + "_" + m_dateFormatter.format(new Date()), ".xml", true);
+            FileUtil.createTempFile(m_filestore.getName() + "_" + m_dateFormatter.format(new Date()), ".xml", true);
         XMLResultFileWriter resultWriter = new XMLResultFileWriter(resultFile);
         resultWriter.startSuites();
         WorkflowTestResult result = WorkflowTestSuite.runTest(suite, resultWriter);
@@ -135,7 +138,7 @@ class TestflowJob extends Job {
             public void run() {
                 try {
                     PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage()
-                            .showView("org.eclipse.jdt.junit.ResultView");
+                        .showView("org.eclipse.jdt.junit.ResultView");
                 } catch (PartInitException ex) {
                     exception.set(ex);
                 }

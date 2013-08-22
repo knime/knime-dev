@@ -119,6 +119,7 @@ class TestflowJob extends Job {
         File mountPointRoot = m_filestore.getContentProvider().getFileStore("/").toLocalFile();
 
         TestrunConfiguration runConfig = new TestrunConfiguration();
+        runConfig.setCloseWorkflowAfterTest(false);
         WorkflowTestSuite suite = new WorkflowTestSuite(m_manager, workflowDir, mountPointRoot, runConfig, monitor);
         File resultFile =
                 FileUtil.createTempFile(m_filestore.getName() + "_" + m_dateFormatter.format(new Date()), ".xml", true);

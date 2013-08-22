@@ -54,7 +54,6 @@ import java.io.File;
 import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.Collections;
 import java.util.Date;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
@@ -124,8 +123,10 @@ class TestflowJob extends Job {
         File resultFile =
                 FileUtil.createTempFile(m_filestore.getName() + "_" + m_dateFormatter.format(new Date()), ".xml", true);
         XMLResultFileWriter resultWriter = new XMLResultFileWriter(resultFile);
+        resultWriter.startSuites();
         WorkflowTestResult result = WorkflowTestSuite.runTest(suite, resultWriter);
-        resultWriter.writeResult(Collections.singletonList(result));
+        resultWriter.addResult(result);
+        resultWriter.endSuites();
 
         final AtomicReference<PartInitException> exception = new AtomicReference<PartInitException>();
         Display.getDefault().syncExec(new Runnable() {

@@ -55,6 +55,7 @@ import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
+import org.eclipse.jface.window.Window;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.IEditorDescriptor;
 import org.eclipse.ui.IEditorInput;
@@ -67,6 +68,7 @@ import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.ide.FileStoreEditorInput;
 import org.eclipse.ui.ide.IDE;
 import org.knime.core.node.workflow.WorkflowPersistor;
+import org.knime.testing.core.ng.TestrunConfiguration;
 import org.knime.workbench.editor2.WorkflowEditor;
 import org.knime.workbench.explorer.filesystem.LocalExplorerFileStore;
 import org.knime.workbench.explorer.view.ContentObject;
@@ -83,13 +85,18 @@ public class RunTestflowAction implements IObjectActionDelegate {
      */
     @Override
     public void run(final IAction action) {
+        TestrunConfiguration runConfig = getRunConfiguration();
+        if (runConfig == null) {
+            return;
+        }
+
         IWorkbenchWindow activeWindow = PlatformUI.getWorkbench().getActiveWorkbenchWindow();
 
         LocalExplorerFileStore workflowFile = m_filestore.getChild(WorkflowPersistor.WORKFLOW_FILE);
         IEditorInput editorInput = new FileStoreEditorInput(workflowFile);
         IEditorPart editor = activeWindow.getActivePage().findEditor(editorInput);
-        if (editor != null) {
-            editor.getEditorSite().getPage().closeEditor(editor, true);
+        if ((editor != null) && !editor.getEditorSite().getPage().closeEditor(editor, true)) {
+            return;
         }
 
         IEditorDescriptor editorDescriptor;
@@ -97,13 +104,13 @@ public class RunTestflowAction implements IObjectActionDelegate {
             editorDescriptor = IDE.getEditorDescriptor(workflowFile.getName());
             editor = activeWindow.getActivePage().openEditor(editorInput, editorDescriptor.getId());
             Job job =
-                    new TestflowJob("Testflow " + m_filestore.getName(), m_filestore,
-                            ((WorkflowEditor)editor).getWorkflowManager());
+                new TestflowJob("Testflow " + m_filestore.getName(), m_filestore,
+                    ((WorkflowEditor)editor).getWorkflowManager(), runConfig);
             job.setUser(true);
             job.schedule();
         } catch (PartInitException ex) {
             MessageDialog.openError(Display.getCurrent().getActiveShell(), "Error while executing testflow",
-                                    ex.getMessage());
+                ex.getMessage());
         }
     }
 
@@ -133,5 +140,16 @@ public class RunTestflowAction implements IObjectActionDelegate {
     @Override
     public void setActivePart(final IAction action, final IWorkbenchPart targetPart) {
 
+    }
+
+    private TestrunConfiguration getRunConfiguration() {
+        TestrunConfiguration runConfig = new TestrunConfiguration();
+        TestrunConfigDialog dialog = new TestrunConfigDialog(Display.getCurrent().getActiveShell(), runConfig);
+        dialog.setBlockOnOpen(true);
+        if (dialog.open() == Window.OK) {
+            return runConfig;
+        } else {
+            return null;
+        }
     }
 }

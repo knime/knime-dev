@@ -89,7 +89,7 @@ class TestflowJob extends Job {
 
     private final WorkflowManager m_manager;
 
-    private final DateFormat m_dateFormatter = new SimpleDateFormat("yy-MM-dd_hh:mm:ss", Locale.US);
+    private final DateFormat m_dateFormatter = new SimpleDateFormat("yy-MM-dd_hhmmss", Locale.US);
 
     private final TestrunConfiguration m_runConfig;
 

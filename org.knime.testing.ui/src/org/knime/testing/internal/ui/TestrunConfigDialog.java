@@ -77,6 +77,8 @@ class TestrunConfigDialog extends Dialog {
 
     private Button m_testViews;
 
+    private Button m_loadSaveLoad;
+
     TestrunConfigDialog(final Shell shell, final TestrunConfiguration runConfig) {
         super(shell);
         m_runConfig = runConfig;
@@ -95,25 +97,30 @@ class TestrunConfigDialog extends Dialog {
         l.setLayoutData(new GridData(SWT.BEGINNING, SWT.TOP, true, false));
         l.setText("Select which tests should be run in addition to the standard tests.");
 
-        m_checkLogMessages = new Button(container, SWT.CHECK);
-        m_checkLogMessages.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, false, false));
-        m_checkLogMessages.setText("Check &log messages");
-        m_checkLogMessages.setSelection(m_runConfig.isCheckLogMessages());
+        m_loadSaveLoad = new Button(container, SWT.CHECK);
+        m_loadSaveLoad.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, false, false));
+        m_loadSaveLoad.setText("Load-&save-load instead of load only");
+        m_loadSaveLoad.setSelection(m_runConfig.isLoadSaveLoad());
 
         m_reportDeprecatedNodes = new Button(container, SWT.CHECK);
         m_reportDeprecatedNodes.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, false, false));
         m_reportDeprecatedNodes.setText("Check for de&precated nodes");
         m_reportDeprecatedNodes.setSelection(m_runConfig.isReportDeprecatedNodes());
 
+        m_testViews = new Button(container, SWT.CHECK);
+        m_testViews.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, false, false));
+        m_testViews.setText("Test &views (open && close)");
+        m_testViews.setSelection(m_runConfig.isTestViews());
+
         m_testDialogs = new Button(container, SWT.CHECK);
         m_testDialogs.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, false, false));
         m_testDialogs.setText("Test &dialogs (load && save)");
         m_testDialogs.setSelection(m_runConfig.isTestDialogs());
 
-        m_testViews = new Button(container, SWT.CHECK);
-        m_testViews.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, false, false));
-        m_testViews.setText("Test &views (open && close)");
-        m_testViews.setSelection(m_runConfig.isTestViews());
+        m_checkLogMessages = new Button(container, SWT.CHECK);
+        m_checkLogMessages.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, false, false));
+        m_checkLogMessages.setText("Check &log messages");
+        m_checkLogMessages.setSelection(m_runConfig.isCheckLogMessages());
 
         return container;
     }
@@ -123,7 +130,7 @@ class TestrunConfigDialog extends Dialog {
      */
     @Override
     protected Point getInitialSize() {
-        return new Point(250, 250);
+        return new Point(250, 280);
     }
 
     /**
@@ -131,6 +138,7 @@ class TestrunConfigDialog extends Dialog {
      */
     @Override
     protected void okPressed() {
+        m_runConfig.setLoadSaveLoad(m_loadSaveLoad.getSelection());
         m_runConfig.setCheckLogMessages(m_checkLogMessages.getSelection());
         m_runConfig.setReportDeprecatedNodes(m_reportDeprecatedNodes.getSelection());
         m_runConfig.setTestDialogs(m_testDialogs.getSelection());

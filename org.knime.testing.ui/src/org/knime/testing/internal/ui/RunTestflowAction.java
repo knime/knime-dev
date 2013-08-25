@@ -52,28 +52,25 @@ package org.knime.testing.internal.ui;
 
 import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.jface.action.IAction;
-import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.window.Window;
 import org.eclipse.swt.widgets.Display;
-import org.eclipse.ui.IEditorDescriptor;
 import org.eclipse.ui.IEditorInput;
 import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.IObjectActionDelegate;
 import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.IWorkbenchWindow;
-import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.ide.FileStoreEditorInput;
-import org.eclipse.ui.ide.IDE;
 import org.knime.core.node.workflow.WorkflowPersistor;
 import org.knime.testing.core.ng.TestrunConfiguration;
-import org.knime.workbench.editor2.WorkflowEditor;
 import org.knime.workbench.explorer.filesystem.LocalExplorerFileStore;
 import org.knime.workbench.explorer.view.ContentObject;
 
 /**
+ * Action that runs the selected workflow as workflow test case. It is only enabled for local workflows (i.e. from the
+ * local space or a team space mount).
  *
  * @author Thorsten Meinl, KNIME.com, Zurich, Switzerland
  */
@@ -99,19 +96,9 @@ public class RunTestflowAction implements IObjectActionDelegate {
             return;
         }
 
-        IEditorDescriptor editorDescriptor;
-        try {
-            editorDescriptor = IDE.getEditorDescriptor(workflowFile.getName());
-            editor = activeWindow.getActivePage().openEditor(editorInput, editorDescriptor.getId());
-            Job job =
-                new TestflowJob("Testflow " + m_filestore.getName(), m_filestore,
-                    ((WorkflowEditor)editor).getWorkflowManager(), runConfig);
-            job.setUser(true);
-            job.schedule();
-        } catch (PartInitException ex) {
-            MessageDialog.openError(Display.getCurrent().getActiveShell(), "Error while executing testflow",
-                ex.getMessage());
-        }
+        Job job = new TestflowJob("Testflow " + m_filestore.getName(), m_filestore, runConfig);
+        job.setUser(true);
+        job.schedule();
     }
 
     /**

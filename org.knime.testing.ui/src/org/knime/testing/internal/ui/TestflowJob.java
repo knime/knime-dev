@@ -70,7 +70,6 @@ import org.eclipse.jdt.junit.JUnitCore;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.PlatformUI;
-import org.knime.core.node.workflow.WorkflowManager;
 import org.knime.core.util.FileUtil;
 import org.knime.testing.core.ng.TestrunConfiguration;
 import org.knime.testing.core.ng.WorkflowTestResult;
@@ -87,17 +86,13 @@ import org.osgi.framework.FrameworkUtil;
 class TestflowJob extends Job {
     private final LocalExplorerFileStore m_filestore;
 
-    private final WorkflowManager m_manager;
-
     private final DateFormat m_dateFormatter = new SimpleDateFormat("yy-MM-dd_hhmmss", Locale.US);
 
     private final TestrunConfiguration m_runConfig;
 
-    TestflowJob(final String name, final LocalExplorerFileStore workflowFilestore, final WorkflowManager wfm,
-        final TestrunConfiguration runConfig) {
+    TestflowJob(final String name, final LocalExplorerFileStore workflowFilestore, final TestrunConfiguration runConfig) {
         super(name);
         m_filestore = workflowFilestore;
-        m_manager = wfm;
         m_runConfig = runConfig;
     }
 
@@ -123,7 +118,8 @@ class TestflowJob extends Job {
         File mountPointRoot = m_filestore.getContentProvider().getFileStore("/").toLocalFile();
 
         m_runConfig.setCloseWorkflowAfterTest(false);
-        WorkflowTestSuite suite = new WorkflowTestSuite(m_manager, workflowDir, mountPointRoot, m_runConfig, monitor);
+
+        WorkflowTestSuite suite = new GUIWorkflowTestSuite(workflowDir, mountPointRoot, m_runConfig, monitor);
         File resultFile =
             FileUtil.createTempFile(m_filestore.getName() + "_" + m_dateFormatter.format(new Date()), ".xml", true);
         XMLResultFileWriter resultWriter = new XMLResultFileWriter(resultFile);

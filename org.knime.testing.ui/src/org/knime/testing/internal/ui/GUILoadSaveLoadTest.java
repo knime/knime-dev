@@ -124,7 +124,6 @@ class GUILoadSaveLoadTest extends WorkflowTest {
                     (GUITestContext)m_context);
 
             m_context.setWorkflowManager(manager);
-            m_context.recordPreExecutedNodes(manager);
         } catch (Throwable t) {
             result.addError(this, t);
         } finally {

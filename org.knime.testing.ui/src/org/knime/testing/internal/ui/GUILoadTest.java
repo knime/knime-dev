@@ -121,7 +121,6 @@ class GUILoadTest extends WorkflowTest {
         try {
             m_context.setWorkflowManager(loadWorkflow(this, result, m_workflowDir, m_testcaseRoot, m_runConfiguration,
                 (GUITestContext)m_context));
-            m_context.recordPreExecutedNodes(m_context.getWorkflowManager());
         } catch (Throwable t) {
             result.addError(this, t);
         } finally {

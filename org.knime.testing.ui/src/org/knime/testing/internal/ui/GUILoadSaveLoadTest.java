@@ -56,7 +56,6 @@ import junit.framework.TestResult;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.swt.widgets.Display;
-import org.knime.core.node.KNIMEConstants;
 import org.knime.core.node.NodeLogger;
 import org.knime.core.node.workflow.WorkflowManager;
 import org.knime.testing.core.ng.TestrunConfiguration;
@@ -136,6 +135,6 @@ class GUILoadSaveLoadTest extends WorkflowTest {
      */
     @Override
     public String getName() {
-        return "load-save-load workflow (assertions " + (KNIMEConstants.ASSERTIONS_ENABLED ? "on" : "off") + ")";
+        return "load-save-load workflow";
     }
 }

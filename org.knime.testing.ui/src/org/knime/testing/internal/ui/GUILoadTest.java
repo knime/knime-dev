@@ -152,17 +152,8 @@ class GUILoadTest extends WorkflowTest {
         };
 
         WorkflowLoadResult loadRes = WorkflowManager.loadProject(workflowDir, new ExecutionMonitor(), loadHelper);
-        boolean hasErrors = false;
-        switch (loadRes.getType()) {
-            case DataLoadError:
-                hasErrors = loadRes.getGUIMustReportDataLoadErrors();
-                break;
-            case Error:
-                hasErrors = true;
-                break;
-            default:
-        }
-        if (hasErrors) {
+        if ((loadRes.getType() == LoadResultEntryType.Error)
+            || ((loadRes.getType() == LoadResultEntryType.DataLoadError) && loadRes.getGUIMustReportDataLoadErrors())) {
             result.addFailure(test, new AssertionFailedError(loadRes.getFilteredError("", LoadResultEntryType.Error)));
         }
         if (runConfig.isCheckForLoadWarnings() && loadRes.hasWarningEntries()) {

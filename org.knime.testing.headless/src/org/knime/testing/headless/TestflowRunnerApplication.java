@@ -122,9 +122,8 @@ public class TestflowRunnerApplication implements IApplication {
                 context.getArguments()
                         .get(IApplicationContext.APPLICATION_ARGS);
 
-        if (!extractCommandLineArgs(args) || (m_testNamePattern == null)
-                || (m_rootDirs.isEmpty() && (m_serverUri == null))
-                || ((m_xmlResultFile == null) && (m_xmlResultDir == null))) {
+        if (!extractCommandLineArgs(args) || (m_rootDirs.isEmpty() && (m_serverUri == null))
+            || ((m_xmlResultFile == null) && (m_xmlResultDir == null))) {
             printUsage();
             return EXIT_OK;
         }
@@ -454,6 +453,10 @@ public class TestflowRunnerApplication implements IApplication {
             System.err.println("Invalid option: '" + stringArgs[i] + "'\n");
             printUsage();
             return false;
+        }
+
+        if (m_testNamePattern == null) {
+            m_testNamePattern = ".+";
         }
 
         return true;

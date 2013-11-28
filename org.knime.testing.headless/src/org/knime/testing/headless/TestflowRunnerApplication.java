@@ -122,6 +122,10 @@ public class TestflowRunnerApplication implements IApplication {
                 context.getArguments()
                         .get(IApplicationContext.APPLICATION_ARGS);
 
+        System.err.println("========================================================================================");
+        System.err.println("This application is outdated, consider using org.knime.testing.NGTestflowRunner instead.");
+        System.err.println("========================================================================================");
+
         if (!extractCommandLineArgs(args) || (m_rootDirs.isEmpty() && (m_serverUri == null))
             || ((m_xmlResultFile == null) && (m_xmlResultDir == null))) {
             printUsage();

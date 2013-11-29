@@ -1,4 +1,0 @@
-source.__JAR_NAME__ = src/
-bin.includes = plugin.xml,\
-               META-INF/,\
-               __JAR_NAME__

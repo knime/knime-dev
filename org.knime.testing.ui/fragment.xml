@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<fragment>
+      <extension
+         point="org.eclipse.ui.popupMenus">
+      <objectContribution
+            adaptable="false"
+            id="org.knime.workbench.explorer.view"
+            objectClass="org.knime.workbench.explorer.view.ContentObject">
+         <action
+               class="org.knime.testing.internal.ui.RunTestflowAction"
+               enablesFor="1"
+               icon="icons/execute_testflow.png"
+               id="org.knime.testing.runWorkflowTest"
+               label="Run as workflow test">
+         </action>
+      </objectContribution>
+   </extension>
+</fragment>

@@ -1,7 +1,7 @@
 /*
  * ------------------------------------------------------------------------
  *
- *  Copyright by 
+ *  Copyright by
  *  University of Konstanz, Germany and
  *  KNIME GmbH, Konstanz, Germany
  *  Website: http://www.knime.org; Email: contact@knime.org
@@ -71,6 +71,8 @@ class TestrunConfigDialog extends Dialog {
 
     private Button m_checkLogMessages;
 
+    private Button m_checkNodeMessages;
+
     private Button m_reportDeprecatedNodes;
 
     private Button m_testDialogs;
@@ -122,6 +124,12 @@ class TestrunConfigDialog extends Dialog {
         m_checkLogMessages.setText("Check &log messages");
         m_checkLogMessages.setSelection(m_runConfig.isCheckLogMessages());
 
+        m_checkNodeMessages = new Button(container, SWT.CHECK);
+        m_checkNodeMessages.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, false, false));
+        m_checkNodeMessages.setText("Check &node messages");
+        m_checkNodeMessages.setSelection(m_runConfig.isCheckNodeMessages());
+
+
         return container;
     }
 
@@ -130,7 +138,7 @@ class TestrunConfigDialog extends Dialog {
      */
     @Override
     protected Point getInitialSize() {
-        return new Point(250, 280);
+        return new Point(250, 300);
     }
 
     /**
@@ -140,6 +148,7 @@ class TestrunConfigDialog extends Dialog {
     protected void okPressed() {
         m_runConfig.setLoadSaveLoad(m_loadSaveLoad.getSelection());
         m_runConfig.setCheckLogMessages(m_checkLogMessages.getSelection());
+        m_runConfig.setCheckNodeMessages(m_checkNodeMessages.getSelection());
         m_runConfig.setReportDeprecatedNodes(m_reportDeprecatedNodes.getSelection());
         m_runConfig.setTestDialogs(m_testDialogs.getSelection());
         m_runConfig.setTestViews(m_testViews.getSelection());

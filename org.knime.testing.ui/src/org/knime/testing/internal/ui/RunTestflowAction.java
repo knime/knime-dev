@@ -1,7 +1,7 @@
 /*
  * ------------------------------------------------------------------------
  *
- *  Copyright by 
+ *  Copyright by
  *  University of Konstanz, Germany and
  *  KNIME GmbH, Konstanz, Germany
  *  Website: http://www.knime.org; Email: contact@knime.org
@@ -50,21 +50,25 @@
  */
 package org.knime.testing.internal.ui;
 
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+
+import org.eclipse.core.filesystem.EFS;
+import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.window.Window;
 import org.eclipse.swt.widgets.Display;
-import org.eclipse.ui.IEditorInput;
-import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.IObjectActionDelegate;
 import org.eclipse.ui.IWorkbenchPart;
-import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PlatformUI;
-import org.eclipse.ui.ide.FileStoreEditorInput;
-import org.knime.core.node.workflow.WorkflowPersistor;
+import org.knime.core.node.NodeLogger;
 import org.knime.testing.core.ng.TestrunConfiguration;
+import org.knime.workbench.explorer.filesystem.AbstractExplorerFileInfo;
+import org.knime.workbench.explorer.filesystem.AbstractExplorerFileStore;
 import org.knime.workbench.explorer.filesystem.LocalExplorerFileStore;
 import org.knime.workbench.explorer.view.ContentObject;
 
@@ -75,7 +79,7 @@ import org.knime.workbench.explorer.view.ContentObject;
  * @author Thorsten Meinl, KNIME.com, Zurich, Switzerland
  */
 public class RunTestflowAction implements IObjectActionDelegate {
-    private LocalExplorerFileStore m_filestore;
+    private final List<LocalExplorerFileStore> m_filestores = new ArrayList<LocalExplorerFileStore>();
 
     /**
      * {@inheritDoc}
@@ -87,16 +91,7 @@ public class RunTestflowAction implements IObjectActionDelegate {
             return;
         }
 
-        IWorkbenchWindow activeWindow = PlatformUI.getWorkbench().getActiveWorkbenchWindow();
-
-        LocalExplorerFileStore workflowFile = m_filestore.getChild(WorkflowPersistor.WORKFLOW_FILE);
-        IEditorInput editorInput = new FileStoreEditorInput(workflowFile);
-        IEditorPart editor = activeWindow.getActivePage().findEditor(editorInput);
-        if ((editor != null) && !editor.getEditorSite().getPage().closeEditor(editor, true)) {
-            return;
-        }
-
-        Job job = new TestflowJob("Testflow " + m_filestore.getName(), m_filestore, runConfig);
+        Job job = new TestflowJob(m_filestores, runConfig, PlatformUI.getWorkbench().getActiveWorkbenchWindow());
         job.setUser(true);
         job.schedule();
     }
@@ -106,19 +101,42 @@ public class RunTestflowAction implements IObjectActionDelegate {
      */
     @Override
     public void selectionChanged(final IAction action, final ISelection selection) {
-        m_filestore = null;
+        m_filestores.clear();
+
         if (selection instanceof IStructuredSelection) {
-            Object selectedObject = ((IStructuredSelection)selection).getFirstElement();
-            if (selectedObject instanceof ContentObject) {
-                if (((ContentObject)selectedObject).getObject() instanceof LocalExplorerFileStore) {
-                    LocalExplorerFileStore fs = (LocalExplorerFileStore)((ContentObject)selectedObject).getObject();
-                    if (fs.fetchInfo().isWorkflow()) {
-                        m_filestore = fs;
+            IStructuredSelection sSel = (IStructuredSelection)selection;
+            for (@SuppressWarnings("unchecked")
+            Iterator<Object> it = sSel.iterator(); it.hasNext();) {
+                Object selectedObject = it.next();
+                if (selectedObject instanceof ContentObject) {
+                    if (((ContentObject)selectedObject).getObject() instanceof LocalExplorerFileStore) {
+                        LocalExplorerFileStore fs = (LocalExplorerFileStore)((ContentObject)selectedObject).getObject();
+                        try {
+                            processFilestore(fs);
+                        } catch (CoreException ex) {
+                            NodeLogger.getLogger(RunTestflowAction.class).error(
+                                "Cannot determine workflows in selection: " + ex.getMessage(), ex);
+                        }
                     }
                 }
             }
+
         }
-        action.setEnabled(m_filestore != null);
+        action.setEnabled(!m_filestores.isEmpty());
+    }
+
+    private void processFilestore(final LocalExplorerFileStore fs) throws CoreException {
+        AbstractExplorerFileInfo info = fs.fetchInfo();
+
+        if (info.isWorkflow()) {
+            m_filestores.add(fs);
+        } else if (info.isWorkflowGroup()) {
+            for (AbstractExplorerFileStore child : fs.childStores(EFS.NONE, null)) {
+                if (child instanceof LocalExplorerFileStore) {
+                    processFilestore((LocalExplorerFileStore)child);
+                }
+            }
+        }
     }
 
     /**

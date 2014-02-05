@@ -9,7 +9,7 @@
             objectClass="org.knime.workbench.explorer.view.ContentObject">
          <action
                class="org.knime.testing.internal.ui.RunTestflowAction"
-               enablesFor="1"
+               enablesFor="+"
                icon="icons/execute_testflow.png"
                id="org.knime.testing.runWorkflowTest"
                label="Run as workflow test">

@@ -1,7 +1,7 @@
 /*
  * ------------------------------------------------------------------------
  *
- *  Copyright by 
+ *  Copyright by
  *  University of Konstanz, Germany and
  *  KNIME GmbH, Konstanz, Germany
  *  Website: http://www.knime.org; Email: contact@knime.org
@@ -55,7 +55,9 @@ import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -65,16 +67,24 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
+import org.eclipse.core.runtime.SubProgressMonitor;
 import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.jdt.junit.JUnitCore;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.ui.IEditorInput;
+import org.eclipse.ui.IEditorPart;
+import org.eclipse.ui.IEditorReference;
+import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.PlatformUI;
+import org.eclipse.ui.ide.FileStoreEditorInput;
+import org.knime.core.node.workflow.WorkflowPersistor;
 import org.knime.core.util.FileUtil;
 import org.knime.testing.core.ng.TestrunConfiguration;
 import org.knime.testing.core.ng.WorkflowTestResult;
 import org.knime.testing.core.ng.WorkflowTestSuite;
 import org.knime.testing.core.ng.XMLResultFileWriter;
+import org.knime.workbench.editor2.WorkflowManagerInput;
 import org.knime.workbench.explorer.filesystem.LocalExplorerFileStore;
 import org.osgi.framework.FrameworkUtil;
 
@@ -84,16 +94,20 @@ import org.osgi.framework.FrameworkUtil;
  * @author Thorsten Meinl, KNIME.com, Zurich, Switzerland
  */
 class TestflowJob extends Job {
-    private final LocalExplorerFileStore m_filestore;
+    private final List<LocalExplorerFileStore> m_filestores;
 
     private final DateFormat m_dateFormatter = new SimpleDateFormat("yy-MM-dd_hhmmss", Locale.US);
 
     private final TestrunConfiguration m_runConfig;
 
-    TestflowJob(final String name, final LocalExplorerFileStore workflowFilestore, final TestrunConfiguration runConfig) {
-        super(name);
-        m_filestore = workflowFilestore;
+    private final IWorkbenchWindow m_activeWindow;
+
+    TestflowJob(final List<LocalExplorerFileStore> workflowFilestores, final TestrunConfiguration runConfig,
+        final IWorkbenchWindow activeWindow) {
+        super(workflowFilestores.size() + " testflows");
+        m_filestores = workflowFilestores;
         m_runConfig = runConfig;
+        m_activeWindow = activeWindow;
     }
 
     /**
@@ -102,32 +116,37 @@ class TestflowJob extends Job {
     @Override
     protected IStatus run(final IProgressMonitor monitor) {
         try {
-            executeTestflow(monitor);
+            monitor.beginTask("Executing testflows", m_filestores.size());
+
+            File resultFile = FileUtil.createTempFile("Testflows_" + m_dateFormatter.format(new Date()), ".xml", true);
+            XMLResultFileWriter resultWriter = new XMLResultFileWriter(resultFile);
+            resultWriter.startSuites();
+
+            for (LocalExplorerFileStore fs : m_filestores) {
+                if (monitor.isCanceled()) {
+                    return Status.CANCEL_STATUS;
+                }
+                monitor.subTask("Executing " + fs.getName());
+                if (!closeEditor(fs, true)) {
+                    return Status.CANCEL_STATUS;
+                }
+                executeTestflow(new SubProgressMonitor(monitor, 1, SubProgressMonitor.PREPEND_MAIN_LABEL_TO_SUBTASK),
+                    fs, resultWriter);
+            }
+
+            resultWriter.endSuites();
+            displayResults(resultFile);
             return Status.OK_STATUS;
         } catch (Exception ex) {
             Status status =
                 new Status(IStatus.ERROR, FrameworkUtil.getBundle(getClass()).getSymbolicName(),
-                    "Error while executing the testflow", ex);
+                    "Error while executing the testflows", ex);
             return status;
         }
     }
 
-    private void executeTestflow(final IProgressMonitor monitor) throws CoreException, IOException,
-        ParserConfigurationException, TransformerException {
-        File workflowDir = m_filestore.toLocalFile();
-        File mountPointRoot = m_filestore.getContentProvider().getFileStore("/").toLocalFile();
-
-        m_runConfig.setCloseWorkflowAfterTest(false);
-
-        WorkflowTestSuite suite = new GUIWorkflowTestSuite(workflowDir, mountPointRoot, m_runConfig, monitor);
-        File resultFile =
-            FileUtil.createTempFile(m_filestore.getName() + "_" + m_dateFormatter.format(new Date()), ".xml", true);
-        XMLResultFileWriter resultWriter = new XMLResultFileWriter(resultFile);
-        resultWriter.startSuites();
-        WorkflowTestResult result = WorkflowTestSuite.runTest(suite, resultWriter);
-        resultWriter.addResult(result);
-        resultWriter.endSuites();
-
+    private void displayResults(final File resultFile) throws CoreException {
+        JUnitCore.importTestRunSession(resultFile);
         final AtomicReference<PartInitException> exception = new AtomicReference<PartInitException>();
         Display.getDefault().syncExec(new Runnable() {
             @Override
@@ -144,6 +163,50 @@ class TestflowJob extends Job {
         if (exception.get() != null) {
             throw exception.get();
         }
-        JUnitCore.importTestRunSession(resultFile);
+    }
+
+    private void executeTestflow(final IProgressMonitor monitor, final LocalExplorerFileStore fs,
+        final XMLResultFileWriter resultWriter) throws CoreException, IOException, ParserConfigurationException,
+        TransformerException {
+        File workflowDir = fs.toLocalFile();
+        File mountPointRoot = fs.getContentProvider().getFileStore("/").toLocalFile();
+
+        m_runConfig.setCloseWorkflowAfterTest(false);
+
+        WorkflowTestSuite suite = new GUIWorkflowTestSuite(workflowDir, mountPointRoot, m_runConfig, monitor);
+        WorkflowTestResult result = WorkflowTestSuite.runTest(suite, resultWriter);
+        resultWriter.addResult(result);
+        if (result.wasSuccessful()) {
+            closeEditor(fs, false);
+        }
+    }
+
+
+    private boolean closeEditor(final LocalExplorerFileStore fs, final boolean saveChanges) throws CoreException {
+        LocalExplorerFileStore workflowFile = fs.getChild(WorkflowPersistor.WORKFLOW_FILE);
+        IEditorInput editorInput = new FileStoreEditorInput(workflowFile);
+        IEditorPart editor = m_activeWindow.getActivePage().findEditor(editorInput);
+        if (editor == null) {
+            for (IEditorReference editorRef : m_activeWindow.getActivePage().getEditorReferences()) {
+                IEditorInput input = editorRef.getEditorInput();
+
+                if ((input instanceof WorkflowManagerInput) &&
+                        fs.toLocalFile().toURI().equals(((WorkflowManagerInput) input).getWorkflowLocation())) {
+                    editor = editorRef.getEditor(false);
+                    break;
+                }
+            }
+        }
+        final AtomicBoolean ret = new AtomicBoolean(true);
+        if (editor != null) {
+            final IEditorPart finalEditor = editor;
+            Display.getDefault().syncExec(new Runnable() {
+                @Override
+                public void run() {
+                    ret.set(finalEditor.getEditorSite().getPage().closeEditor(finalEditor, saveChanges));
+                }
+            });
+        }
+        return ret.get();
     }
 }

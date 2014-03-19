@@ -11,4 +11,4 @@ Require-Bundle: org.eclipse.jdt.junit.core;bundle-version="[3.7.0,4.0.0)",
  org.eclipse.ui.ide;bundle-version="[3.7.0,4.0.0)",
  org.knime.workbench.editor;bundle-version="[2.8.0,3.0.0)",
  org.knime.workbench.explorer.view;bundle-version="[5.0.0,7.0.0)"
-Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Bundle-RequiredExecutionEnvironment: JavaSE-1.7

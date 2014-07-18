@@ -15,15 +15,13 @@
       <properties>
         <property key="javadoc.additionalClassPathRoot" value="${workspace_loc}"/>
         <property key="javadoc.packageNames" value="org.knime.core.*,org.knime.base.*"/>
+        <property key="destination" value="${buckminster.home}/rootfiles/knime_doc/javadoc" />
       </properties>
       <prerequisites alias="action.requirements">
         <attribute name="knime.source" component="org.knime.core.util" alias="core-util-source"/>
         <attribute name="knime.source" component="org.knime.core" alias="core-source"/>
         <attribute name="knime.source" component="org.knime.base" alias="base-source"/>
       </prerequisites>
-      <products alias="destination" base="${buckminster.home}/rootfiles/knime_doc" upToDatePolicy="DEFAULT">
-        <path path="javadoc/"/>
-      </products>
     </public>
   </actions>
   <alterActions>

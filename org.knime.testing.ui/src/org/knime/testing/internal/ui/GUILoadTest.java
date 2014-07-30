@@ -73,7 +73,7 @@ import org.knime.core.node.workflow.WorkflowPersistor;
 import org.knime.core.node.workflow.WorkflowPersistor.LoadResultEntry.LoadResultEntryType;
 import org.knime.core.node.workflow.WorkflowPersistor.WorkflowLoadResult;
 import org.knime.core.util.LockFailedException;
-import org.knime.testing.core.ng.TestrunConfiguration;
+import org.knime.testing.core.TestrunConfiguration;
 import org.knime.testing.core.ng.WorkflowTest;
 import org.knime.testing.core.ng.WorkflowTestContext;
 import org.knime.workbench.editor2.WorkflowManagerInput;

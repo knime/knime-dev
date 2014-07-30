@@ -55,7 +55,7 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
-import org.knime.testing.core.ng.TestrunConfiguration;
+import org.knime.testing.core.TestrunConfiguration;
 
 /**
  * Dialog in which the user can select which tests should be performed (in addition to standard test such as execute and

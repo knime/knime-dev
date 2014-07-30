@@ -55,7 +55,7 @@ import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.swt.widgets.Display;
 import org.knime.core.node.NodeLogger;
 import org.knime.core.node.workflow.WorkflowManager;
-import org.knime.testing.core.ng.TestrunConfiguration;
+import org.knime.testing.core.TestrunConfiguration;
 import org.knime.testing.core.ng.WorkflowTest;
 import org.knime.testing.core.ng.WorkflowTestContext;
 import org.knime.workbench.editor2.WorkflowEditor;

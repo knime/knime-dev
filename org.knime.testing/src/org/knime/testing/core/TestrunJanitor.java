@@ -1,5 +1,6 @@
 /*
  * ------------------------------------------------------------------------
+ *
  *  Copyright by KNIME GmbH, Konstanz, Germany
  *  Website: http://www.knime.org; Email: contact@knime.org
  *
@@ -42,45 +43,34 @@
  *  when such Node is propagated with or for interoperation with KNIME.
  * ---------------------------------------------------------------------
  *
- * Created on 23.08.2013 by thor
+ * History
+ *   30.07.2014 (thor): created
  */
-package org.knime.testing.internal.ui;
+package org.knime.testing.core;
 
-import java.io.File;
-import java.io.IOException;
-
-import org.eclipse.core.runtime.IProgressMonitor;
-import org.knime.testing.core.TestrunConfiguration;
-import org.knime.testing.core.ng.WorkflowTest;
-import org.knime.testing.core.ng.WorkflowTestSuite;
 
 /**
- * Extended workflow test suite that runs in the KNIME GUI.
+ * Interface for a class that executes certain operation before and after all testflows are executed.
  *
  * @author Thorsten Meinl, KNIME.com, Zurich, Switzerland
+ * @since 2.11
  */
-class GUIWorkflowTestSuite extends WorkflowTestSuite {
-    GUIWorkflowTestSuite(final File workflowDir, final File testcaseRoot, final TestrunConfiguration runConfig,
-        final IProgressMonitor monitor) throws IOException {
-        super(workflowDir, testcaseRoot, runConfig, monitor, new GUITestContext());
-    }
+public interface TestrunJanitor {
+    /**
+     * This method is executed before the first testflow is executed. The implementation may prepare an expected
+     * environment and also modify the testrun configuration.
+     *
+     * @param config the testrun configuration
+     * @throws Exception in an exception occurs
+     */
+    public void before(TestrunConfiguration config) throws Exception;
 
     /**
-     * {@inheritDoc}
+     * This method is executed after the last testflow has been executed. The implementation should roll back any
+     * changes that it has made in {@link #before(TestrunConfiguration)}.
+     *
+     * @param config the testrun configuration
+     * @throws Exception in an exception occurs
      */
-    @Override
-    protected WorkflowTest createLoadTest(final File workflowDir, final File testcaseRoot,
-        final TestrunConfiguration runConfig) {
-        return new GUILoadTest(workflowDir, testcaseRoot, m_workflowName, m_progressMonitor, runConfig, m_context);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    protected WorkflowTest createLoadSaveLoadTest(final File workflowDir, final File testcaseRoot,
-        final TestrunConfiguration runConfig) {
-        return new GUILoadSaveLoadTest(workflowDir, testcaseRoot, m_workflowName, m_progressMonitor, runConfig,
-            m_context);
-    }
+    public void after(TestrunConfiguration config) throws Exception;
 }

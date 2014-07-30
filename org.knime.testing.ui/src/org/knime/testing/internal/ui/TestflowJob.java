@@ -77,7 +77,7 @@ import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.ide.FileStoreEditorInput;
 import org.knime.core.node.workflow.WorkflowPersistor;
 import org.knime.core.util.FileUtil;
-import org.knime.testing.core.ng.TestrunConfiguration;
+import org.knime.testing.core.TestrunConfiguration;
 import org.knime.testing.core.ng.WorkflowTestResult;
 import org.knime.testing.core.ng.WorkflowTestSuite;
 import org.knime.testing.core.ng.XMLResultFileWriter;

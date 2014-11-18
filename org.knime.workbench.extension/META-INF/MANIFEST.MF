@@ -3,7 +3,6 @@ Bundle-ManifestVersion: 2
 Bundle-Name: KNIME Workbench Extensions
 Bundle-SymbolicName: org.knime.workbench.extension;singleton:=true
 Bundle-Version: 2.11.0.qualifier
-Bundle-Activator: org.knime.workbench.plugin.KNIMEExtensionPlugin
 Bundle-Vendor: KNIME GmbH, Konstanz, Germany
 Export-Package: org.knime.workbench.extension.wizards
 Require-Bundle: org.eclipse.core.runtime;bundle-version="[3.7.0,4.0.0)",

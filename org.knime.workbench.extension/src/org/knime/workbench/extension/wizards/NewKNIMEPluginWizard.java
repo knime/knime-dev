@@ -77,6 +77,7 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Path;
+import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.operation.IRunnableWithProgress;
@@ -90,7 +91,8 @@ import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.ide.IDE;
 import org.eclipse.ui.internal.ide.IDEWorkbenchPlugin;
-import org.knime.workbench.plugin.KNIMEExtensionPlugin;
+import org.osgi.framework.Bundle;
+import org.osgi.framework.FrameworkUtil;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -183,10 +185,8 @@ public class NewKNIMEPluginWizard extends Wizard implements INewWizard {
      * @param e the exception
      */
     private void logError(final Exception e) {
-        KNIMEExtensionPlugin.getDefault().getLog().log(
-                new Status(IStatus.ERROR, KNIMEExtensionPlugin.getDefault()
-                        .getBundle().getSymbolicName(), 0, e.getMessage() + "",
-                        e));
+        Bundle myself = FrameworkUtil.getBundle(getClass());
+        Platform.getLog(myself).log(new Status(IStatus.ERROR, myself.getSymbolicName(), 0, e.getMessage() + "", e));
     }
 
     /**
@@ -404,9 +404,7 @@ public class NewKNIMEPluginWizard extends Wizard implements INewWizard {
             IFile defIcon = packageContainer.getFile("default.png");
 
             // copy default.png
-            URL url =
-                    KNIMEExtensionPlugin.getDefault().getBundle().getEntry(
-                            "templates/default.png");
+            URL url = FrameworkUtil.getBundle(getClass()).getEntry("templates/default.png");
             try {
                 defIcon.create(url.openStream(), true, monitor);
             } catch (IOException e1) {
@@ -539,9 +537,7 @@ public class NewKNIMEPluginWizard extends Wizard implements INewWizard {
     private InputStream openSubstitutedContentStream(
             final String templateFileName, final Properties substitutions)
             throws CoreException {
-        URL url =
-                KNIMEExtensionPlugin.getDefault().getBundle().getEntry(
-                        "templates/" + templateFileName);
+        URL url = FrameworkUtil.getBundle(getClass()).getEntry("templates/" + templateFileName);
         String contents = "";
         try {
             BufferedReader reader =

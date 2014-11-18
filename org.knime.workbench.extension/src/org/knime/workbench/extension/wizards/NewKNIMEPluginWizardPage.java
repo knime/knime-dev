@@ -83,9 +83,7 @@ import org.eclipse.ui.internal.ide.IDEWorkbenchMessages;
 import org.eclipse.ui.internal.ide.IDEWorkbenchPlugin;
 import org.eclipse.ui.internal.ide.IIDEHelpContextIds;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
-import org.knime.core.node.NodeFactory;
-import org.knime.core.node.NodeFactory.NodeType;
-import org.knime.workbench.plugin.KNIMEExtensionPlugin;
+import org.osgi.framework.FrameworkUtil;
 
 /**
  * This page enables the user to enter the information needed to create the
@@ -148,9 +146,12 @@ public class NewKNIMEPluginWizardPage extends WizardPage implements Listener {
     private IJavaProject m_currentJavaProject;
 
     // load this icon only once per session (static)
-    private static final ImageDescriptor ICON = AbstractUIPlugin
-            .imageDescriptorFromPlugin(KNIMEExtensionPlugin.ID,
-                    "icons/knime_extension55.png");
+    private static final ImageDescriptor ICON = AbstractUIPlugin.imageDescriptorFromPlugin(
+        FrameworkUtil.getBundle(NewKNIMEPluginWizard.class).getSymbolicName(), "icons/knime_extension55.png");
+
+    // see also org.knime.core.node.NodeFactory.NodeType
+    private static final String[] NODE_TYPES = {"Source", "Sink", "Learner", "Predictor", "Manipulator", "Visualizer",
+        "Meta", "LoopStart", "LoopEnd", "QuickForm", "Other"};
 
     /**
      * Constructor for WizardPage.
@@ -505,16 +506,12 @@ public class NewKNIMEPluginWizardPage extends WizardPage implements Listener {
 
         Combo typeCombo = new Combo(parent, SWT.READ_ONLY | SWT.BORDER);
 
-        for (NodeType type : NodeFactory.NodeType.values()) {
+        for (String type : NODE_TYPES) {
+            typeCombo.add(type);
 
-            // unknown is just an internal type
-            if (!type.equals(NodeType.Unknown) && !type.equals(NodeType.Missing)) {
-                typeCombo.add(type.toString());
-
-                if (typeCombo.getText() == null
-                        || typeCombo.getText().trim().equals("")) {
-                    typeCombo.setText(type.toString());
-                }
+            if (typeCombo.getText() == null
+                    || typeCombo.getText().trim().equals("")) {
+                typeCombo.setText(type.toString());
             }
         }
 

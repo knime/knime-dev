@@ -54,6 +54,7 @@ import org.eclipse.core.resources.IWorkspace;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Path;
+import org.eclipse.core.runtime.Platform;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IPackageFragment;
@@ -143,6 +144,8 @@ public class NewKNIMEPluginWizardPage extends WizardPage implements Listener {
 
     private Button m_packageBrowseButton;
 
+    private Button m_activateTP;
+
     private IJavaProject m_currentJavaProject;
 
     // load this icon only once per session (static)
@@ -198,6 +201,15 @@ public class NewKNIMEPluginWizardPage extends WizardPage implements Listener {
      */
     public boolean getIncludeSampleCode() {
         return m_includeSampleCode.getSelection();
+    }
+
+    /**
+     * Returns whether the KNIME target platform should be activated or not.
+     *
+     * @return <code>true</code> if it should be activated, <code>false</code> otherwise
+     */
+    public boolean getActivateTP() {
+        return m_activateTP.getSelection();
     }
 
     /**
@@ -470,6 +482,21 @@ public class NewKNIMEPluginWizardPage extends WizardPage implements Listener {
         // data.horizontalAlignment = SWT.CENTER;
         m_includeSampleCode.setLayoutData(data);
         m_includeSampleCode.setSelection(true);
+
+        // Checkbox for enabling the TP
+        m_activateTP = new Button(composite, SWT.CHECK);
+        m_activateTP.setText("Create and download KNIME Target Platform");
+        m_activateTP.setToolTipText("Downloads the necessary KNIME plug-in from the KNIME Update Site and creates a "
+            + "target platform. The download is about 130MB.");
+        data = new GridData(GridData.FILL_BOTH);
+        data.horizontalIndent = 7;
+        // data.horizontalAlignment = SWT.CENTER;
+        m_activateTP.setLayoutData(data);
+        m_activateTP.setSelection(!knimePluginsInstalled() && TPHelper.getInstance().currentTPIsRunningPlatform());
+    }
+    private boolean knimePluginsInstalled() {
+        return (Platform.getBundle("org.knime.core") != null)
+                && (Platform.getBundle("org.knime.workbench.repository") != null);
     }
 
     private String getSelectedPackage() {
@@ -688,6 +715,11 @@ public class NewKNIMEPluginWizardPage extends WizardPage implements Listener {
 
     }
 
+    /**
+     * Returns the project name the user has entered in case a new project should be created.
+     *
+     * @return the project name
+     */
     public String getProjectName() {
         if (m_projectNameField == null) {
             return "";
@@ -707,10 +739,20 @@ public class NewKNIMEPluginWizardPage extends WizardPage implements Listener {
         }
     };
 
+    /**
+     * Returns the name of an existing project into which the new classes should be added.
+     *
+     * @return the name of an existing project
+     */
     public String getExistingProjectName() {
         return m_comboExistingProjects.getText();
     }
 
+    /**
+     * Returns whether the new classes should be added to an existing project.
+     *
+     * @return <code>true</code> if they should be added to an existing project, <code>false</code> otherwise
+     */
     public boolean addToExistingProject() {
         return m_existingProjectRadio.getSelection();
     }

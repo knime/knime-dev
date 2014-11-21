@@ -1,5 +1,6 @@
 /*
  * ------------------------------------------------------------------------
+ *
  *  Copyright by KNIME GmbH, Konstanz, Germany
  *  Website: http://www.knime.org; Email: contact@knime.org
  *
@@ -40,53 +41,55 @@
  *  propagated with or for interoperation with KNIME.  The owner of a Node
  *  may freely choose the license terms applicable to such Node, including
  *  when such Node is propagated with or for interoperation with KNIME.
- * ----------------------------------------------------------------------------
+ * ---------------------------------------------------------------------
+ *
+ * History
+ *   19.11.2014 (thor): created
  */
-package org.knime.workbench.plugin;
+package org.knime.workbench.extension.wizards;
 
-import org.eclipse.ui.plugin.AbstractUIPlugin;
-import org.osgi.framework.BundleContext;
+import java.io.IOException;
+import java.net.URISyntaxException;
+
+import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.Platform;
+import org.eclipse.core.runtime.SubMonitor;
+import org.osgi.framework.Version;
 
 /**
- * The main plugin class to be used in the desktop.
+ * Helper class to access some target platform related functionality. The API changed in Eclipse 3.8, therefore
+ * we need to distinguish between 3.7 and 3.8 and upwards. The {@link #getInstance()} method creates the right
+ * implementation depending on the PDE version.
+ *
+ * @author Thorsten Meinl, KNIME.com, Zurich, Switzerland
  */
-public class KNIMEExtensionPlugin extends AbstractUIPlugin {
-
-    // The shared instance.
-    private static KNIMEExtensionPlugin plugin;
-
-    /** Plugin ID as defined in plugin XML. */
-    public static final String ID = "org.knime.workbench.extension";
+abstract class TPHelper {
+    private static final Version PDE_CHANGE_VERSION = new Version(3, 8, 0);
 
     /**
-     * The constructor.
+     * Sets up the KNIME target platform that is bundled in this plug-in.
+     *
+     * @param monitor a progress monitor
+     *
+     * @throws URISyntaxException if the bundled TP file cannot be resolved
+     * @throws CoreException if a core problem occurs
+     * @throws IOException if an I/O error occurs
      */
-    public KNIMEExtensionPlugin() {
-        plugin = this;
-    }
+    public abstract void setupTargetPlatform(final SubMonitor monitor) throws URISyntaxException, CoreException,
+        IOException;
 
     /**
-     * {@inheritDoc}
+     * Returns whether the currently active target platform is the "Running Platform".
+     *
+     * @return <code>true</code> if it is the running platform, <code>false</code> if it's something else
      */
-    @Override
-    public void start(final BundleContext context) throws Exception {
-        super.start(context);
-    }
+    public abstract boolean currentTPIsRunningPlatform();
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void stop(final BundleContext context) throws Exception {
-        super.stop(context);
-        plugin = null;
+    public static TPHelper getInstance() {
+        if (Platform.getBundle("org.eclipse.pde.core").getVersion().compareTo(PDE_CHANGE_VERSION) >= 0) {
+            return new TPHelperImpl38();
+        } else {
+            return new TPHelperImpl37();
+        }
     }
-
-    /**
-     * @return the shared instance
-     */
-    public static KNIMEExtensionPlugin getDefault() {
-        return plugin;
-    }
-
 }

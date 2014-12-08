@@ -15,7 +15,7 @@
       <properties>
         <property key="javadoc.additionalClassPathRoot" value="${workspace_loc}"/>
         <property key="javadoc.packageNames" value="org.knime.core.*,org.knime.base.*"/>
-        <property key="destination" value="${buckminster.home}/rootfiles/knime_doc/javadoc" />
+        <property key="destination" value="${buckminster.home}/rootfiles/all/knime_doc/javadoc" />
       </properties>
       <prerequisites alias="action.requirements">
         <attribute name="knime.source" component="org.knime.core.util" alias="core-util-source"/>

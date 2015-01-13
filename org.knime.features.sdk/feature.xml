@@ -2,7 +2,7 @@
 <feature
       id="org.knime.features.sdk"
       label="KNIME SDK"
-      version="2.11.0.qualifier"
+      version="2.11.1.qualifier"
       provider-name="KNIME GmbH, Konstanz, Germany"
       plugin="org.knime.workbench.extension">
 
@@ -737,7 +737,7 @@ propagated with or for interoperation with KNIME.
          version="0.0.0"/>
 
    <includes
-         id="org.knime.features.testingapplication" 
+         id="org.knime.features.testingapplication"
          version="0.0.0"/>
 
    <requires>

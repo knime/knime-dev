@@ -52,8 +52,13 @@ import java.lang.reflect.Field;
 import java.security.SecureRandom;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.sql.Statement;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -71,6 +76,8 @@ import org.knime.core.node.workflow.FlowVariable;
  */
 public abstract class AbstractDatabaseJanitor extends TestrunJanitor {
     private static final SecureRandom RAND = new SecureRandom();
+
+    private final DateFormat m_dateFormat = new SimpleDateFormat("yyyyMMddHHmmssSSS");
 
     private final String m_driverName;
 
@@ -106,7 +113,7 @@ public abstract class AbstractDatabaseJanitor extends TestrunJanitor {
         m_port = port;
         m_username = username;
         m_password = password;
-        m_dbName = "knime_testing_" + System.currentTimeMillis() + "_" + Long.toHexString(RAND.nextLong());
+        m_dbName = "knime_testing_" + m_dateFormat.format(new Date()) + "_" + Long.toHexString(RAND.nextLong());
     }
 
     /**
@@ -117,7 +124,12 @@ public abstract class AbstractDatabaseJanitor extends TestrunJanitor {
      */
     protected abstract String getJDBCUrl(String dbName);
 
-    private String getVariablePrefix() {
+    /**
+     * Returns the prefix for all variables returned by {@link #getFlowVariables()}.
+     *
+     * @return the prefix (ending with ".")
+     */
+    protected final String getVariablePrefix() {
         return getJDBCUrl("db").split(":")[1] + ".";
     }
 
@@ -145,14 +157,8 @@ public abstract class AbstractDatabaseJanitor extends TestrunJanitor {
     @Override
     public void before() throws Exception {
         DatabaseDriverLoader.registerDriver(m_driverName);
-
-        try (Connection conn = DriverManager.getConnection(getJDBCUrl(m_initialDatabase), m_username, m_password)) {
-            Statement stmt = conn.createStatement();
-            String sql = "CREATE DATABASE " + m_dbName;
-            stmt.execute(sql);
-            m_databaseCreated = true;
-            NodeLogger.getLogger(getClass()).info("Created temporary testing database " + m_dbName);
-        }
+        createDatabase(m_initialDatabase, m_username, m_password, m_dbName);
+        m_databaseCreated = true;
     }
 
     /**
@@ -167,22 +173,72 @@ public abstract class AbstractDatabaseJanitor extends TestrunJanitor {
             Class<DatabaseConnectionSettings> clazz = DatabaseConnectionSettings.class;
             Field mapField = clazz.getDeclaredField("CONNECTION_MAP");
             mapField.setAccessible(true);
+            @SuppressWarnings("unchecked")
             Map<?, Connection> connectionMap = (Map<?, Connection>)mapField.get(null);
-            for (Connection conn : connectionMap.values()) {
-                if (!conn.isClosed() && conn.getMetaData().getURL().equals(getJDBCUrl(m_dbName))) {
-                    conn.close();
+            Iterator<Connection> it = connectionMap.values().iterator();
+            while (it.hasNext()) {
+                Connection conn = it.next();
+                if (conn.getMetaData().getURL().contains(m_dbName)) {
+                    if (!conn.isClosed()) {
+                        conn.close();
+                    }
+                    it.remove();
                 }
             }
 
-            try (Connection conn = DriverManager.getConnection(getJDBCUrl(m_initialDatabase), m_username, m_password)) {
-                Statement stmt = conn.createStatement();
-                String sql = "DROP DATABASE " + m_dbName;
-                stmt.execute(sql);
-                NodeLogger.getLogger(getClass()).info("Deleted temporary testing database " + m_dbName);
-            }
+            dropDatabase(m_initialDatabase, m_username, m_password, m_dbName);
         }
 
-        m_dbName = "knime_testing_" + System.currentTimeMillis() + "_" + Long.toHexString(RAND.nextLong());
+        m_dbName = "knime_testing_" + m_dateFormat.format(new Date()) + "_" + Long.toHexString(RAND.nextLong());
+    }
+
+    /**
+     * Creates a new database. Subclasses may override this method.
+     *
+     * @param initialDatabase the initial database to connect to
+     * @param username the username
+     * @param password the password
+     * @param dbName name of the new database
+     * @throws SQLException if a database error occurs
+     */
+    protected void createDatabase(final String initialDatabase, final String username, final String password,
+        final String dbName) throws SQLException {
+        try (Connection conn = DriverManager.getConnection(getJDBCUrl(initialDatabase), username, password)) {
+            String sql = "CREATE DATABASE " + dbName;
+            try (Statement stmt = conn.createStatement()) {
+                stmt.execute(sql);
+                NodeLogger.getLogger(getClass()).info("Created temporary testing database " + dbName);
+            }
+        }
+    }
+
+    /**
+     * Drops a database. Subclasses may override this method.
+     *
+     * @param initialDatabase the initial database to connect to
+     * @param username the username
+     * @param password the password
+     * @param dbName name of the database to drop
+     * @throws SQLException if a database error occurs
+     */
+    protected void dropDatabase(final String initialDatabase, final String username, final String password,
+        final String dbName) throws SQLException {
+        try (Connection conn = DriverManager.getConnection(getJDBCUrl(initialDatabase), username, password)) {
+            String sql = "DROP DATABASE " + dbName;
+            try (Statement stmt = conn.createStatement()) {
+                stmt.execute(sql);
+                NodeLogger.getLogger(getClass()).info("Deleted temporary testing database " + dbName);
+            }
+        }
+    }
+
+    /**
+     * Returns the name of the temporary database. The name is reset during {@link #after()}.
+     *
+     * @return a database name
+     */
+    protected final String getDatabaseName() {
+        return m_dbName;
     }
 
     /**

@@ -62,9 +62,9 @@ import java.util.regex.Pattern;
 
 import junit.framework.TestCase;
 
-import org.eclipse.osgi.baseadaptor.bundlefile.BundleEntry;
-import org.eclipse.osgi.baseadaptor.loader.BaseClassLoader;
-import org.eclipse.osgi.baseadaptor.loader.ClasspathManager;
+import org.eclipse.osgi.internal.loader.ModuleClassLoader;
+import org.eclipse.osgi.internal.loader.classpath.ClasspathManager;
+import org.eclipse.osgi.storage.bundlefile.BundleEntry;
 import org.junit.Test;
 
 /**
@@ -121,7 +121,7 @@ public abstract class AbstractTestcaseCollector {
      * @throws IOException if an I/O error occurs while collecting the classes
      */
     public List<String> getUnittestsClassNames() throws IOException {
-        BaseClassLoader cl = (BaseClassLoader)getClass().getClassLoader();
+        ModuleClassLoader cl = (ModuleClassLoader)getClass().getClassLoader();
         ClasspathManager cpm = cl.getClasspathManager();
         String classPath = this.getClass().getName().replace(".", "/") + ".class";
 

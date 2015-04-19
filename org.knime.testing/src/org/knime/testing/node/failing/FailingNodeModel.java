@@ -179,13 +179,13 @@ class FailingNodeModel extends NodeModel {
         InterruptedException {
         final int failAtIndex = m_configuration.getFailAtIndex();
         if (failAtIndex < 0) {
-            throw new Exception("This node fails in each execution.");
+            throw new Exception("This node fails on each execution.");
         }
         int index = 0;
         DataRow r;
         while ((r = rowInput.poll()) != null) {
             if (index++ == failAtIndex) {
-                throw new Exception("This node fails in each execution - row index " + failAtIndex);
+                throw new Exception("This node fails on each execution - row index " + failAtIndex);
             }
             rowOutput.push(r);
         }

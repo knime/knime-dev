@@ -47,6 +47,7 @@
 package org.knime.testing.internal.ui;
 
 import org.eclipse.ui.IEditorPart;
+import org.knime.testing.core.TestrunConfiguration;
 import org.knime.testing.core.ng.WorkflowTestContext;
 
 /**
@@ -55,6 +56,15 @@ import org.knime.testing.core.ng.WorkflowTestContext;
  * @author Thorsten Meinl, KNIME.com, Zurich, Switzerland
  */
 class GUITestContext extends WorkflowTestContext {
+    /**
+     * Creates a new test context.
+     *
+     * @param globalConfiguration the global test run configuration which is used for some default values
+     */
+    public GUITestContext(final TestrunConfiguration globalConfiguration) {
+        super(globalConfiguration);
+    }
+
     private IEditorPart m_editorPart;
 
     public void setEditorPart(final IEditorPart editorPart) {

@@ -50,11 +50,13 @@ import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.layout.GridData;
+import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.widgets.Spinner;
 import org.knime.testing.core.TestrunConfiguration;
 
 /**
@@ -77,6 +79,8 @@ class TestrunConfigDialog extends Dialog {
     private Button m_testViews;
 
     private Button m_loadSaveLoad;
+
+    private Spinner m_defaultTimeout;
 
     TestrunConfigDialog(final Shell shell, final TestrunConfiguration runConfig) {
         super(shell);
@@ -126,6 +130,19 @@ class TestrunConfigDialog extends Dialog {
         m_checkNodeMessages.setText("Check &node messages");
         m_checkNodeMessages.setSelection(m_runConfig.isCheckNodeMessages());
 
+        Composite p = new Composite(parent, SWT.NONE);
+        p.setLayout(new GridLayout(2,false));
+        p.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, false, false));
+
+        Label l2 = new Label(p, SWT.NONE);
+        l2.setText("  Default timeout (in seconds)");
+
+        m_defaultTimeout = new Spinner(p, SWT.BORDER);
+        m_defaultTimeout.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, false, false));
+        m_defaultTimeout.setMinimum(1);
+        m_defaultTimeout.setMaximum(24 * 60 * 60); // one day
+        m_defaultTimeout.setSelection(m_runConfig.getTimeout());
+        m_defaultTimeout.setIncrement(5);
 
         return container;
     }
@@ -135,7 +152,7 @@ class TestrunConfigDialog extends Dialog {
      */
     @Override
     protected Point getInitialSize() {
-        return new Point(250, 300);
+        return new Point(250, 340);
     }
 
     /**
@@ -149,6 +166,7 @@ class TestrunConfigDialog extends Dialog {
         m_runConfig.setReportDeprecatedNodes(m_reportDeprecatedNodes.getSelection());
         m_runConfig.setTestDialogs(m_testDialogs.getSelection());
         m_runConfig.setTestViews(m_testViews.getSelection());
+        m_runConfig.setTimeout(m_defaultTimeout.getSelection());
         super.okPressed();
     }
 }

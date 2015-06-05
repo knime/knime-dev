@@ -62,7 +62,7 @@ import org.knime.testing.core.ng.WorkflowTestSuite;
 class GUIWorkflowTestSuite extends WorkflowTestSuite {
     GUIWorkflowTestSuite(final File workflowDir, final File testcaseRoot, final TestrunConfiguration runConfig,
         final IProgressMonitor monitor) throws IOException {
-        super(workflowDir, testcaseRoot, runConfig, monitor, new GUITestContext());
+        super(workflowDir, testcaseRoot, runConfig, monitor, new GUITestContext(runConfig));
     }
 
     /**

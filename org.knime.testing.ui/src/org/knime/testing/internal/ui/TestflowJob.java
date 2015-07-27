@@ -75,6 +75,7 @@ import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.ide.FileStoreEditorInput;
+import org.knime.core.node.workflow.WorkflowManager;
 import org.knime.core.node.workflow.WorkflowPersistor;
 import org.knime.core.util.FileUtil;
 import org.knime.testing.core.TestrunConfiguration;
@@ -183,6 +184,7 @@ class TestflowJob extends Job {
         LocalExplorerFileStore workflowFile = fs.getChild(WorkflowPersistor.WORKFLOW_FILE);
         IEditorInput editorInput = new FileStoreEditorInput(workflowFile);
         IEditorPart editor = m_activeWindow.getActivePage().findEditor(editorInput);
+        WorkflowManager wfm = null;
         if (editor == null) {
             for (IEditorReference editorRef : m_activeWindow.getActivePage().getEditorReferences()) {
                 IEditorInput input = editorRef.getEditorInput();
@@ -190,6 +192,7 @@ class TestflowJob extends Job {
                 if ((input instanceof WorkflowManagerInput) &&
                         fs.toLocalFile().toURI().equals(((WorkflowManagerInput) input).getWorkflowLocation())) {
                     editor = editorRef.getEditor(false);
+                    wfm = ((WorkflowManagerInput) input).getWorkflowManager();
                     break;
                 }
             }
@@ -203,6 +206,9 @@ class TestflowJob extends Job {
                     ret.set(finalEditor.getEditorSite().getPage().closeEditor(finalEditor, saveChanges));
                 }
             });
+        }
+        if (wfm != null) {
+            WorkflowManager.ROOT.removeProject(wfm.getID());
         }
         return ret.get();
     }

@@ -48,7 +48,6 @@ package org.knime.testing.internal.ui;
 
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
@@ -145,14 +144,6 @@ class TestrunConfigDialog extends Dialog {
         m_defaultTimeout.setIncrement(5);
 
         return container;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    protected Point getInitialSize() {
-        return new Point(250, 340);
     }
 
     /**

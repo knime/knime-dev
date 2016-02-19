@@ -79,7 +79,7 @@ class TestrunConfigDialog extends Dialog {
 
     private Button m_loadSaveLoad;
 
-    private Button m_runInStreamingMode;
+    private Button m_enableStreamingTests;
 
     private Spinner m_defaultTimeout;
 
@@ -131,10 +131,10 @@ class TestrunConfigDialog extends Dialog {
         m_checkNodeMessages.setText("Check &node messages");
         m_checkNodeMessages.setSelection(m_runConfig.isCheckNodeMessages());
 
-        m_runInStreamingMode = new Button(container, SWT.CHECK);
-        m_runInStreamingMode.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, false, false));
-        m_runInStreamingMode.setText("Allow tests of &streaming API (needs to be enabled in workflow, too)");
-        m_runInStreamingMode.setSelection(m_runConfig.isRunInStreamingMode());
+        m_enableStreamingTests = new Button(container, SWT.CHECK);
+        m_enableStreamingTests.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, false, false));
+        m_enableStreamingTests.setText("Allow tests of &streaming API (needs to be enabled in workflow, too)");
+        m_enableStreamingTests.setSelection(m_runConfig.isEnableStreamingTests());
 
         Composite p = new Composite(parent, SWT.NONE);
         p.setLayout(new GridLayout(2,false));
@@ -164,7 +164,7 @@ class TestrunConfigDialog extends Dialog {
         m_runConfig.setReportDeprecatedNodes(m_reportDeprecatedNodes.getSelection());
         m_runConfig.setTestDialogs(m_testDialogs.getSelection());
         m_runConfig.setTestViews(m_testViews.getSelection());
-        m_runConfig.setRunInStreamingMode(m_runInStreamingMode.getSelection());
+        m_runConfig.setEnableStreamingMode(m_enableStreamingTests.getSelection());
         m_runConfig.setTimeout(m_defaultTimeout.getSelection());
         super.okPressed();
     }

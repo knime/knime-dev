@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<cspecExtension xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bc="http://www.eclipse.org/buckminster/Common-1.0" xmlns="http://www.eclipse.org/buckminster/CSpec-1.0">
+  <dependencies>
+    <dependency name="org.knime.core" componentType="osgi.bundle"/>
+    <dependency name="org.knime.core.util" componentType="osgi.bundle"/>
+    <dependency name="org.knime.base" componentType="osgi.bundle"/>
+    <dependency name="org.knime.config" componentType="osgi.bundle"/>
+  </dependencies>
+  <actions>
+    <public name="build.javadoc" actor="ant">
+      <actorProperties>
+        <property key="buildFileId" value="knime.javadoc"/>
+        <property key="targets" value="build.javadoc"/>
+      </actorProperties>
+      <properties>
+        <property key="javadoc.additionalClassPathRoot" value="${workspace_loc}"/>
+        <property key="javadoc.packageNames" value="org.knime.core.*,org.knime.base.*"/>
+        <property key="destination" value="${buckminster.home}/rootfiles/all/knime_doc/javadoc" />
+      </properties>
+      <prerequisites alias="action.requirements">
+        <attribute name="knime.source" component="org.knime.core.util" alias="core-util-source"/>
+        <attribute name="knime.source" component="org.knime.core" alias="core-source"/>
+        <attribute name="knime.source" component="org.knime.base" alias="base-source"/>
+      </prerequisites>
+    </public>
+  </actions>
+  <alterActions>
+    <private name="feature.jar">
+      <prerequisites>
+        <attribute name="build.javadoc"/>
+      </prerequisites>
+    </private>
+  </alterActions>
+</cspecExtension>

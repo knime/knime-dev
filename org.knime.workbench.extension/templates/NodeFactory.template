@@ -1,0 +1,58 @@
+package __BASE_PACKAGE__;
+
+import org.knime.core.node.NodeDialogPane;
+import org.knime.core.node.NodeFactory;
+import org.knime.core.node.NodeView;
+
+/**
+ * <code>NodeFactory</code> for the "__NODE_NAME__" Node.
+ * __DESCRIPTION__
+ *
+ * @author __VENDOR_NAME__
+ */
+public class __NODE_NAME__NodeFactory 
+        extends NodeFactory<__NODE_NAME__NodeModel> {
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public __NODE_NAME__NodeModel createNodeModel() {
+        return new __NODE_NAME__NodeModel();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int getNrNodeViews() {
+        return 1;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public NodeView<__NODE_NAME__NodeModel> createNodeView(final int viewIndex,
+            final __NODE_NAME__NodeModel nodeModel) {
+        return new __NODE_NAME__NodeView(nodeModel);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean hasDialog() {
+        return true;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public NodeDialogPane createNodeDialogPane() {
+        return new __NODE_NAME__NodeDialog();
+    }
+
+}
+

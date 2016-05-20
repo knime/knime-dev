@@ -38,6 +38,11 @@
       </node>
       <node
             category-path="/testing"
+            factory-class="org.knime.testing.node.credentialsvalidate.CredentialsValidateNodeFactory"
+            id="org.knime.testing.node.credentialsvalidate.CredentialsValidateNodeFactory">
+      </node>
+      <node
+            category-path="/testing"
             factory-class="org.knime.testing.node.datagenerator.TestDataNodeFactory"
             id="org.knime.testing.node.datagenerator.TestDataNodeFactory">
       </node>
@@ -171,6 +176,9 @@
       <DifferenceCheckerFactory
             class="org.knime.testing.internal.diffcheckers.IgnoreChecker$Factory">
       </DifferenceCheckerFactory>
+      <DifferenceCheckerFactory
+            class="org.knime.testing.internal.diffcheckers.XMLChecker$Factory">
+      </DifferenceCheckerFactory>
    </extension>
    <extension
          id="NGTestflowRunner"
@@ -205,5 +213,22 @@
                serializerClass="org.knime.testing.data.filestore.LargeFileStoreCell$Serializer">
          </serializer>
       </DataType>
+   </extension>
+   <extension
+         point="org.knime.core.PortType">
+      <portType
+            hidden="true"
+            name="Large Filestore"
+            objectClass="org.knime.testing.data.filestore.LargeFileStorePortObject"
+            objectSerializer="org.knime.testing.data.filestore.LargeFileStorePortObject$Serializer"
+            specClass="org.knime.testing.data.filestore.LargeFileStorePortObjectSpec"
+            specSerializer="org.knime.testing.data.filestore.LargeFileStorePortObjectSpec$Serializer">
+      </portType>
+   </extension>
+   <extension
+         point="org.knime.core.NodeExecutionJobManagerFactory">
+      <NodeExecutionJobManagerFactory
+            JobManagerFactory="org.knime.testing.streaming.testexecutor.StreamingTestNodeExecutionJobManagerFactory">
+      </NodeExecutionJobManagerFactory>
    </extension>
 </plugin>

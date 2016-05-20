@@ -48,14 +48,23 @@
 package org.knime.testing.core.ng;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
-
-import junit.framework.AssertionFailedError;
-import junit.framework.TestResult;
+import java.util.concurrent.Semaphore;
+import java.util.stream.Collectors;
 
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.knime.core.data.container.BufferTracker;
+import org.knime.core.data.util.memory.MemoryAlert;
+import org.knime.core.data.util.memory.MemoryAlertListener;
+import org.knime.core.data.util.memory.MemoryAlertSystem;
 import org.knime.core.node.workflow.NodeContainer;
 import org.knime.core.node.workflow.WorkflowManager;
+import org.knime.core.util.Pair;
+
+import junit.framework.AssertionFailedError;
+import junit.framework.Test;
+import junit.framework.TestResult;
 
 /**
  * Testcase that closes the workflow and does some additional checks, e.g. if all resources held by the workflow are
@@ -76,20 +85,53 @@ class WorkflowCloseTest extends WorkflowTest {
         result.startTest(this);
 
         try {
-            m_context.getWorkflowManager().shutdown();
-            m_context.getWorkflowManager().getParent().removeNode(m_context.getWorkflowManager().getID());
-
-            List<NodeContainer> openWorkflows = new ArrayList<NodeContainer>(WorkflowManager.ROOT.getNodeContainers());
-            openWorkflows.removeAll(m_context.getAlreadyOpenWorkflows());
-            if (openWorkflows.size() > 0) {
-                result.addFailure(this, new AssertionFailedError(openWorkflows.size()
-                        + " dangling workflows detected: " + openWorkflows));
-            }
+            closeWorkflow(this, result, m_context);
         } catch (Throwable t) {
             result.addError(this, t);
         } finally {
             result.endTest(this);
         }
+    }
+
+    /**
+     * Closes the workflow and check for dangling workflow managers and table buffers.
+     *
+     * @param test the current test
+     * @param result the test result to which problems are reported
+     * @param context the test workflow context
+     */
+    static void closeWorkflow(final Test test, final TestResult result, final WorkflowTestContext context) {
+        context.getWorkflowManager().shutdown();
+        context.getWorkflowManager().getParent().removeNode(context.getWorkflowManager().getID());
+
+        List<NodeContainer> openWorkflows = new ArrayList<NodeContainer>(WorkflowManager.ROOT.getNodeContainers());
+        openWorkflows.removeAll(context.getAlreadyOpenWorkflows());
+        if (openWorkflows.size() > 0) {
+            result.addFailure(test, new AssertionFailedError(openWorkflows.size()
+                    + " dangling workflows detected: " + openWorkflows));
+        }
+
+        Collection<Pair<NodeContainer, StackTraceElement[]>> openBuffers =
+            BufferTracker.getInstance().getOpenBuffers();
+        if (!openBuffers.isEmpty()) {
+            result.addFailure(test, new AssertionFailedError(openBuffers.size() + " open buffers detected: "
+                + openBuffers.stream().map(p -> p.getFirst().getNameWithID()).collect(Collectors.joining(", "))));
+        }
+        BufferTracker.getInstance().clear();
+    }
+
+    private void sendMemoryAlert() throws InterruptedException {
+        Semaphore sem = new Semaphore(1);
+        sem.acquire();
+        MemoryAlertSystem.getInstance().addListener(new MemoryAlertListener() {
+            @Override
+            protected boolean memoryAlert(final MemoryAlert alert) {
+                sem.release();
+                return true;
+            }
+        });
+        MemoryAlertSystem.getInstance().sendMemoryAlert();
+        sem.acquire();
     }
 
     /**

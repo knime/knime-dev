@@ -1,5 +1,5 @@
 /*
- * ------------------------------------------------------------------
+ * ------------------------------------------------------------------------
  *  Copyright by KNIME GmbH, Konstanz, Germany
  *  Website: http://www.knime.org; Email: contact@knime.org
  *
@@ -40,17 +40,13 @@
  *  propagated with or for interoperation with KNIME.  The owner of a Node
  *  may freely choose the license terms applicable to such Node, including
  *  when such Node is propagated with or for interoperation with KNIME.
- * --------------------------------------------------------------------- *
- *
- * History
- *   March 10, 2007 (sieb): created
+ * ------------------------------------------------------------------------
  */
-package org.knime.testing.node.differModelContent;
+package org.knime.testing.node.credentialsvalidate;
 
 import java.io.File;
 import java.io.IOException;
 
-import org.knime.core.node.BufferedDataTable;
 import org.knime.core.node.CanceledExecutionException;
 import org.knime.core.node.ExecutionContext;
 import org.knime.core.node.ExecutionMonitor;
@@ -61,98 +57,80 @@ import org.knime.core.node.NodeSettingsWO;
 import org.knime.core.node.port.PortObject;
 import org.knime.core.node.port.PortObjectSpec;
 import org.knime.core.node.port.PortType;
-import org.knime.testing.node.differNode.TestEvaluationException;
+import org.knime.core.node.port.flowvariable.FlowVariablePortObject;
+import org.knime.core.node.util.CheckUtils;
 
 /**
- * Checks two models for equality.
  *
- * @author Christoph Sieb, University of Konstanz
+ * @author wiswedel, University of Konstanz
  */
-public class DiffModelContentModel extends NodeModel {
+class CredentialsValidateNodeModel extends NodeModel {
 
-    /**
-     * Creates a model with two model inports.
+    private CredentialsValidateNodeConfiguration m_configuration;
+
+    /** One data input, one data output.
      */
-    public DiffModelContentModel() {
-        super(new PortType[]{PortObject.TYPE, PortObject.TYPE}, new PortType[0]);
+    CredentialsValidateNodeModel() {
+        super(new PortType[] {FlowVariablePortObject.TYPE}, new PortType[] {});
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    /** {@inheritDoc} */
     @Override
-    protected void saveSettingsTo(final NodeSettingsWO settings) {
-
+    protected PortObject[] execute(final PortObject[] inData, final ExecutionContext exec) throws Exception {
+        validate();
+        return new PortObject[] {};
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    /** {@inheritDoc} */
     @Override
-    protected void validateSettings(final NodeSettingsRO settings)
-            throws InvalidSettingsException {
-        // do nothing yet
+    protected PortObjectSpec[] configure(final PortObjectSpec[] inSpecs) throws InvalidSettingsException {
+        validate();
+        return new PortObjectSpec[0];
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    private void validate() throws InvalidSettingsException {
+        CheckUtils.checkSetting(m_configuration != null, "No settings available");
+        m_configuration.verify(getCredentialsProvider());
+
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    protected void reset() {
+    }
+
+    /** {@inheritDoc} */
     @Override
     protected void loadValidatedSettingsFrom(final NodeSettingsRO settings)
             throws InvalidSettingsException {
-        // do nothing yet
+        m_configuration = new CredentialsValidateNodeConfiguration().loadSettingsInModel(settings);
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    /** {@inheritDoc} */
     @Override
-    protected PortObject[] execute(final PortObject[] inData,
-            final ExecutionContext exec) throws Exception {
-        if (!inData[0].equals(inData[1])) {
-            throw new TestEvaluationException("The ports are not the same.");
-        }
-
-        return new BufferedDataTable[]{};
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    protected void reset() {
-        // do nothing yet
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    protected PortObjectSpec[] configure(final PortObjectSpec[] inSpecs)
+    protected void validateSettings(final NodeSettingsRO settings)
             throws InvalidSettingsException {
-        return new PortObjectSpec[]{};
+        new CredentialsValidateNodeConfiguration().loadSettingsInModel(settings);
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    /** {@inheritDoc} */
     @Override
-    protected void loadInternals(final File nodeInternDir,
-            final ExecutionMonitor exec) throws IOException,
-            CanceledExecutionException {
-        // do nothing yet
-
+    protected void saveSettingsTo(final NodeSettingsWO settings) {
+        if (m_configuration != null) {
+            m_configuration.saveSettings(settings);
+        }
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    /** {@inheritDoc} */
     @Override
-    protected void saveInternals(final File nodeInternDir,
-            final ExecutionMonitor exec) throws IOException,
-            CanceledExecutionException {
-        // do nothing yet
+    protected void loadInternals(final File nodeInternDir, final ExecutionMonitor exec)
+            throws IOException, CanceledExecutionException {
+    }
 
+    /** {@inheritDoc} */
+    @Override
+    protected void saveInternals(final File nodeInternDir, final ExecutionMonitor exec)
+            throws IOException, CanceledExecutionException {
     }
 
 }

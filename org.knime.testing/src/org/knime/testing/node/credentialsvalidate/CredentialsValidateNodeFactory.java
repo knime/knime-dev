@@ -1,6 +1,5 @@
 /*
  * ------------------------------------------------------------------------
- *
  *  Copyright by KNIME GmbH, Konstanz, Germany
  *  Website: http://www.knime.org; Email: contact@knime.org
  *
@@ -38,55 +37,52 @@
  *  License, the License does not apply to Nodes, you are not required to
  *  license Nodes under the License, and you are granted a license to
  *  prepare and propagate Nodes, in each case even if such Nodes are
- *  propagated with or for interoperation with KNIME. The owner of a Node
+ *  propagated with or for interoperation with KNIME.  The owner of a Node
  *  may freely choose the license terms applicable to such Node, including
  *  when such Node is propagated with or for interoperation with KNIME.
  * ------------------------------------------------------------------------
+ */
+package org.knime.testing.node.credentialsvalidate;
+
+import org.knime.core.node.NodeDialogPane;
+import org.knime.core.node.NodeFactory;
+import org.knime.core.node.NodeView;
+
+/**
  *
+ * @author wiswedel, University of Konstanz
  */
-package org.knime.testing.data.filestore;
+public final class CredentialsValidateNodeFactory extends NodeFactory<CredentialsValidateNodeModel> {
 
-import org.knime.core.node.InvalidSettingsException;
-import org.knime.core.node.ModelContentRO;
-import org.knime.core.node.ModelContentWO;
-import org.knime.core.node.port.AbstractSimplePortObjectSpec;
-
-/** Empty spec to {@link LargeFileStorePortObject}.
- * @author Bernd Wiswedel, KNIME.com, Zurich, Switzerland
- */
-public final class LargeFileStorePortObjectSpec extends AbstractSimplePortObjectSpec {
-    public static final class Serializer extends AbstractSimplePortObjectSpecSerializer<LargeFileStorePortObjectSpec> {}
-
-    public static final LargeFileStorePortObjectSpec INSTANCE = new LargeFileStorePortObjectSpec();
-
-    /**  Don't use, framework constructor.
-     * @see #INSTANCE */
-    public LargeFileStorePortObjectSpec() {
+    /** {@inheritDoc} */
+    @Override
+    protected NodeDialogPane createNodeDialogPane() {
+        return new CredentialsValidateNodeDialogPane();
     }
 
+    /** {@inheritDoc} */
     @Override
-    protected void save(final ModelContentWO model) {
-
+    public CredentialsValidateNodeModel createNodeModel() {
+        return new CredentialsValidateNodeModel();
     }
 
+    /** {@inheritDoc} */
     @Override
-    protected void load(final ModelContentRO model) throws InvalidSettingsException {
-
+    public NodeView<CredentialsValidateNodeModel> createNodeView(
+            final int viewIndex, final CredentialsValidateNodeModel nodeModel) {
+        return null;
     }
 
+    /** {@inheritDoc} */
     @Override
-    public String toString() {
-        return "Static instance";
+    protected int getNrNodeViews() {
+        return 0;
     }
 
+    /** {@inheritDoc} */
     @Override
-    public boolean equals(final Object ospec) {
-        return ospec != null && ospec.getClass().equals(getClass());
-    }
-
-    @Override
-    public int hashCode() {
-        return getClass().hashCode();
+    protected boolean hasDialog() {
+        return true;
     }
 
 }

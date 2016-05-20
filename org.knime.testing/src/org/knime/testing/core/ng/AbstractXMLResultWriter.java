@@ -54,6 +54,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.Collection;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -68,13 +69,13 @@ import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+
 import junit.framework.AssertionFailedError;
 import junit.framework.Test;
 import junit.framework.TestFailure;
 import junit.framework.TestListener;
-
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
 
 /**
  * Abstract base class for result writer that create JUnit compliant XML output. See the XSD in this package for details
@@ -154,15 +155,18 @@ public abstract class AbstractXMLResultWriter implements TestListener {
      *
      * @param result the result of a workflow test suite
      * @param doc the document from which the elements should be created
+     * @param includeStdouterr true if stdout and stderr should be included in the XML structure
      * @return a new XML element containing the test suite
      */
-    protected final Element createTestsuiteElement(final WorkflowTestResult result, final Document doc) {
+    protected final Element createTestsuiteElement(final WorkflowTestResult result, final Document doc,
+        final boolean includeStdouterr) {
         Element testSuite = doc.createElement("testsuite");
 
         testSuite.setAttribute("name", result.getSuite().getSuiteName());
         testSuite.setAttribute("tests", Integer.toString(result.runCount()));
         testSuite.setAttribute("failures", Integer.toString(result.failureCount()));
         testSuite.setAttribute("errors", Integer.toString(result.errorCount()));
+        testSuite.setAttribute("skipped", Long.toString(result.skippedCount()));
         testSuite.setAttribute("time", Double.toString((m_endTimes.get(result.getSuite()) - m_startTimes.get(result
                 .getSuite())) / 1000.0));
         testSuite.setAttribute("timestamp", m_timestampFormat.format(new Date(m_startTimes.get(result.getSuite()))));
@@ -175,13 +179,15 @@ public abstract class AbstractXMLResultWriter implements TestListener {
 
         addTestcases(result, doc, testSuite);
 
-        Element sysout = doc.createElement("system-out");
-        testSuite.appendChild(sysout);
-        sysout.appendChild(doc.createTextNode(result.getSystemOut()));
+        if (includeStdouterr) {
+            Element sysout = doc.createElement("system-out");
+            testSuite.appendChild(sysout);
+            sysout.appendChild(doc.createTextNode(result.getSystemOut()));
 
-        Element syserr = doc.createElement("system-err");
-        testSuite.appendChild(syserr);
-        syserr.appendChild(doc.createTextNode(result.getSystemErr()));
+            Element syserr = doc.createElement("system-err");
+            testSuite.appendChild(syserr);
+            syserr.appendChild(doc.createTextNode(result.getSystemErr()));
+        }
 
         return testSuite;
     }
@@ -189,16 +195,20 @@ public abstract class AbstractXMLResultWriter implements TestListener {
     private void addTestcases(final WorkflowTestResult result, final Document doc, final Element testSuite) {
         Map<Test, Element> testcases = new HashMap<Test, Element>();
 
-        for (Test t : result.getAllTests()) {
-            if ((t instanceof TestWithName) && !(t instanceof WorkflowTestSuite)) {
-                Element tc = createTestcaseElement((TestWithName)t, doc);
+        Collection<Test> skippedTests = result.getSkippedTests();
+        for (Test test : result.getAllTests()) {
+            if ((test instanceof TestWithName) && !(test instanceof WorkflowTestSuite)) {
+                Element tc = createTestcaseElement((TestWithName)test, doc);
                 testSuite.appendChild(tc);
-                testcases.put(t, tc);
+                testcases.put(test, tc);
+                if (skippedTests.contains(test)) {
+                    tc.appendChild(doc.createElement("skipped"));
+                }
             }
         }
 
         processIssues(result.failures(), "failure", doc, testSuite, testcases);
-        processIssues(result.errors(), "failure", doc, testSuite, testcases);
+        processIssues(result.errors(), "error", doc, testSuite, testcases);
     }
 
     private void processIssues(final Enumeration<TestFailure> issues, final String type, final Document doc,
@@ -216,12 +226,12 @@ public abstract class AbstractXMLResultWriter implements TestListener {
 
             Element failure = doc.createElement(type);
             tc.appendChild(failure);
-            failure.setAttribute("message", f.exceptionMessage());
+            failure.setAttribute("message", replaceInvalidCharacters(f.exceptionMessage()));
             failure.setAttribute("type", f.thrownException().getClass().getName());
 
             StringWriter buf = new StringWriter();
             f.thrownException().printStackTrace(new PrintWriter(buf));
-            failure.appendChild(doc.createTextNode(buf.toString()));
+            failure.appendChild(doc.createTextNode(replaceInvalidCharacters(buf.toString())));
         }
     }
 
@@ -255,4 +265,29 @@ public abstract class AbstractXMLResultWriter implements TestListener {
      * @throws IOException if an I/O error occurs while writing the results
      */
     public abstract void addResult(WorkflowTestResult result) throws TransformerException, IOException;
+
+    /**
+     * Replaces characters that are invalid in XML 1.0 with an replacement notation. A <code>null</code> string is
+     * replaced by an empty string.
+     *
+     * @param input any input string
+     * @return the replaces string, never <code>null</code>
+     */
+    protected static String replaceInvalidCharacters(final String input) {
+        if (input == null) {
+            return "";
+        }
+        char[] in = input.toCharArray();
+        StringBuilder buf = new StringBuilder();
+        for (int i = 0; i < in.length; i++) {
+            char c = in[i];
+            if ((c != 9) && (c != '\r') && (c != '\n') && ((c < 32) || (c > 0xd7ff))) {
+                buf.append("&#").append(Integer.toHexString(c)).append(';');
+            } else {
+                buf.append(c);
+            }
+        }
+
+        return buf.toString();
+    }
 }

@@ -1,5 +1,6 @@
 /*
- * ------------------------------------------------------------------
+ * ------------------------------------------------------------------------
+ *
  *  Copyright by KNIME GmbH, Konstanz, Germany
  *  Website: http://www.knime.org; Email: contact@knime.org
  *
@@ -40,119 +41,84 @@
  *  propagated with or for interoperation with KNIME.  The owner of a Node
  *  may freely choose the license terms applicable to such Node, including
  *  when such Node is propagated with or for interoperation with KNIME.
- * --------------------------------------------------------------------- *
+ * ---------------------------------------------------------------------
  *
- * History
- *   March 10, 2007 (sieb): created
  */
-package org.knime.testing.node.differModelContent;
+package org.knime.testing.streaming.testexecutor;
 
-import java.io.File;
-import java.io.IOException;
+import java.awt.FlowLayout;
 
-import org.knime.core.node.BufferedDataTable;
-import org.knime.core.node.CanceledExecutionException;
-import org.knime.core.node.ExecutionContext;
-import org.knime.core.node.ExecutionMonitor;
+import javax.swing.JLabel;
+import javax.swing.JTextField;
+
 import org.knime.core.node.InvalidSettingsException;
-import org.knime.core.node.NodeModel;
 import org.knime.core.node.NodeSettingsRO;
 import org.knime.core.node.NodeSettingsWO;
-import org.knime.core.node.port.PortObject;
 import org.knime.core.node.port.PortObjectSpec;
-import org.knime.core.node.port.PortType;
-import org.knime.testing.node.differNode.TestEvaluationException;
+import org.knime.core.node.workflow.NodeContainer.NodeContainerSettings.SplitType;
+import org.knime.core.node.workflow.NodeExecutionJobManagerPanel;
 
 /**
- * Checks two models for equality.
+ * Configuration panel for the test streaming executor.
  *
- * @author Christoph Sieb, University of Konstanz
+ * @author Martin Horn, University of Konstanz
  */
-public class DiffModelContentModel extends NodeModel {
+public class StreamingTestJobMgrSettingsPanel extends NodeExecutionJobManagerPanel {
+
+    static final String CFG_NUM_CHUNKS = "numChunks";
+
+    static final int DEFAULT_NUM_CHUNKS = 3;
+
+    private static final long serialVersionUID = 1;
+
+    private JTextField m_numChunks;
 
     /**
-     * Creates a model with two model inports.
+     * Creates a new panel.
+     *
+     * @param nodeSplitType type of splitting permitted by the underlying node
      */
-    public DiffModelContentModel() {
-        super(new PortType[]{PortObject.TYPE, PortObject.TYPE}, new PortType[0]);
+    public StreamingTestJobMgrSettingsPanel(final SplitType nodeSplitType) {
+        m_numChunks =  new JTextField(DEFAULT_NUM_CHUNKS);
+        setLayout(new FlowLayout());
+        add(new JLabel("Number of (virtual) chunks"));
+        add(m_numChunks);
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    protected void saveSettingsTo(final NodeSettingsWO settings) {
-
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    protected void validateSettings(final NodeSettingsRO settings)
-            throws InvalidSettingsException {
-        // do nothing yet
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    protected void loadValidatedSettingsFrom(final NodeSettingsRO settings)
-            throws InvalidSettingsException {
-        // do nothing yet
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    protected PortObject[] execute(final PortObject[] inData,
-            final ExecutionContext exec) throws Exception {
-        if (!inData[0].equals(inData[1])) {
-            throw new TestEvaluationException("The ports are not the same.");
+    public void loadSettings(final NodeSettingsRO settings) {
+        try {
+            m_numChunks.setText("" + settings.getInt(CFG_NUM_CHUNKS));
+        } catch (InvalidSettingsException e) {
+            m_numChunks.setText("" + DEFAULT_NUM_CHUNKS);
         }
-
-        return new BufferedDataTable[]{};
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    protected void reset() {
-        // do nothing yet
+    public void updateInputSpecs(final PortObjectSpec[] inSpecs) {
+        //nothing to do
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    protected PortObjectSpec[] configure(final PortObjectSpec[] inSpecs)
+    public void saveSettings(final NodeSettingsWO settings)
             throws InvalidSettingsException {
-        return new PortObjectSpec[]{};
+        try {
+            int numChunks = Integer.parseInt(m_numChunks.getText());
+            if(numChunks < 1) {
+                throw new InvalidSettingsException("Invalid number of chunks: " + numChunks);
+            }
+            settings.addInt(CFG_NUM_CHUNKS, numChunks);
+        } catch (NumberFormatException e) {
+            throw new InvalidSettingsException(e);
+        }
     }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    protected void loadInternals(final File nodeInternDir,
-            final ExecutionMonitor exec) throws IOException,
-            CanceledExecutionException {
-        // do nothing yet
-
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    protected void saveInternals(final File nodeInternDir,
-            final ExecutionMonitor exec) throws IOException,
-            CanceledExecutionException {
-        // do nothing yet
-
-    }
-
 }

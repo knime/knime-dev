@@ -47,16 +47,19 @@ package org.knime.testing.core.ng;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
-import java.io.UnsupportedEncodingException;
 import java.io.Writer;
+import java.lang.management.MemoryUsage;
 import java.util.Collection;
+import java.util.Formatter;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.regex.Pattern;
 
 import org.apache.tools.ant.taskdefs.optional.junit.JUnitTaskMirror.JUnitTestRunnerMirror;
 import org.apache.tools.ant.taskdefs.optional.junit.JUnitTest;
@@ -78,11 +81,34 @@ import org.knime.core.node.workflow.BatchExecutor;
  * @author Thorsten Meinl, University of Konstanz
  */
 public class UnittestRunnerApplication implements IApplication {
+    private static class NoSysoutFormatter extends XMLJUnitResultFormatter {
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public void setSystemOutput(final String out) {
+            // do nothig
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public void setSystemError(final String out) {
+            // do nothing
+        }
+    }
+
+
     private volatile boolean m_stopped;
 
     private volatile boolean m_leftDispatchLoop = false;
 
     private File m_destDir;
+
+    private boolean m_outputToSeparateFile;
+
+    private Pattern m_includePattern = Pattern.compile(".+");
 
     private void dispatchLoop(final Display display) {
         while (!m_stopped) {
@@ -140,8 +166,7 @@ public class UnittestRunnerApplication implements IApplication {
     }
 
 
-    private void runAllTests(final Collection<Class<?>> allTests, final int maxNameLength) throws FileNotFoundException,
-        UnsupportedEncodingException, IOException {
+    private void runAllTests(final Collection<Class<?>> allTests, final int maxNameLength) throws IOException {
         final PrintStream sysout = System.out; // we save and use the copy because some test may re-assign it
         final PrintStream syserr = System.err;
         // run the tests
@@ -150,65 +175,63 @@ public class UnittestRunnerApplication implements IApplication {
             if (m_stopped) {
                 syserr.println("Tests aborted");
                 break;
+            } else if (!m_includePattern.matcher(testClass.getName()).matches()) {
+                continue;
             }
+
 
             sysout.printf("=> Running %-" + maxNameLength + "s ...", testClass.getName());
             long startTime = System.currentTimeMillis();
             JUnitTest junitTest = new JUnitTest(testClass.getName());
             final JUnitTestRunner runner =
                     new JUnitTestRunner(junitTest, false, false, false, testClass.getClassLoader());
-            XMLJUnitResultFormatter formatter = new XMLJUnitResultFormatter();
-            OutputStream out = new FileOutputStream(new File(m_destDir, testClass.getName() + ".xml"));
-            formatter.setOutput(out);
+
+            XMLJUnitResultFormatter formatter;
+            Writer stdout;
+            if (m_outputToSeparateFile) {
+                formatter = new NoSysoutFormatter();
+                stdout = new FileWriter(new File(m_destDir, testClass.getName() + "-output.txt"));
+            } else {
+                formatter = new XMLJUnitResultFormatter();
+                stdout = new Writer() {
+                    @Override
+                    public void write(final char[] cbuf, final int off, final int len) throws IOException {
+                        runner.handleOutput(new String(cbuf, off, len));
+                    }
+
+                    @Override
+                    public void flush() throws IOException {
+                    }
+
+                    @Override
+                    public void close() throws IOException {
+                    }
+                };
+            }
+            OutputStream xmlOut = new FileOutputStream(new File(m_destDir, "TEST-" + testClass.getName() + ".xml"));
+            formatter.setOutput(xmlOut);
             runner.addFormatter(formatter);
 
-            Writer stdout = new Writer() {
-                @Override
-                public void write(final char[] cbuf, final int off, final int len) throws IOException {
-                    runner.handleOutput(new String(cbuf, off, len));
-                }
-
-                @Override
-                public void flush() throws IOException {
-                }
-
-                @Override
-                public void close() throws IOException {
-                }
-            };
-            Writer stderr = new Writer() {
-
-                @Override
-                public void write(final char[] cbuf, final int off, final int len) throws IOException {
-                    runner.handleErrorOutput(new String(cbuf, off, len));
-                }
-
-                @Override
-                public void flush() throws IOException {
-                }
-
-                @Override
-                public void close() throws IOException {
-                }
-            };
-
             NodeLogger.addWriter(stdout, LEVEL.DEBUG, LEVEL.FATAL);
-            NodeLogger.addWriter(stderr, LEVEL.ERROR, LEVEL.FATAL);
 
+            NodeLogger logger = NodeLogger.getLogger(testClass);
             try {
                 System.setOut(new PrintStream(new WriterOutputStream(stdout), false, "UTF-8"));
-                System.setErr(new PrintStream(new WriterOutputStream(stderr), false, "UTF-8"));
+                System.setErr(new PrintStream(new WriterOutputStream(stdout), false, "UTF-8"));
+                logger.info("================= Starting testcase " + junitTest.getName() + " =================");
+                logMemoryStatus(logger);
                 runner.run();
                 System.out.flush();
                 System.err.flush();
             } finally {
+                logMemoryStatus(logger);
+                logger.info("================= Finished testcase " + junitTest.getName() + " =================");
                 System.setOut(sysout);
                 System.setErr(syserr);
             }
-            NodeLogger.removeWriter(stderr);
             NodeLogger.removeWriter(stdout);
 
-            out.close();
+            xmlOut.close();
 
             long duration = System.currentTimeMillis() - startTime;
             long totalRuntime = System.currentTimeMillis() - globalStartTime;
@@ -228,6 +251,17 @@ public class UnittestRunnerApplication implements IApplication {
             }
         }
     }
+
+    private void logMemoryStatus(final NodeLogger logger) {
+        MemoryUsage usage = WorkflowTest.getHeapUsage();
+
+        Formatter formatter = new Formatter();
+        formatter.format("===== Memory statistics: %1$,.3f MB max, %2$,.3f MB used, %3$,.3f MB free ====",
+            usage.getMax() / 1024.0 / 1024.0, usage.getUsed() / 1024.0 / 1024.0,
+            (usage.getMax() - usage.getUsed()) / 1024.0 / 1024.0);
+        logger.info(formatter.out().toString());
+    }
+
 
     @Override
     public void stop() {
@@ -288,6 +322,17 @@ public class UnittestRunnerApplication implements IApplication {
                 }
                 File prefsFile = new File(stringArgs[i++]);
                 BatchExecutor.setPreferences(prefsFile);
+            } else if (stringArgs[i].equals("-outputToSeparateFile")) {
+                i++;
+                m_outputToSeparateFile = true;
+            } else if (stringArgs[i].equals("-include")) {
+                i++;
+                if ((i >= stringArgs.length) || (stringArgs[i] == null) || (stringArgs[i].length() == 0)) {
+                    System.err.println("Missing <pattern> for option -include.");
+                    printUsage();
+                    return false;
+                }
+                m_includePattern = Pattern.compile(stringArgs[i++]);
             } else {
                 System.err.println("Invalid option: '" + stringArgs[i] + "'\n");
                 return false;
@@ -304,6 +349,10 @@ public class UnittestRunnerApplication implements IApplication {
                 + "written.");
         System.err.println("    -preferences <file_name>: optional, specifies an exported preferences file that should"
                 + " be used to initialize preferences");
+        System.err.println("    -outputToSeparateFile: optional, specifies that system out and system err are written "
+            + "to a separate text file instead of being included in the XML result file (similar to Surefire)");
+        System.err.println("    -include <pattern>: optional, specifies a regular expression that matches all test classes  "
+                + "that should should be included in the test run; default is to include all classes");
     }
 
     private static class WriterOutputStream extends OutputStream {

@@ -1,5 +1,6 @@
 /*
  * ------------------------------------------------------------------------
+ *
  *  Copyright by KNIME GmbH, Konstanz, Germany
  *  Website: http://www.knime.org; Email: contact@knime.org
  *
@@ -43,49 +44,65 @@
  * ---------------------------------------------------------------------
  *
  * History
- *   19.08.2013 (thor): created
+ *   04.02.2016 (thor): created
  */
-package org.knime.testing.core.ng;
+package org.knime.testing.internal.diffcheckers;
 
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.Semaphore;
-import java.util.concurrent.TimeUnit;
-
-import javax.swing.SwingUtilities;
-
-import org.eclipse.core.runtime.IProgressMonitor;
-import org.knime.core.node.AbstractNodeView;
-import org.knime.core.node.Node;
-import org.knime.core.node.NodeModel;
-import org.knime.core.node.workflow.SingleNodeContainer;
-
-import junit.framework.AssertionFailedError;
-import junit.framework.TestResult;
+import org.knime.core.data.xml.XMLValue;
+import org.knime.core.data.xml.util.XmlDomComparer;
+import org.knime.core.data.xml.util.XmlDomComparer.Diff;
+import org.knime.testing.core.AbstractDifferenceChecker;
+import org.knime.testing.core.DifferenceChecker;
+import org.knime.testing.core.DifferenceCheckerFactory;
 
 /**
- * Testcase that closes all open views of the workflow and checks whether any exceptions are thrown meanwhile.
+ * Checker if two XML documents are equal and outputs a detailed message where they differ otherwise.
  *
  * @author Thorsten Meinl, KNIME.com, Zurich, Switzerland
  */
-class WorkflowCloseViewsTest extends WorkflowTest {
-    WorkflowCloseViewsTest(final String workflowName, final IProgressMonitor monitor, final WorkflowTestContext context) {
-        super(workflowName, monitor, context);
+public class XMLChecker extends AbstractDifferenceChecker<XMLValue> {
+    /**
+     * Factory for the {@link XMLChecker}.
+     */
+    public static class Factory implements DifferenceCheckerFactory<XMLValue> {
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public Class<XMLValue> getType() {
+            return XMLValue.class;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public String getDescription() {
+            return DESCRIPTION;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public DifferenceChecker<XMLValue> newChecker() {
+            return new XMLChecker();
+        }
     }
+
+    static final String DESCRIPTION = "XML";
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public void run(final TestResult result) {
-        result.startTest(this);
-
-        try {
-            closeViews(result);
-        } catch (Throwable t) {
-            result.addError(this, t);
-        } finally {
-            result.endTest(this);
+    public Result check(final XMLValue expected, final XMLValue got) {
+        Diff result = XmlDomComparer.compareNodes(expected.getDocument(), got.getDocument());
+        if (result != null) {
+            return new Result(result.toString() + " [expected document: '" + expected.toString() + "', actual '"
+                + got.toString() + "']");
+        } else {
+            return OK;
         }
     }
 
@@ -93,30 +110,7 @@ class WorkflowCloseViewsTest extends WorkflowTest {
      * {@inheritDoc}
      */
     @Override
-    public String getName() {
-        return "close views";
-    }
-
-    private void closeViews(final TestResult result) throws InterruptedException {
-        Semaphore done = new Semaphore(1);
-        done.acquire();
-        SwingUtilities.invokeLater(() -> done.release());
-        done.tryAcquire(2, TimeUnit.SECONDS);
-
-        for (Map.Entry<SingleNodeContainer, List<AbstractNodeView<? extends NodeModel>>> e : m_context.getNodeViews()
-                .entrySet()) {
-            for (AbstractNodeView<? extends NodeModel> view : e.getValue()) {
-                try {
-                    Node.invokeCloseView(view);
-                } catch (Exception ex) {
-                    String msg =
-                            "View '" + view + "' of node '" + e.getKey().getNameWithID() + "' has thrown a "
-                                    + ex.getClass().getSimpleName() + " during close: " + ex.getMessage();
-                    AssertionFailedError error = new AssertionFailedError(msg);
-                    error.initCause(ex);
-                    result.addFailure(this, error);
-                }
-            }
-        }
+    public String getDescription() {
+        return DESCRIPTION;
     }
 }

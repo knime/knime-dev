@@ -58,6 +58,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.knime.core.data.AdapterValue;
 import org.knime.core.data.DataCell;
 import org.knime.core.data.DataColumnDomain;
 import org.knime.core.data.DataColumnSpec;
@@ -65,6 +66,7 @@ import org.knime.core.data.DataRow;
 import org.knime.core.data.DataTableSpec;
 import org.knime.core.data.DataType;
 import org.knime.core.data.DataValue;
+import org.knime.core.data.RWAdapterValue;
 import org.knime.core.data.RowIterator;
 import org.knime.core.data.collection.CollectionDataValue;
 import org.knime.core.node.BufferedDataTable;
@@ -195,7 +197,7 @@ class DifferenceCheckerNodeModel extends NodeModel {
                 if (colSpec.getType().isCollectionType() && !(checker instanceof EqualityChecker)) {
                     compareCollection(colSpec, checker, testCell, refCell);
                 } else {
-                    Result res = checker.check(testCell, refCell);
+                    Result res = checker.check(refCell, testCell);
                     if (!res.ok()) {
                         throw new IllegalStateException("Wrong value in row '" + refRow.getKey() + "' and column '"
                                 + colSpec.getName() + "': " + res.getMessage() + " (using checker '"
@@ -229,7 +231,7 @@ class DifferenceCheckerNodeModel extends NodeModel {
         for (DataCell refCollCell : refCollection) {
             DataCell testCollCell = testCollIt.next();
 
-            Result res = checker.check(testCollCell, refCollCell);
+            Result res = checker.check(refCollCell, testCollCell);
             if (!res.ok()) {
                 throw new IllegalStateException("Wrong value at position " + index + " in collection of column '"
                         + colSpec.getName() + "': " + res.getMessage() + " (using checker '" + checker.getDescription()
@@ -316,8 +318,21 @@ class DifferenceCheckerNodeModel extends NodeModel {
                         + " in test table");
             }
             if (!refColSpec.getType().equals(testColSpec.getType())) {
-                throw new IllegalStateException("Expected type '" + refColSpec.getType() + "' for column "
-                        + refColSpec.getName() + " in test table");
+                List<Class<? extends DataValue>> refValueClasses =
+                    new ArrayList<>(refColSpec.getType().getValueClasses());
+                // ignore AdapterValue in value interfaces
+                refValueClasses.remove(AdapterValue.class);
+                refValueClasses.remove(RWAdapterValue.class);
+
+                List<Class<? extends DataValue>> testValueClasses =
+                    new ArrayList<>(testColSpec.getType().getValueClasses());
+                testValueClasses.remove(AdapterValue.class);
+                testValueClasses.remove(RWAdapterValue.class);
+
+                if (!refValueClasses.equals(testValueClasses)) {
+                    throw new IllegalStateException("Expected type '" + refColSpec.getType() + "' for column "
+                        + refColSpec.getName() + " in test table but is '" + testColSpec.getType() + "'");
+                }
             }
 
             checkDomain(testColSpec, refColSpec);

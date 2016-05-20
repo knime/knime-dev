@@ -1,5 +1,6 @@
 /*
  * ------------------------------------------------------------------------
+ *
  *  Copyright by KNIME GmbH, Konstanz, Germany
  *  Website: http://www.knime.org; Email: contact@knime.org
  *
@@ -43,80 +44,42 @@
  * ---------------------------------------------------------------------
  *
  * History
- *   19.08.2013 (thor): created
+ *   Oct 14, 2015 (hornm): created
  */
-package org.knime.testing.core.ng;
+package org.knime.testing.streaming.testexecutor;
 
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.Semaphore;
-import java.util.concurrent.TimeUnit;
-
-import javax.swing.SwingUtilities;
-
-import org.eclipse.core.runtime.IProgressMonitor;
-import org.knime.core.node.AbstractNodeView;
-import org.knime.core.node.Node;
-import org.knime.core.node.NodeModel;
-import org.knime.core.node.workflow.SingleNodeContainer;
-
-import junit.framework.AssertionFailedError;
-import junit.framework.TestResult;
+import org.knime.core.node.workflow.NodeExecutionJobManager;
+import org.knime.core.node.workflow.NodeExecutionJobManagerFactory;
 
 /**
- * Testcase that closes all open views of the workflow and checks whether any exceptions are thrown meanwhile.
+ * Factory for creating test streaming job managers.
  *
- * @author Thorsten Meinl, KNIME.com, Zurich, Switzerland
+ * @author Martin Horn, University of Konstanz
  */
-class WorkflowCloseViewsTest extends WorkflowTest {
-    WorkflowCloseViewsTest(final String workflowName, final IProgressMonitor monitor, final WorkflowTestContext context) {
-        super(workflowName, monitor, context);
+public class StreamingTestNodeExecutionJobManagerFactory implements NodeExecutionJobManagerFactory {
+    static final String ID = StreamingTestNodeExecutionJobManagerFactory.class.getName();
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String getID() {
+        return ID;
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public void run(final TestResult result) {
-        result.startTest(this);
-
-        try {
-            closeViews(result);
-        } catch (Throwable t) {
-            result.addError(this, t);
-        } finally {
-            result.endTest(this);
-        }
+    public String getLabel() {
+        return "Test for Streaming and Distributed Processing";
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public String getName() {
-        return "close views";
-    }
-
-    private void closeViews(final TestResult result) throws InterruptedException {
-        Semaphore done = new Semaphore(1);
-        done.acquire();
-        SwingUtilities.invokeLater(() -> done.release());
-        done.tryAcquire(2, TimeUnit.SECONDS);
-
-        for (Map.Entry<SingleNodeContainer, List<AbstractNodeView<? extends NodeModel>>> e : m_context.getNodeViews()
-                .entrySet()) {
-            for (AbstractNodeView<? extends NodeModel> view : e.getValue()) {
-                try {
-                    Node.invokeCloseView(view);
-                } catch (Exception ex) {
-                    String msg =
-                            "View '" + view + "' of node '" + e.getKey().getNameWithID() + "' has thrown a "
-                                    + ex.getClass().getSimpleName() + " during close: " + ex.getMessage();
-                    AssertionFailedError error = new AssertionFailedError(msg);
-                    error.initCause(ex);
-                    result.addFailure(this, error);
-                }
-            }
-        }
+    public NodeExecutionJobManager getInstance() {
+       return new StreamingTestNodeExecutionJobManager();
     }
 }

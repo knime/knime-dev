@@ -67,6 +67,7 @@ import org.knime.core.node.ModelContent;
 import org.knime.core.node.ModelContentRO;
 import org.knime.core.node.ModelContentWO;
 import org.knime.core.node.NodeLogger;
+import org.knime.core.node.port.PortTypeRegistry;
 import org.knime.core.node.port.PortObjectSpec;
 import org.knime.core.node.port.PortObjectZipInputStream;
 import org.knime.core.node.port.PortObjectZipOutputStream;
@@ -79,14 +80,9 @@ import org.knime.testing.data.filestore.LargeFileStorePortObject.LargeFileElemen
  */
  public final class LargeFileStorePortObject extends FileStorePortObject implements Iterable<LargeFileElement> {
 
-    public static final PortType TYPE = new PortType(LargeFileStorePortObject.class);
+    public static final PortType TYPE = PortTypeRegistry.getInstance().getPortType(LargeFileStorePortObject.class);
 
-    public static final PortObjectSerializer<LargeFileStorePortObject> getPortObjectSerializer() {
-        return new MyPortObjectSerializer();
-    }
-
-
-    private static final class MyPortObjectSerializer extends PortObjectSerializer<LargeFileStorePortObject> {
+    public static final class Serializer extends PortObjectSerializer<LargeFileStorePortObject> {
         @Override
         public LargeFileStorePortObject loadPortObject(final PortObjectZipInputStream in, final PortObjectSpec spec, final ExecutionMonitor exec)
             throws IOException, CanceledExecutionException {

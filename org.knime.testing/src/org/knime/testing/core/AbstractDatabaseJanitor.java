@@ -62,6 +62,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.knime.core.node.KNIMEConstants;
 import org.knime.core.node.NodeLogger;
 import org.knime.core.node.port.database.DatabaseConnectionSettings;
 import org.knime.core.node.port.database.DatabaseDriverLoader;
@@ -77,7 +78,7 @@ import org.knime.core.node.workflow.FlowVariable;
 public abstract class AbstractDatabaseJanitor extends TestrunJanitor {
     private static final SecureRandom RAND = new SecureRandom();
 
-    private final DateFormat m_dateFormat = new SimpleDateFormat("yyyyMMddHHmmssSSS");
+    private final DateFormat m_dateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
 
     private final String m_driverName;
 
@@ -93,7 +94,10 @@ public abstract class AbstractDatabaseJanitor extends TestrunJanitor {
 
     private String m_dbName;
 
-    private boolean m_databaseCreated;
+    /**
+     * Flag that indicates if the database was actually created and that it should be deleted afterwards.
+     */
+    protected boolean m_databaseCreated;
 
     /**
      * Creates a new database janitor.
@@ -113,7 +117,8 @@ public abstract class AbstractDatabaseJanitor extends TestrunJanitor {
         m_port = port;
         m_username = username;
         m_password = password;
-        m_dbName = "knime_testing_" + m_dateFormat.format(new Date()) + "_" + Long.toHexString(RAND.nextLong());
+        m_dbName = "knime_testing_" + m_dateFormat.format(new Date()) + "_" + Integer.toHexString(RAND.nextInt()) +
+                "_" + KNIMEConstants.VERSION.replace('.', '_').replace("_v\\d+$", "");
     }
 
     /**
@@ -180,6 +185,10 @@ public abstract class AbstractDatabaseJanitor extends TestrunJanitor {
                 Connection conn = it.next();
                 if (conn.getMetaData().getURL().contains(m_dbName)) {
                     if (!conn.isClosed()) {
+                        NodeLogger.getLogger(getClass()).debug("Closing connection " + conn.getMetaData().getURL()
+                            + " for user " + conn.getMetaData().getUserName());
+                        conn.setAutoCommit(false);
+                        conn.rollback();
                         conn.close();
                     }
                     it.remove();
@@ -189,7 +198,9 @@ public abstract class AbstractDatabaseJanitor extends TestrunJanitor {
             dropDatabase(m_initialDatabase, m_username, m_password, m_dbName);
         }
 
-        m_dbName = "knime_testing_" + m_dateFormat.format(new Date()) + "_" + Long.toHexString(RAND.nextLong());
+        m_dbName = "knime_testing_" + m_dateFormat.format(new Date()) + "_" + Long.toHexString(RAND.nextLong()) +
+                "_" + KNIMEConstants.VERSION.replace('.', '_');
+
     }
 
     /**

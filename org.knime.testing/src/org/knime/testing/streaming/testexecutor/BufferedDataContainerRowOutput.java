@@ -1,5 +1,6 @@
 /*
- * ------------------------------------------------------------------
+ * ------------------------------------------------------------------------
+ *
  *  Copyright by KNIME GmbH, Konstanz, Germany
  *  Website: http://www.knime.org; Email: contact@knime.org
  *
@@ -40,119 +41,94 @@
  *  propagated with or for interoperation with KNIME.  The owner of a Node
  *  may freely choose the license terms applicable to such Node, including
  *  when such Node is propagated with or for interoperation with KNIME.
- * --------------------------------------------------------------------- *
+ * ---------------------------------------------------------------------
  *
  * History
- *   March 10, 2007 (sieb): created
+ *   Oct 14, 2015 (hornm): created
  */
-package org.knime.testing.node.differModelContent;
+package org.knime.testing.streaming.testexecutor;
 
-import java.io.File;
-import java.io.IOException;
-
+import org.knime.core.data.DataRow;
+import org.knime.core.node.BufferedDataContainer;
 import org.knime.core.node.BufferedDataTable;
-import org.knime.core.node.CanceledExecutionException;
-import org.knime.core.node.ExecutionContext;
-import org.knime.core.node.ExecutionMonitor;
-import org.knime.core.node.InvalidSettingsException;
-import org.knime.core.node.NodeModel;
-import org.knime.core.node.NodeSettingsRO;
-import org.knime.core.node.NodeSettingsWO;
-import org.knime.core.node.port.PortObject;
-import org.knime.core.node.port.PortObjectSpec;
-import org.knime.core.node.port.PortType;
-import org.knime.testing.node.differNode.TestEvaluationException;
+import org.knime.core.node.streamable.RowOutput;
 
 /**
- * Checks two models for equality.
  *
- * @author Christoph Sieb, University of Konstanz
+ * @author Martin Horn, University of Konstanz
  */
-public class DiffModelContentModel extends NodeModel {
+class BufferedDataContainerRowOutput extends RowOutput {
+
+    private BufferedDataContainer m_dataContainer;
+
+    private BufferedDataTable m_setFullyTable = null;
+
+    private boolean m_closeCalled = false;
 
     /**
-     * Creates a model with two model inports.
+     * Constructor.
+     *
+     * @param dataContainer the data container to be filled
      */
-    public DiffModelContentModel() {
-        super(new PortType[]{PortObject.TYPE, PortObject.TYPE}, new PortType[0]);
+    public BufferedDataContainerRowOutput(final BufferedDataContainer dataContainer) {
+        m_dataContainer = dataContainer;
+    }
+
+    /**
+     * Constructor. In this case the data table can only be set by calling
+     * {@link #setFully(org.knime.core.node.BufferedDataTable)}. If {@link #push(DataRow)} is used an
+     * {@link IllegalStateException} will be thrown.
+     */
+    public BufferedDataContainerRowOutput() {
+        m_dataContainer = null;
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    protected void saveSettingsTo(final NodeSettingsWO settings) {
-
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    protected void validateSettings(final NodeSettingsRO settings)
-            throws InvalidSettingsException {
-        // do nothing yet
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    protected void loadValidatedSettingsFrom(final NodeSettingsRO settings)
-            throws InvalidSettingsException {
-        // do nothing yet
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    protected PortObject[] execute(final PortObject[] inData,
-            final ExecutionContext exec) throws Exception {
-        if (!inData[0].equals(inData[1])) {
-            throw new TestEvaluationException("The ports are not the same.");
+    public void push(final DataRow row) throws InterruptedException {
+        if (m_dataContainer == null) {
+            throw new IllegalStateException(
+                "Table can only be set by the 'setFully'-method. Rows can not be added individually. Possible reason: DataTableSpec==null at configure-time (must be non-null for streamable ports).");
         }
-
-        return new BufferedDataTable[]{};
+        m_dataContainer.addRowToTable(row);
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    protected void reset() {
-        // do nothing yet
+    public void close() throws InterruptedException {
+        m_closeCalled = true;
+    }
+
+    /**
+     * @return whether {@link #close()} has been called at least once
+     */
+    public boolean closeCalled() {
+        return m_closeCalled;
+    }
+
+    BufferedDataTable getDataTable() {
+        if (m_dataContainer != null) {
+            m_dataContainer.close();
+            return m_dataContainer.getTable();
+        } else if (m_setFullyTable != null) {
+            return m_setFullyTable;
+        } else {
+            throw new IllegalStateException("No table set. Use 'setFully'-method to set table first.");
+        }
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    protected PortObjectSpec[] configure(final PortObjectSpec[] inSpecs)
-            throws InvalidSettingsException {
-        return new PortObjectSpec[]{};
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    protected void loadInternals(final File nodeInternDir,
-            final ExecutionMonitor exec) throws IOException,
-            CanceledExecutionException {
-        // do nothing yet
-
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    protected void saveInternals(final File nodeInternDir,
-            final ExecutionMonitor exec) throws IOException,
-            CanceledExecutionException {
-        // do nothing yet
-
+    public void setFully(final BufferedDataTable table) throws InterruptedException {
+        m_dataContainer = null;
+        m_setFullyTable = table;
+        m_closeCalled = true;
     }
 
 }

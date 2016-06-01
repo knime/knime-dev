@@ -49,7 +49,9 @@
 package org.knime.workbench.extension.wizards;
 
 import java.io.IOException;
+import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.FileLocator;
@@ -84,8 +86,11 @@ class TPHelperImpl38 extends TPHelper {
         try {
             ITargetPlatformService tpService = bundleContext.getService(serviceRef);
             // load KNIME TP definition from bundle
-            ITargetHandle knimeTPHandle =
-                tpService.getTarget(FileLocator.toFileURL(myself.getEntry("KNIME.target")).toURI());
+
+            URL url = FileLocator.toFileURL(myself.getEntry("KNIME.target"));
+            URI uri = new URI(url.getProtocol(), url.getUserInfo(), url.getHost(), url.getPort(), url.getPath(),
+                url.getQuery(), url.getRef());
+            ITargetHandle knimeTPHandle = tpService.getTarget(uri);
             ITargetDefinition knimeTP = knimeTPHandle.getTargetDefinition();
 
             ITargetHandle defaultTpHandle = tpService.getWorkspaceTargetHandle();

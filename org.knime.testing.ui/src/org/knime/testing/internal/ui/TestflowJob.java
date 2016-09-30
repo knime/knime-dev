@@ -75,6 +75,7 @@ import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.ide.FileStoreEditorInput;
+import org.knime.core.api.node.workflow.IWorkflowManager;
 import org.knime.core.node.workflow.WorkflowManager;
 import org.knime.core.node.workflow.WorkflowPersistor;
 import org.knime.core.util.FileUtil;
@@ -184,7 +185,7 @@ class TestflowJob extends Job {
         LocalExplorerFileStore workflowFile = fs.getChild(WorkflowPersistor.WORKFLOW_FILE);
         IEditorInput editorInput = new FileStoreEditorInput(workflowFile);
         IEditorPart editor = m_activeWindow.getActivePage().findEditor(editorInput);
-        WorkflowManager wfm = null;
+        IWorkflowManager wfm = null;
         if (editor == null) {
             for (IEditorReference editorRef : m_activeWindow.getActivePage().getEditorReferences()) {
                 IEditorInput input = editorRef.getEditorInput();

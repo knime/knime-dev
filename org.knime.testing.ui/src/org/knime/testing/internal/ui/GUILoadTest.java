@@ -50,9 +50,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicReference;
 
-import junit.framework.AssertionFailedError;
-import junit.framework.TestResult;
-
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.IEditorDescriptor;
@@ -74,9 +71,13 @@ import org.knime.core.node.workflow.WorkflowPersistor.LoadResultEntry.LoadResult
 import org.knime.core.node.workflow.WorkflowPersistor.WorkflowLoadResult;
 import org.knime.core.util.LockFailedException;
 import org.knime.testing.core.TestrunConfiguration;
+import org.knime.testing.core.ng.WorkflowLoadTest;
 import org.knime.testing.core.ng.WorkflowTest;
 import org.knime.testing.core.ng.WorkflowTestContext;
 import org.knime.workbench.editor2.WorkflowManagerInput;
+
+import junit.framework.AssertionFailedError;
+import junit.framework.TestResult;
 
 /**
  * Load test that runs in the GUI. It uses a workflow editor.
@@ -117,6 +118,7 @@ class GUILoadTest extends WorkflowTest {
         try {
             m_context.setWorkflowManager(loadWorkflow(this, result, m_workflowDir, m_testcaseRoot, m_runConfiguration,
                 (GUITestContext)m_context));
+            WorkflowLoadTest.checkLoadVersion(this, result);
         } catch (Throwable t) {
             result.addError(this, t);
         } finally {

@@ -65,6 +65,7 @@ import java.util.regex.Pattern;
 import org.knime.core.node.InvalidSettingsException;
 import org.knime.core.node.NodeLogger;
 import org.knime.core.node.NodeSettings;
+import org.knime.core.node.workflow.FileWorkflowPersistor.LoadVersion;
 import org.knime.core.node.workflow.NativeNodeContainer;
 import org.knime.core.node.workflow.NodeContainer;
 import org.knime.core.node.workflow.NodeContext;
@@ -109,6 +110,8 @@ class TestflowConfiguration {
     private final Map<NodeID, Pattern> m_nodeErrorMessages = new HashMap<NodeID, Pattern>();
 
     private final Collection<Pattern> m_requiredDebugs = new ArrayList<Pattern>();
+
+    private LoadVersion m_requiredLoadVersion = LoadVersion.FUTURE;
 
     private int m_maxHiliteRows = DEFAULT_MAX_HILITE_ROWS;
 
@@ -208,6 +211,7 @@ class TestflowConfiguration {
             }
         }
 
+        m_requiredLoadVersion = settings.requiredLoadVersion();
         m_timeout = settings.timeout();
         m_maxHiliteRows = settings.maxHiliteRows();
         m_streamingTest = settings.streamingTest();
@@ -533,6 +537,18 @@ class TestflowConfiguration {
     public boolean runStreamingTest() {
         return m_streamingTest;
     }
+
+    /**
+     * Returns the version in which this test workflow is required to stay in to be functional. If no specific version
+     * is required, {@link LoadVersion#FUTURE} will be returned. This is useful for testing backwards compatibility
+     * with older node settings, for example.
+     *
+     * @return version a version, never <code>null</code>
+     */
+    public LoadVersion requiredLoadVersion() {
+        return m_requiredLoadVersion;
+    }
+
 
     private static Pattern createPatternFromMessage(String message) {
         int index = message.indexOf(REGEX_PATTERN);

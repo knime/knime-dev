@@ -147,7 +147,9 @@ public abstract class AbstractXMLResultWriter implements TestListener {
      */
     @Override
     public void startTest(final Test test) {
-        m_startTimes.put(test, System.currentTimeMillis());
+        long ts = System.currentTimeMillis();
+        m_startTimes.put(test, ts);
+        m_endTimes.put(test, ts);
     }
 
     /**
@@ -239,7 +241,11 @@ public abstract class AbstractXMLResultWriter implements TestListener {
         Element tc = doc.createElement("testcase");
         tc.setAttribute("name", test.getName());
         tc.setAttribute("classname", test.getSuiteName());
-        tc.setAttribute("time", Double.toString((m_endTimes.get(test) - m_startTimes.get(test)) / 1000.0));
+        if ((m_endTimes.get(test) != null) && (m_startTimes.get(test) != null)) {
+            tc.setAttribute("time", Double.toString((m_endTimes.get(test) - m_startTimes.get(test)) / 1000.0));
+        } else {
+            tc.setAttribute("time", "-1");
+        }
         return tc;
     }
 

@@ -53,8 +53,13 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Future;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.knime.core.data.DataTableSpec;
@@ -66,6 +71,7 @@ import org.knime.core.node.CanceledExecutionException;
 import org.knime.core.node.ExecutionContext;
 import org.knime.core.node.Node;
 import org.knime.core.node.NodeLogger;
+import org.knime.core.node.NodeModel;
 import org.knime.core.node.port.PortObject;
 import org.knime.core.node.port.PortObjectSpec;
 import org.knime.core.node.port.flowvariable.FlowVariablePortObject;
@@ -114,7 +120,7 @@ public class StreamingTestNodeExecutionJob extends NodeExecutionJob {
 
     private Future<?> m_future;
 
-    private String m_warningMessage = null;
+    private final List<String> m_warningMessages = new ArrayList<String>(3);
 
     /**
      * @param nc
@@ -170,7 +176,9 @@ public class StreamingTestNodeExecutionJob extends NodeExecutionJob {
         ExecutionContext localExec = localNodeContainer.createExecutionContext();
 
         localNodeContainer.getNodeModel().addWarningListener(w -> {
-            m_warningMessage = w;
+            if (w != null) {
+                m_warningMessages.add(w);
+            }
         });
 
         /* --- configure nodes --- */
@@ -278,6 +286,14 @@ public class StreamingTestNodeExecutionJob extends NodeExecutionJob {
 
         /* --- intermediate runs --- */
 
+        //sanity check: if NodeModel#createInitialStreamableOperatorInternals" is overridden, the "NodeModel#iterate" should be overridden, too.
+        //Otherwise it doesn't make sense.
+        if (checkForOverriddenMethod(localNodeContainer, "createInitialStreamableOperatorInternals")
+            && !checkForOverriddenMethod(localNodeContainer, "iterate", StreamableOperatorInternals.class)) {
+            m_warningMessages.add(
+                "Implementation warning: Overriding the 'createInitialStreamableOperatorInternals'-method without overriding the 'iterate'-method doesn't make sense.");
+        }
+
         // create initial streamable operator internals for the first call of the iterate-method
         LOGGER.info("call local: NodeModel#createInitialStreamableOperatorInternals");
         StreamableOperatorInternals operatorInternals =
@@ -342,9 +358,17 @@ public class StreamingTestNodeExecutionJob extends NodeExecutionJob {
                 ExecutionContext exec = remoteNodeContainers[i].createExecutionContext();
                 remoteNodeContainers[i].getNode().openFileStoreHandler(exec);
                 try {
-                streamableOperator.runFinal(portInputs[i], portOutputs, exec);
-                }catch(ClassCastException e) {
-                    throw new ClassCastException(e.getMessage() + ". Likely reason: port-role is not set as streamable -> overwrite get[Input|Ouptut]PortRoles()-methods in NodeModel.");
+                    PortOutput[] tmpPortOutputs = portOutputs.clone();
+                    streamableOperator.runFinal(portInputs[i], portOutputs, exec);
+                    //make sure that the portOutputs-object hasn't been manipulated directly (only it's containing objects)
+                    if(IntStream.range(0, portOutputs.length).anyMatch(j -> {
+                        return tmpPortOutputs[j] != portOutputs[j];
+                    })) {
+                        throw new IllegalStateException("Output array must not be manipulated.");
+                    }
+                } catch (ClassCastException e) {
+                    throw new ClassCastException(e.getMessage()
+                        + ". Likely reason: port-role is not set as streamable -> overwrite get[Input|Ouptut]PortRoles()-methods in NodeModel.");
                 }
                 checkClosedPortOutputs(portOutputs);
                 if (localMergeOperator != null) {
@@ -375,12 +399,30 @@ public class StreamingTestNodeExecutionJob extends NodeExecutionJob {
                     // to set warning messages etc.
                     nonDistrPortOutputs = new PortOutput[outputPortRoles.length];
                 }
-                localNodeContainer.getNodeModel().finishStreamableExecution(operatorInternals, localExec, nonDistrPortOutputs);
+
+                PortOutput[] tmpPortOutputs = nonDistrPortOutputs.clone();
+                localNodeContainer.getNodeModel().finishStreamableExecution(operatorInternals, localExec,
+                    nonDistrPortOutputs);
+                //make sure that the pArrays.equals(a, a2)ortOutputs-object hasn't been manipulated directly, only it's containing objects
+                if (IntStream.range(0, portOutputs.length).anyMatch(j -> {
+                    return tmpPortOutputs[j] != nonDistrPortOutputs[j];
+                })) {
+                    throw new IllegalStateException("Output array must not be manipulated.");
+                }
                 //merge the portOutputs and the nonDistrPortOutputs
                 for (int i = 0; i < nonDistrPortOutputs.length; i++) {
                     if(nonDistrPortOutputs[i]!=null) {
                         portOutputs[i] = nonDistrPortOutputs[i];
                     }
+                }
+            } else {
+                //make sure that if the NodeModel#finishStreamableExecution-method is implemented, the NodeModel#createMergeOperator is implemented as well
+                //check whether the current node model overrides the #finishStreamableExecution-method
+                if (checkForOverriddenMethod(localNodeContainer, "finishStreamableExecution",
+                    StreamableOperatorInternals.class, ExecutionContext.class, PortOutput[].class)) {
+                    //method has been overridden -> createMergeOperator-method actually needs to be implemented as well!
+                    throw new IllegalStateException(
+                        "The 'NodeModel#finishStreamExecution'-method is overridden but no merge operator provided. Please override the 'NodeModel#createMergeOperator'-method as well.");
                 }
             }
 
@@ -395,7 +437,7 @@ public class StreamingTestNodeExecutionJob extends NodeExecutionJob {
                     outPortObjects[i] = table;
                     //check if table is empty and set appropriate warning message
                     if (table.size() == 0) {
-                        m_warningMessage = "Node created an empty data table.";
+                        m_warningMessages.add("Node created an empty data table.");
                     }
                 } else {
                     outPortObjects[i] = ((PortObjectOutput)portOutputs[i - 1]).getPortObject();
@@ -423,8 +465,9 @@ public class StreamingTestNodeExecutionJob extends NodeExecutionJob {
             //            if (Arrays.stream(outPortObjects).noneMatch(p -> p == null)) {
             localNodeContainer.loadExecutionResult(execResult, localExec, loadResult);
             //            }
-            if (m_warningMessage != null) {
-                NodeMessage nm = new NodeMessage(Type.WARNING, m_warningMessage);
+            if (!m_warningMessages.isEmpty()) {
+                String joinedMessages = m_warningMessages.stream().collect(Collectors.joining("\n"));
+                NodeMessage nm = new NodeMessage(Type.WARNING, joinedMessages);
                 localNodeContainer.setNodeMessage(nm);
                 execResult.setMessage(nm);
             }
@@ -444,7 +487,7 @@ public class StreamingTestNodeExecutionJob extends NodeExecutionJob {
                 localNodeContainer.setNodeMessage(NodeMessage.newWarning("Execution canceled"));
                 return NodeContainerExecutionStatus.FAILURE;
             }
-            localNodeContainer.getNode().createErrorMessageAndNotify("Execute failed: ".concat(e.getMessage()), e);
+            localNodeContainer.getNode().createErrorMessageAndNotify("Execute failed: " + e.getMessage(), e);
             return NodeContainerExecutionStatus.FAILURE;
         } finally {
             /* --- remove virtual nodes from workflow --- */
@@ -498,6 +541,11 @@ public class StreamingTestNodeExecutionJob extends NodeExecutionJob {
         final int numChunks, final ExecutionContext exec) {
         PortInput[][] portInputs = new PortInput[numChunks][inputPortRoles.length];
         for (int i = 0; i < inputPortRoles.length; i++) {
+            if (inPortObjects[i + 1] == null) {
+                //usually happens in case of unconnected optional inports
+                //nothing to do here
+                continue;
+            }
             // if distributed: create chunks of the input table(s)
             if (numChunks > 1) {
                 if (inputPortRoles[i].isDistributable()) {
@@ -506,12 +554,25 @@ public class StreamingTestNodeExecutionJob extends NodeExecutionJob {
                     BufferedDataTable[] tables =
                         createTableChunks((BufferedDataTable)inPortObjects[i + 1], numChunks, exec);
                     for (int j = 0; j < tables.length; j++) {
-                        portInputs[j][i] = new DataTableRowInput(tables[j]);
+                        if (inputPortRoles[i].isStreamable()) {
+                            portInputs[j][i] = new DataTableRowInput(tables[j]);
+                        } else {
+                            portInputs[j][i] = new PortObjectInput(tables[j]);
+                        }
                     }
                 } else {
                     // TODO: copy port object for each chunk to be executed
                     for (int j = 0; j < numChunks; j++) {
-                        portInputs[j][i] = new PortObjectInput(inPortObjects[i + 1]);
+                        if (inputPortRoles[i].isStreamable()) {
+                            BufferedDataTable table = (BufferedDataTable)inPortObjects[i + 1];
+                            try {
+                                portInputs[j][i] = new DataTableRowInput(exec.createBufferedDataTable(table, exec));
+                            } catch (CanceledExecutionException e) {
+                                throw new RuntimeException(e);
+                            }
+                        } else {
+                            portInputs[j][i] = new PortObjectInput(inPortObjects[i + 1]);
+                        }
                     }
                 }
             } else {
@@ -679,6 +740,26 @@ public class StreamingTestNodeExecutionJob extends NodeExecutionJob {
         StreamableOperatorInternals res = internals.getClass().newInstance();
         res.load(in);
         return res;
+    }
+
+    /**
+     * Helper method that checks whether the given method is overridden by the given NodeModel-implementation.
+     *
+     * @param the node container to be checked
+     * @param name the name of the method
+     * @param parameterTypes the list of parameters
+     * @return <code>true</code> if overridden
+     * @throws SecurityException
+     * @throws NoSuchMethodException
+     */
+    private boolean checkForOverriddenMethod(final NativeNodeContainer nc, final String name,
+        final Class<?>... parameterTypes) {
+        try {
+            Method m = nc.getNodeModel().getClass().getMethod(name, parameterTypes);
+            return m.getDeclaringClass() != NodeModel.class;
+        } catch (NoSuchMethodException | SecurityException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**

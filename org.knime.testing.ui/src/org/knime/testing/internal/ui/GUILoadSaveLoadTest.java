@@ -48,17 +48,18 @@ package org.knime.testing.internal.ui;
 
 import java.io.File;
 
-import junit.framework.TestResult;
-
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.swt.widgets.Display;
 import org.knime.core.node.NodeLogger;
 import org.knime.core.node.workflow.WorkflowManager;
 import org.knime.testing.core.TestrunConfiguration;
+import org.knime.testing.core.ng.WorkflowLoadTest;
 import org.knime.testing.core.ng.WorkflowTest;
 import org.knime.testing.core.ng.WorkflowTestContext;
 import org.knime.workbench.editor2.WorkflowEditor;
+
+import junit.framework.TestResult;
 
 /**
  * Load-save-load test that runs in the GUI. It uses a workflow editor.
@@ -103,6 +104,8 @@ class GUILoadSaveLoadTest extends WorkflowTest {
             WorkflowManager manager =
                 GUILoadTest.loadWorkflow(this, result, m_workflowDir, m_testcaseRoot, m_runConfiguration,
                     (GUITestContext)m_context);
+            m_context.setWorkflowManager(manager);
+            WorkflowLoadTest.checkLoadVersion(this, result);
 
             LOGGER.info("Saving workflow '" + m_workflowName + "'");
             final WorkflowEditor editor = ((WorkflowEditor)((GUITestContext)m_context).getEditorPart());

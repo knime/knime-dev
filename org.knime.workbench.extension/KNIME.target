@@ -15,7 +15,6 @@
 -Dosgi.classloader.lock=classname
 -XX:+UnlockDiagnosticVMOptions
 -XX:+UnsyncloadClass 
--Dknime.enable.fastload=true
 -ea
 -Dorg.eclipse.swt.internal.gtk.cairoGraphics=false
 -Dorg.eclipse.swt.internal.gtk.useCairo=false

@@ -207,9 +207,6 @@ class TestflowJob extends Job {
                 }
             });
         }
-        if (wfm != null) {
-            WorkflowManager.ROOT.removeProject(wfm.getID());
-        }
         return ret.get();
     }
 }

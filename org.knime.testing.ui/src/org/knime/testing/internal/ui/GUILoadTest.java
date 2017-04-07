@@ -75,6 +75,7 @@ import org.knime.testing.core.ng.WorkflowLoadTest;
 import org.knime.testing.core.ng.WorkflowTest;
 import org.knime.testing.core.ng.WorkflowTestContext;
 import org.knime.workbench.editor2.WorkflowManagerInput;
+import org.knime.workbench.ui.navigator.ProjectWorkflowMap;
 
 import junit.framework.AssertionFailedError;
 import junit.framework.TestResult;
@@ -172,6 +173,7 @@ class GUILoadTest extends WorkflowTest {
                     IWorkbenchWindow activeWindow = PlatformUI.getWorkbench().getActiveWorkbenchWindow();
                     IEditorPart editor = activeWindow.getActivePage().openEditor(editorInput, editorDescriptor.getId());
                     context.setEditorPart(editor);
+                    ProjectWorkflowMap.putWorkflow(workflowDir.toURI(), manager);
                 } catch (PartInitException ex) {
                     exRef.set(ex);
                 }

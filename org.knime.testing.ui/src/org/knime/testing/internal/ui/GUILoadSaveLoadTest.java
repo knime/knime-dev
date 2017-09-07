@@ -46,13 +46,15 @@
  */
 package org.knime.testing.internal.ui;
 
+import static org.knime.core.ui.wrapper.Wrapper.unwrapWFM;
+
 import java.io.File;
 
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.swt.widgets.Display;
 import org.knime.core.node.NodeLogger;
-import org.knime.core.node.workflow.WorkflowManager;
+import org.knime.core.ui.node.workflow.UIWorkflowManager;
 import org.knime.testing.core.TestrunConfiguration;
 import org.knime.testing.core.ng.WorkflowLoadTest;
 import org.knime.testing.core.ng.WorkflowTest;
@@ -101,10 +103,10 @@ class GUILoadSaveLoadTest extends WorkflowTest {
         result.startTest(this);
         try {
             LOGGER.info("Loading workflow '" + m_workflowName + "'");
-            WorkflowManager manager =
+            UIWorkflowManager manager =
                 GUILoadTest.loadWorkflow(this, result, m_workflowDir, m_testcaseRoot, m_runConfiguration,
                     (GUITestContext)m_context);
-            m_context.setWorkflowManager(manager);
+            m_context.setWorkflowManager(unwrapWFM(manager));
             WorkflowLoadTest.checkLoadVersion(this, result);
 
             LOGGER.info("Saving workflow '" + m_workflowName + "'");
@@ -122,7 +124,7 @@ class GUILoadSaveLoadTest extends WorkflowTest {
                 GUILoadTest.loadWorkflow(this, result, m_workflowDir, m_testcaseRoot, m_runConfiguration,
                     (GUITestContext)m_context);
 
-            m_context.setWorkflowManager(manager);
+            m_context.setWorkflowManager(unwrapWFM(manager));
         } catch (Throwable t) {
             result.addError(this, t);
         } finally {

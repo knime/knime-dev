@@ -69,6 +69,9 @@ import org.knime.core.node.workflow.WorkflowManager;
 import org.knime.core.node.workflow.WorkflowPersistor;
 import org.knime.core.node.workflow.WorkflowPersistor.LoadResultEntry.LoadResultEntryType;
 import org.knime.core.node.workflow.WorkflowPersistor.WorkflowLoadResult;
+import org.knime.core.ui.node.workflow.WorkflowManagerUI;
+import org.knime.core.ui.wrapper.WorkflowManagerWrapper;
+import org.knime.core.ui.wrapper.Wrapper;
 import org.knime.core.util.LockFailedException;
 import org.knime.testing.core.TestrunConfiguration;
 import org.knime.testing.core.ng.WorkflowLoadTest;
@@ -117,8 +120,8 @@ class GUILoadTest extends WorkflowTest {
     public void run(final TestResult result) {
         result.startTest(this);
         try {
-            m_context.setWorkflowManager(loadWorkflow(this, result, m_workflowDir, m_testcaseRoot, m_runConfiguration,
-                (GUITestContext)m_context));
+            m_context.setWorkflowManager(Wrapper.unwrapWFM(loadWorkflow(this, result, m_workflowDir, m_testcaseRoot, m_runConfiguration,
+                (GUITestContext)m_context)));
             WorkflowLoadTest.checkLoadVersion(this, result);
         } catch (Throwable t) {
             result.addError(this, t);
@@ -135,7 +138,7 @@ class GUILoadTest extends WorkflowTest {
         return "load workflow";
     }
 
-    static WorkflowManager loadWorkflow(final WorkflowTest test, final TestResult result, final File workflowDir,
+    static WorkflowManagerUI loadWorkflow(final WorkflowTest test, final TestResult result, final File workflowDir,
         final File testcaseRoot, final TestrunConfiguration runConfig, final GUITestContext context)
         throws IOException, InvalidSettingsException, CanceledExecutionException, UnsupportedWorkflowVersionException,
         LockFailedException, PartInitException {
@@ -161,7 +164,7 @@ class GUILoadTest extends WorkflowTest {
                 .addFailure(test, new AssertionFailedError(loadRes.getFilteredError("", LoadResultEntryType.Warning)));
         }
 
-        WorkflowManager manager = loadRes.getWorkflowManager();
+        WorkflowManagerUI manager = WorkflowManagerWrapper.wrap(loadRes.getWorkflowManager());
 
         final IEditorInput editorInput = new WorkflowManagerInput(manager, workflowDir.toURI());
         final IEditorDescriptor editorDescriptor = IDE.getEditorDescriptor(WorkflowPersistor.WORKFLOW_FILE);
@@ -173,7 +176,7 @@ class GUILoadTest extends WorkflowTest {
                     IWorkbenchWindow activeWindow = PlatformUI.getWorkbench().getActiveWorkbenchWindow();
                     IEditorPart editor = activeWindow.getActivePage().openEditor(editorInput, editorDescriptor.getId());
                     context.setEditorPart(editor);
-                    ProjectWorkflowMap.putWorkflow(workflowDir.toURI(), manager);
+                    ProjectWorkflowMap.putWorkflowUI(workflowDir.toURI(), manager);
                 } catch (PartInitException ex) {
                     exRef.set(ex);
                 }

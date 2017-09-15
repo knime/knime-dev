@@ -54,7 +54,7 @@ import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.swt.widgets.Display;
 import org.knime.core.node.NodeLogger;
-import org.knime.core.ui.node.workflow.UIWorkflowManager;
+import org.knime.core.ui.node.workflow.WorkflowManagerUI;
 import org.knime.testing.core.TestrunConfiguration;
 import org.knime.testing.core.ng.WorkflowLoadTest;
 import org.knime.testing.core.ng.WorkflowTest;
@@ -103,7 +103,7 @@ class GUILoadSaveLoadTest extends WorkflowTest {
         result.startTest(this);
         try {
             LOGGER.info("Loading workflow '" + m_workflowName + "'");
-            UIWorkflowManager manager =
+            WorkflowManagerUI manager =
                 GUILoadTest.loadWorkflow(this, result, m_workflowDir, m_testcaseRoot, m_runConfiguration,
                     (GUITestContext)m_context);
             m_context.setWorkflowManager(unwrapWFM(manager));

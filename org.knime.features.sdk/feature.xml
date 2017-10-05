@@ -6,7 +6,7 @@
       provider-name="KNIME GmbH, Konstanz, Germany"
       plugin="org.knime.workbench.extension">
 
-   <description url="http://www.knime.org/">
+   <description url="http://www.knime.com/">
       This feature contains additional developer resources for KNIME.
    </description>
 

@@ -6,7 +6,7 @@
       provider-name="KNIME GmbH, Konstanz, Germany"
       plugin="org.knime.workbench.extension">
 
-   <description url="http://www.knime.org/">
+   <description url="http://www.knime.com/">
       This feature contains the Node wizard for KNIME that helps you
 creating new nodes. Note: This feature requires the eclipse Java
 development plugins! The standalone product of KNIME does not

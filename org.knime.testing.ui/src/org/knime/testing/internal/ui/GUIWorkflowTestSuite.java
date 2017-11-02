@@ -1,6 +1,6 @@
 /*
  * ------------------------------------------------------------------------
- *  Copyright by KNIME GmbH, Konstanz, Germany
+ *  Copyright by KNIME AG, Zurich, Switzerland
  *  Website: http://www.knime.com; Email: contact@knime.com
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -57,7 +57,7 @@ import org.knime.testing.core.ng.WorkflowTestSuite;
 /**
  * Extended workflow test suite that runs in the KNIME GUI.
  *
- * @author Thorsten Meinl, KNIME.com, Zurich, Switzerland
+ * @author Thorsten Meinl, KNIME AG, Zurich, Switzerland
  */
 class GUIWorkflowTestSuite extends WorkflowTestSuite {
     GUIWorkflowTestSuite(final File workflowDir, final File testcaseRoot, final TestrunConfiguration runConfig,

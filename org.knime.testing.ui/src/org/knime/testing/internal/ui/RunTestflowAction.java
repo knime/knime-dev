@@ -1,6 +1,6 @@
 /*
  * ------------------------------------------------------------------------
- *  Copyright by KNIME GmbH, Konstanz, Germany
+ *  Copyright by KNIME AG, Zurich, Switzerland
  *  Website: http://www.knime.com; Email: contact@knime.com
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -73,7 +73,7 @@ import org.knime.workbench.explorer.view.ContentObject;
  * Action that runs the selected workflow as workflow test case. It is only enabled for local workflows (i.e. from the
  * local space or a KNIME TeamSpace mount).
  *
- * @author Thorsten Meinl, KNIME.com, Zurich, Switzerland
+ * @author Thorsten Meinl, KNIME AG, Zurich, Switzerland
  */
 public class RunTestflowAction implements IObjectActionDelegate {
     private final List<LocalExplorerFileStore> m_filestores = new ArrayList<LocalExplorerFileStore>();

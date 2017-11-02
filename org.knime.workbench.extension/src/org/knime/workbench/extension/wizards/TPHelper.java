@@ -1,7 +1,7 @@
 /*
  * ------------------------------------------------------------------------
  *
- *  Copyright by KNIME GmbH, Konstanz, Germany
+ *  Copyright by KNIME AG, Zurich, Switzerland
  *  Website: http://www.knime.com; Email: contact@knime.com
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -61,7 +61,7 @@ import org.osgi.framework.Version;
  * we need to distinguish between 3.7 and 3.8 and upwards. The {@link #getInstance()} method creates the right
  * implementation depending on the PDE version.
  *
- * @author Thorsten Meinl, KNIME.com, Zurich, Switzerland
+ * @author Thorsten Meinl, KNIME AG, Zurich, Switzerland
  */
 abstract class TPHelper {
     private static final Version PDE_CHANGE_VERSION = new Version(3, 8, 0);

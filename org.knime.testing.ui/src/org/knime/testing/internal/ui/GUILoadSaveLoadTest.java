@@ -1,6 +1,6 @@
 /*
  * ------------------------------------------------------------------------
- *  Copyright by KNIME GmbH, Konstanz, Germany
+ *  Copyright by KNIME AG, Zurich, Switzerland
  *  Website: http://www.knime.com; Email: contact@knime.com
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -66,7 +66,7 @@ import junit.framework.TestResult;
 /**
  * Load-save-load test that runs in the GUI. It uses a workflow editor.
  *
- * @author Thorsten Meinl, KNIME.com, Zurich, Switzerland
+ * @author Thorsten Meinl, KNIME AG, Zurich, Switzerland
  */
 class GUILoadSaveLoadTest extends WorkflowTest {
     private final static NodeLogger LOGGER = NodeLogger.getLogger(GUILoadSaveLoadTest.class);

@@ -62,6 +62,7 @@ import org.eclipse.ui.ide.IDE;
 import org.knime.core.node.CanceledExecutionException;
 import org.knime.core.node.ExecutionMonitor;
 import org.knime.core.node.InvalidSettingsException;
+import org.knime.core.node.workflow.FileWorkflowPersistor.LoadVersion;
 import org.knime.core.node.workflow.UnsupportedWorkflowVersionException;
 import org.knime.core.node.workflow.WorkflowContext;
 import org.knime.core.node.workflow.WorkflowLoadHelper;
@@ -73,6 +74,7 @@ import org.knime.core.ui.node.workflow.WorkflowManagerUI;
 import org.knime.core.ui.wrapper.WorkflowManagerWrapper;
 import org.knime.core.ui.wrapper.Wrapper;
 import org.knime.core.util.LockFailedException;
+import org.knime.core.util.Version;
 import org.knime.testing.core.TestrunConfiguration;
 import org.knime.testing.core.ng.WorkflowLoadTest;
 import org.knime.testing.core.ng.WorkflowTest;
@@ -151,6 +153,15 @@ class GUILoadTest extends WorkflowTest {
                 WorkflowContext.Factory fac = new WorkflowContext.Factory(workflowDir);
                 fac.setMountpointRoot(testcaseRoot);
                 return fac.createContext();
+            }
+
+            /**
+             * {@inheritDoc}
+             */
+            @Override
+            public UnknownKNIMEVersionLoadPolicy getUnknownKNIMEVersionLoadPolicy(final LoadVersion workflowKNIMEVersion,
+                final Version createdByKNIMEVersion, final boolean isNightlyBuild) {
+                return UnknownKNIMEVersionLoadPolicy.Try;
             }
         };
 

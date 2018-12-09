@@ -196,6 +196,15 @@
       <DifferenceCheckerFactory
             class="org.knime.testing.internal.diffcheckers.XMLChecker$Factory">
       </DifferenceCheckerFactory>
+      <DifferenceCheckerFactory
+            class="org.knime.testing.internal.diffcheckers.LocalTimeChecker$Factory">
+      </DifferenceCheckerFactory>
+      <DifferenceCheckerFactory
+            class="org.knime.testing.internal.diffcheckers.LocalDateTimeChecker$Factory">
+      </DifferenceCheckerFactory>
+      <DifferenceCheckerFactory
+            class="org.knime.testing.internal.diffcheckers.ZonedDateTimeChecker$Factory">
+      </DifferenceCheckerFactory>
    </extension>
    <extension
          id="NGTestflowRunner"

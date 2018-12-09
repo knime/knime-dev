@@ -67,12 +67,10 @@ import org.knime.core.node.defaultnodesettings.SettingsModelBoolean;
  * @since 2.9
  */
 public abstract class AbstractDifferenceChecker<T extends DataValue> implements DifferenceChecker<T> {
-    private final SettingsModelBoolean m_ignoreColumnProperties = new SettingsModelBoolean("ignoreColumnProperties",
-        false);
-    private final SettingsModelBoolean m_ignoreColumnElementNames = new SettingsModelBoolean("ignoreColumnElementNames",
-        false);
 
-    private final SettingsModelBoolean m_ignoreDomain = new SettingsModelBoolean("ignoreDomain", false);
+    private final SettingsModelBoolean m_ignoreColumnProperties = createColumnPropertiesModel();
+    private final SettingsModelBoolean m_ignoreColumnElementNames = createColumnElementNameModels();
+    private final SettingsModelBoolean m_ignoreDomain = createIgnoreDomainModel();
 
     private DialogComponentBoolean m_ignorePropertiesComponent;
     private DialogComponentBoolean m_ignoreDomainComponent;
@@ -193,5 +191,25 @@ public abstract class AbstractDifferenceChecker<T extends DataValue> implements 
     @Override
     public boolean ignoreDomain() {
         return m_ignoreDomain.getBooleanValue();
+    }
+    /**
+     * @return the {@link SettingsModelBoolean} for the ignore column properties component
+     */
+    protected SettingsModelBoolean createColumnPropertiesModel() {
+        return new SettingsModelBoolean("ignoreColumnProperties", false);
+    }
+
+    /**
+     * @return the {@link SettingsModelBoolean} for the ignore column elements component
+     */
+    protected SettingsModelBoolean createColumnElementNameModels() {
+        return new SettingsModelBoolean("ignoreColumnElementNames", false);
+    }
+
+    /**
+     * @return the {@link SettingsModelBoolean} for the ignore domain component
+     */
+    protected SettingsModelBoolean createIgnoreDomainModel() {
+        return new SettingsModelBoolean("ignoreDomain", false);
     }
 }

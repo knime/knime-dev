@@ -2,9 +2,13 @@ package __BASE_PACKAGE__;
 
 import org.knime.core.node.NodeView;
 
+
 /**
- * <code>NodeView</code> for the "__NODE_NAME__" Node.
- * __DESCRIPTION__
+ * This is an example implementation of the node view of the
+ * "__NODE_NAME__" node.
+ * 
+ * As this example node does not have a view, this is just an empty stub of the 
+ * NodeView class which not providing a real view pane.
  *
  * @author __VENDOR_NAME__
  */

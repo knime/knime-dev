@@ -14,8 +14,7 @@ import org.knime.core.node.NodeSettingsRO;
 import org.knime.core.node.NodeSettingsWO;
 
 /**
- * This is the model implementation of __NODE_NAME__.
- * __DESCRIPTION__
+ * <code>NodeModel</code> for the "__NODE_NAME__" node.
  *
  * @author __VENDOR_NAME__
  */

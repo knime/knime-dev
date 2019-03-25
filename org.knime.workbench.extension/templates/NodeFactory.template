@@ -5,8 +5,8 @@ import org.knime.core.node.NodeFactory;
 import org.knime.core.node.NodeView;
 
 /**
- * <code>NodeFactory</code> for the "__NODE_NAME__" Node.
- * __DESCRIPTION__
+ * This is an example implementation of the node factory of the
+ * "__NODE_NAME__" node.
  *
  * @author __VENDOR_NAME__
  */
@@ -18,6 +18,7 @@ public class __NODE_NAME__NodeFactory
      */
     @Override
     public __NODE_NAME__NodeModel createNodeModel() {
+		// Create and return a new node model.
         return new __NODE_NAME__NodeModel();
     }
 
@@ -26,7 +27,8 @@ public class __NODE_NAME__NodeFactory
      */
     @Override
     public int getNrNodeViews() {
-        return 1;
+		// The number of views the node should have, in this cases there is none.
+        return 0;
     }
 
     /**
@@ -35,7 +37,8 @@ public class __NODE_NAME__NodeFactory
     @Override
     public NodeView<__NODE_NAME__NodeModel> createNodeView(final int viewIndex,
             final __NODE_NAME__NodeModel nodeModel) {
-        return new __NODE_NAME__NodeView(nodeModel);
+		// We return null as this example node does not provide a view. Also see "getNrNodeViews()".
+		return null;
     }
 
     /**
@@ -43,6 +46,7 @@ public class __NODE_NAME__NodeFactory
      */
     @Override
     public boolean hasDialog() {
+		// Indication whether the node has a dialog or not.
         return true;
     }
 
@@ -51,6 +55,7 @@ public class __NODE_NAME__NodeFactory
      */
     @Override
     public NodeDialogPane createNodeDialogPane() {
+		// This example node has a dialog, hence we create and return it here. Also see "hasDialog()".
         return new __NODE_NAME__NodeDialog();
     }
 

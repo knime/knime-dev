@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: __NODE_NAME__-Node extension for KNIME Workbench
 Bundle-SymbolicName: __BASE_PACKAGE__; singleton:=true
-Bundle-Version: 1.0.0
+Bundle-Version: 1.0.0.qualifier
 Bundle-ClassPath: __JAR_NAME__
 Bundle-Activator: __BASE_PACKAGE__.__NODE_NAME__NodePlugin
 Bundle-Vendor: __VENDOR_NAME__

@@ -1,10 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <feature
-      id="org.knime.features.testingapplication"
-      label="KNIME Testing Framework"
-      version="4.0.0.qualifier"
-      provider-name="KNIME AG, Zurich, Switzerland"
-      plugin="org.knime.testing">
+      id="org.knime.features.testing.application"
+      label="KNIME Testing Framework UI"
+      version="4.1.0.qualifier"
+      provider-name="KNIME AG, Zurich, Switzerland">
 
    <description>
       Contains classes and nodes for testing KNIME&apos;s functionality through testing workflows.
@@ -728,45 +727,15 @@ license terms applicable to such Node, including when such Node is
 propagated with or for interoperation with KNIME.
    </license>
 
-   <requires>
-      <import plugin="org.junit"/>
-   </requires>
-
-   <plugin
-         id="org.knime.testing"
-         download-size="0"
-         install-size="0"
+   <includes
+         id="org.knime.features.testing.core"
          version="0.0.0"/>
 
    <plugin
-         id="org.eclipse.ant.optional.junit"
+         id="org.knime.testing.application"
          download-size="0"
          install-size="0"
          version="0.0.0"
-         fragment="true"
-         unpack="false"/>
-
-   <plugin
-         id="org.knime.testing.headless"
-         download-size="0"
-         install-size="0"
-         version="0.0.0"
-         fragment="true"
-         unpack="false"/>
-
-   <plugin
-         id="org.knime.testing.ui"
-         download-size="0"
-         install-size="0"
-         version="0.0.0"
-         fragment="true"
-         unpack="false"/>
-
-   <plugin
-         id="org.knime.js.testing"
-         download-size="0"
-         install-size="0"
-         version="0.0.0"
-         unpack="false"/>
+         fragment="true"/>
 
 </feature>

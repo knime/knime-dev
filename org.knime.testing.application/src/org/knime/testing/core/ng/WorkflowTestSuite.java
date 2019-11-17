@@ -58,8 +58,10 @@ import java.util.Formatter;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.knime.core.data.util.memory.MemoryAlertSystem;
 import org.knime.core.node.NodeLogger;
 import org.knime.core.node.NodeLogger.LEVEL;
 import org.knime.core.node.util.ViewUtils;
@@ -253,7 +255,11 @@ public class WorkflowTestSuite extends WorkflowTest {
             Thread.setDefaultUncaughtExceptionHandler(null);
             result.endTest(this);
             logMemoryStatus();
+            m_logger.info("Programmatically sending memory alert after test cases finished...");
+            Stream.of(MemoryAlertSystem.getInstance(), MemoryAlertSystem.getInstanceUncollected()).distinct()
+                .forEach(mas -> mas.sendMemoryAlert()); // this will async -- should be fixed?
             m_logger.info("================= Finished testflow " + getName() + " =================");
+
         }
     }
 

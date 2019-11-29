@@ -54,21 +54,12 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryUsage;
 import java.lang.management.OperatingSystemMXBean;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Formatter;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
-import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.eclipse.core.runtime.IProgressMonitor;
-import org.knime.core.data.util.memory.MemoryAlert;
-import org.knime.core.data.util.memory.MemoryAlertListener;
-import org.knime.core.data.util.memory.MemoryAlertSystem;
 import org.knime.core.node.NodeLogger;
 import org.knime.core.node.NodeLogger.LEVEL;
 import org.knime.core.node.util.ViewUtils;
@@ -255,8 +246,6 @@ public class WorkflowTestSuite extends WorkflowTest {
                 }
             }
             waitForUIEvents();
-            m_logger.info("Programmatically sending memory alert after test cases finished...");
-            waitForMemoryAlertToPropagate();
         } catch (Throwable ex) {
             result.addError(this, ex);
         } finally {
@@ -266,45 +255,6 @@ public class WorkflowTestSuite extends WorkflowTest {
             logMemoryStatus();
             m_logger.info("================= Finished testflow " + getName() + " =================");
 
-        }
-    }
-
-    /** Calls {@link MemoryAlertSystem#sendMemoryAlert()} and waits for alert to propagate. Will be called after
-     * each test workflow to allow for temporary DataContainer to be collected. Added to address the issue where
-     * "new DataContainer(..." is used but not cleared within the test case. The Container/Buffer is then added to the
-     * mem alert system and swapped after the test case is run -- its workflow was already removed and that caused
-     * ERROR to be logged to the knime.log (= test case failure).
-     */
-    private static void waitForMemoryAlertToPropagate() throws InterruptedException {
-        for (MemoryAlertSystem mas : new LinkedHashSet<>(Arrays.asList(
-            // might be the same, depending on selected GC
-            MemoryAlertSystem.getInstance(), MemoryAlertSystem.getInstanceUncollected()))) {
-            Lock lock = new ReentrantLock();
-            Condition condition = lock.newCondition();
-            MutableBoolean hasNotSignalled = new MutableBoolean(true);
-            MemoryAlertListener listener = new MemoryAlertListener() {
-                @Override
-                protected boolean memoryAlert(final MemoryAlert alert) {
-                    lock.lock();
-                    try {
-                        hasNotSignalled.setTrue();
-                        condition.signalAll();
-                        return true;
-                    } finally {
-                        lock.unlock();
-                    }
-                }
-            };
-            lock.lockInterruptibly();
-            try {
-                mas.addListener(listener);
-                mas.sendMemoryAlert();
-                while (!hasNotSignalled.booleanValue()) {
-                    condition.await();
-                }
-            } finally {
-                lock.unlock();
-            }
         }
     }
 

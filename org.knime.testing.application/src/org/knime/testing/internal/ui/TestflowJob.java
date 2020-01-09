@@ -167,7 +167,7 @@ class TestflowJob extends Job {
         final XMLResultFileWriter resultWriter) throws CoreException, IOException, ParserConfigurationException,
         TransformerException {
         File workflowDir = fs.toLocalFile();
-        File mountPointRoot = fs.getContentProvider().getFileStore("/").toLocalFile();
+        File mountPointRoot = fs.getContentProvider().getRootStore().toLocalFile();
 
         m_runConfig.setCloseWorkflowAfterTest(false);
 

@@ -277,6 +277,8 @@ public class WorkflowTestSuite extends WorkflowTest {
      * be logged to the knime.log (= test case failure).
      */
     private static void waitForMemoryAlertToPropagate() throws InterruptedException {
+        // collect garbage before sending memory alerts; this way, any unreferenced buffers can be collected
+        System.gc();
         for (MemoryAlertSystem mas : new LinkedHashSet<>(Arrays.asList(
             // might be the same, depending on selected GC
             MemoryAlertSystem.getInstance(), MemoryAlertSystem.getInstanceUncollected()))) {

@@ -120,6 +120,12 @@ class WorkflowCloseTest extends WorkflowTest {
                     + " dangling workflows detected: " + openWorkflows));
         }
 
+        openWorkflows = new ArrayList<>(WorkflowManager.EXTRACTED_WORKFLOW_ROOT.getNodeContainers());
+        if (!openWorkflows.isEmpty()) {
+            result.addFailure(test, new AssertionFailedError(
+                openWorkflows.size() + " dangling workflow fragments detected: " + openWorkflows));
+        }
+
         Collection<Pair<NodeContainer, StackTraceElement[]>> openBuffers =
             BufferTracker.getInstance().getOpenBuffers();
         if (!openBuffers.isEmpty()) {

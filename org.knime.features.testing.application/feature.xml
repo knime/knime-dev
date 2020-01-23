@@ -6,7 +6,7 @@
       provider-name="KNIME AG, Zurich, Switzerland">
 
    <description>
-      Contains classes and nodes for testing KNIME&apos;s functionality through testing workflows.
+      This extension enables developers to write and execute workflow tests for KNIME nodes. It provides several nodes that are useful for creating test workflows as well as a context menu extension for running test workflows directly from within KNIME Analytics Platform.
    </description>
 
    <copyright>

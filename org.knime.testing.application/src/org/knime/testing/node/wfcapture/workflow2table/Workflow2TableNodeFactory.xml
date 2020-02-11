@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE knimeNode PUBLIC "-//UNIKN//DTD KNIME Node 2.0//EN" "http://www.knime.org/Node.dtd">
+<knimeNode type="Manipulator">
+	<name>Workflow to Table</name>
+
+	<shortDescription>
+		Turns a workflow into multiple tables containing
+		node, connection information and more.
+
+		FOR
+		TESTING PURPOSES ONLY! DO NOT
+		USE!
+	</shortDescription>
+
+	<fullDescription>
+		<intro>
+			Turns a workflow into multiple tables containing node,
+			connection
+			information and more.
+
+			FOR TESTING
+			PURPOSES ONLY! DO NOT USE!
+		</intro>
+
+	</fullDescription>
+
+	<ports>
+		<inPort name="Workflow" index="0">The workflow to extract the
+			information from
+		</inPort>
+		<outPort index="0" name="Nodes">The table with node information
+		</outPort>
+		<outPort index="1" name="Connections">The table with connection information
+		</outPort>
+	</ports>
+</knimeNode>

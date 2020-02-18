@@ -101,7 +101,7 @@ class WorkflowReaderNodeModel extends NodeModel {
      */
     @Override
     protected PortObject[] execute(final PortObject[] inObjects, final ExecutionContext exec) throws Exception {
-        WorkflowFragment wf = new WorkflowFragment(readWorklfow(exec), Collections.emptyList(), Collections.emptyList(),
+        WorkflowFragment wf = new WorkflowFragment(readWorkflow(exec), Collections.emptyList(), Collections.emptyList(),
             Collections.emptySet());
         try {
             return new PortObject[]{new WorkflowPortObject(wf)};
@@ -110,7 +110,7 @@ class WorkflowReaderNodeModel extends NodeModel {
         }
     }
 
-    private WorkflowManager readWorklfow(final ExecutionContext exec) throws Exception {
+    private WorkflowManager readWorkflow(final ExecutionContext exec) throws Exception {
         File wfFile = FileUtil.resolveToPath(new URL(m_selectedWorkflow.getPathOrURL())).toFile();
         WorkflowLoadHelper loadHelper = new WorkflowLoadHelper(wfFile);
         WorkflowLoadResult loadResult = WorkflowManager.ROOT.load(wfFile, exec, loadHelper, false);

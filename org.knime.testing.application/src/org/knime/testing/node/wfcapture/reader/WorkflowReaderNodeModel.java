@@ -69,6 +69,7 @@ import org.knime.core.node.workflow.WorkflowPersistor.LoadResultEntry.LoadResult
 import org.knime.core.node.workflow.WorkflowPersistor.WorkflowLoadResult;
 import org.knime.core.node.workflow.capture.WorkflowFragment;
 import org.knime.core.node.workflow.capture.WorkflowPortObject;
+import org.knime.core.node.workflow.capture.WorkflowPortObjectSpec;
 import org.knime.core.util.FileUtil;
 import org.knime.filehandling.core.defaultnodesettings.SettingsModelFileChooser2;
 
@@ -104,7 +105,7 @@ class WorkflowReaderNodeModel extends NodeModel {
         WorkflowFragment wf = new WorkflowFragment(readWorkflow(exec), Collections.emptyList(), Collections.emptyList(),
             Collections.emptySet());
         try {
-            return new PortObject[]{new WorkflowPortObject(wf)};
+            return new PortObject[]{new WorkflowPortObject(new WorkflowPortObjectSpec(wf))};
         } finally {
             wf.serializeAndDisposeWorkflow();
         }

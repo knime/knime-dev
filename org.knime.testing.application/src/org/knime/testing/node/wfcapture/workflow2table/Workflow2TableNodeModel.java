@@ -56,7 +56,10 @@ import org.knime.core.data.DataColumnSpec;
 import org.knime.core.data.DataColumnSpecCreator;
 import org.knime.core.data.DataRow;
 import org.knime.core.data.DataTableSpec;
+import org.knime.core.data.def.BooleanCell;
+import org.knime.core.data.def.BooleanCell.BooleanCellFactory;
 import org.knime.core.data.def.DefaultRow;
+import org.knime.core.data.def.DoubleCell;
 import org.knime.core.data.def.IntCell;
 import org.knime.core.data.def.StringCell;
 import org.knime.core.node.BufferedDataContainer;
@@ -65,6 +68,7 @@ import org.knime.core.node.CanceledExecutionException;
 import org.knime.core.node.ExecutionContext;
 import org.knime.core.node.ExecutionMonitor;
 import org.knime.core.node.InvalidSettingsException;
+import org.knime.core.node.ModelContent;
 import org.knime.core.node.NodeModel;
 import org.knime.core.node.NodeSettings;
 import org.knime.core.node.NodeSettingsRO;
@@ -75,12 +79,14 @@ import org.knime.core.node.port.PortObject;
 import org.knime.core.node.port.PortObjectSpec;
 import org.knime.core.node.port.PortType;
 import org.knime.core.node.workflow.ConnectionContainer;
+import org.knime.core.node.workflow.EditorUIInformation;
 import org.knime.core.node.workflow.NodeContainer;
 import org.knime.core.node.workflow.NodeID;
 import org.knime.core.node.workflow.NodeID.NodeIDSuffix;
 import org.knime.core.node.workflow.WorkflowManager;
 import org.knime.core.node.workflow.capture.WorkflowFragment;
 import org.knime.core.node.workflow.capture.WorkflowPortObject;
+import org.knime.core.node.workflow.capture.WorkflowPortObjectSpec;
 
 /**
  *
@@ -89,7 +95,8 @@ import org.knime.core.node.workflow.capture.WorkflowPortObject;
 class Workflow2TableNodeModel extends NodeModel {
 
     Workflow2TableNodeModel() {
-        super(new PortType[]{WorkflowPortObject.TYPE}, new PortType[]{BufferedDataTable.TYPE, BufferedDataTable.TYPE});
+        super(new PortType[]{WorkflowPortObject.TYPE},
+            new PortType[]{BufferedDataTable.TYPE, BufferedDataTable.TYPE, BufferedDataTable.TYPE});
     }
 
     /**
@@ -105,7 +112,8 @@ class Workflow2TableNodeModel extends NodeModel {
      */
     @Override
     protected PortObject[] execute(final PortObject[] inObjects, final ExecutionContext exec) throws Exception {
-        WorkflowFragment wf = ((WorkflowPortObject)inObjects[0]).getSpec().getWorkflowFragment();
+        WorkflowPortObjectSpec spec = ((WorkflowPortObject)inObjects[0]).getSpec();
+        WorkflowFragment wf = spec.getWorkflowFragment();
         WorkflowManager wfm = wf.loadWorkflow();
         try {
             BufferedDataContainer nodeDC = exec.createDataContainer(createNodeTableSpec());
@@ -123,7 +131,12 @@ class Workflow2TableNodeModel extends NodeModel {
                 i++;
             }
             connectionDC.close();
-            return new PortObject[]{nodeDC.getTable(), connectionDC.getTable()};
+
+            BufferedDataContainer metadataDC = exec.createDataContainer(createMetadataTableSpec());
+            metadataDC.addRowToTable(createMetadataRow(wfm, spec));
+            metadataDC.close();
+
+            return new PortObject[]{nodeDC.getTable(), connectionDC.getTable(), metadataDC.getTable()};
         } finally {
             wf.disposeWorkflow();
         }
@@ -147,6 +160,19 @@ class Workflow2TableNodeModel extends NodeModel {
             new StringCell(NodeIDSuffix.create(parent, cc.getDest()).toString()), new IntCell(cc.getDestPort()));
     }
 
+    private static DataRow createMetadataRow(final WorkflowManager wfm, final WorkflowPortObjectSpec spec)
+        throws IOException {
+        EditorUIInformation uiInfo = wfm.getEditorUIInformation();
+        ModelContent specMeta = new ModelContent("workflow_port_object_spec_metadata");
+        spec.saveSpecMetadata(specMeta);
+        StringWriter metaString = new StringWriter();
+        JSONConfig.writeJSON(specMeta, metaString, WriterConfig.PRETTY);
+        return new DefaultRow("metadata", new IntCell(uiInfo.getGridX()), new IntCell(uiInfo.getGridY()),
+            new DoubleCell(uiInfo.getZoomLevel()), BooleanCellFactory.create(uiInfo.getHasCurvedConnections()),
+            new IntCell(uiInfo.getConnectionLineWidth()), BooleanCellFactory.create(uiInfo.getShowGrid()),
+            BooleanCellFactory.create(uiInfo.getSnapToGrid()), new StringCell(metaString.toString()));
+    }
+
     private static DataTableSpec createNodeTableSpec() {
         DataColumnSpec[] colSpecs =
             new DataColumnSpec[]{new DataColumnSpecCreator("node name", StringCell.TYPE).createSpec(),
@@ -165,6 +191,19 @@ class Workflow2TableNodeModel extends NodeModel {
                 new DataColumnSpecCreator("source port index", IntCell.TYPE).createSpec(),
                 new DataColumnSpecCreator("destination node id suffix", StringCell.TYPE).createSpec(),
                 new DataColumnSpecCreator("destination port index", IntCell.TYPE).createSpec()};
+        return new DataTableSpec(colSpecs);
+    }
+
+    private static DataTableSpec createMetadataTableSpec() {
+        DataColumnSpec[] colSpecs =
+            new DataColumnSpec[]{new DataColumnSpecCreator("ui info: grid x", IntCell.TYPE).createSpec(),
+                new DataColumnSpecCreator("ui info: grid y", IntCell.TYPE).createSpec(),
+                new DataColumnSpecCreator("ui info: zoom level", DoubleCell.TYPE).createSpec(),
+                new DataColumnSpecCreator("ui info: curved connections", BooleanCell.TYPE).createSpec(),
+                new DataColumnSpecCreator("ui info: connection width", IntCell.TYPE).createSpec(),
+                new DataColumnSpecCreator("ui info: show grid", BooleanCell.TYPE).createSpec(),
+                new DataColumnSpecCreator("ui info: snap to grid", BooleanCell.TYPE).createSpec(),
+                new DataColumnSpecCreator("workflow port object spec metadata", StringCell.TYPE).createSpec()};
         return new DataTableSpec(colSpecs);
     }
 

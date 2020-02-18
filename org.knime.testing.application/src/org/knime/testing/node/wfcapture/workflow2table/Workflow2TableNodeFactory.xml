@@ -32,5 +32,8 @@
 		</outPort>
 		<outPort index="1" name="Connections">The table with connection information
 		</outPort>
+		<outPort index="2" name="Misc Worklfow Metadata">Table with mixed set of workflow
+			manager and workflow port object metadata.
+		</outPort>
 	</ports>
 </knimeNode>

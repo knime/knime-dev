@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<site>
+    <feature id="org.knime.features.testing.application" version="0.0.0">
+        <category name="knime-dev"/>
+    </feature>
+    <feature id="org.knime.features.testing.application.source" version="0.0.0">
+        <category name="knime-dev"/>
+    </feature>
+    <feature id="org.knime.features.wizard" version="0.0.0">
+        <category name="knime-dev"/>
+    </feature>
+    <feature id="org.knime.features.wizard.source" version="0.0.0">
+        <category name="knime-dev"/>
+    </feature>
+
+
+    <category-def name="knime-dev" label="Build artifacts from knime-dev">
+        <description>Build artifacts from knime-dev</description>
+    </category-def>
+</site>

@@ -1,3 +1,5 @@
 */bin/
-*/target/
+**/target/
 */build/
+.flattened-pom.xml
+org.knime.workbench.extension/knime-node-wizard.jar

@@ -34,6 +34,31 @@
                 Sets the maximum number of rows that are hilited per data table. This limit is only for preventing
                 excessive memory usage in case of very large tables because the hilited row keys are all kept in memory.
             </option>
+            <option name="Test in streaming mode">
+				If checked, the workflow will also be tested in streaming mode, i.e. a
+				Test Streaming Executor will be selected for each node and executed.
+				Please note that the streaming mode must additionally be allowed in
+				the global Testrun Configuration! Otherwise the streaming test will be
+				skipped.
+			</option>
+			<option name="Test nodes in components">
+				If checked, nodes inside components will be listed in (and configurable
+				via) the Node settings tab. Conversely, if unchecked, nodes inside
+				components are not listed and the component itself can be found and
+				configured in the Node settings tab.
+			</option>
+			<option name="Require workflow version">
+				If set, the node will fail on execution if the workflow file was not in
+				the specified version.
+				This is useful for ensuring that a workflow stays in a specific previous
+				version to ensure backwards compatibility with node settings written with
+				that version.
+				This makes sure that the node settings were not overwritten by a newer
+				KNIME version, which would defeat the purpose of the workflow test.
+                <p>Note that version numbers from the drop-down don't necessarily correspond
+                to KNIME releases; these version strings are used internally in the framework
+                and are written to the workflow.knime.</p>
+			</option>
             <option name="Log Errors, Warnings, Infos">
                 These lists contains error, warning, or info messages that must be present
                 in the log file after the workflows has been fully executed. Usually these
@@ -80,25 +105,6 @@
                 is used.<br />
                 Also warning messages can contain regular expressions, see above.
             </option>
-			<option name="Test in streaming mode">
-				If checked, the workflow will also be tested in streaming mode, i.e. a
-				Test Streaming Executor will be selected for each node and executed.
-				Please note that the streaming mode must additionally be allowed in
-				the global Testrun Configuration! Otherwise the streaming test will be
-				skipped.
-			</option>
-			<option name="Require workflow version">
-				If set, the node will fail on execution if the workflow file was not in
-				the specified version.
-				This is useful for ensuring that a workflow stays in a specific previous
-				version to ensure backwards compatibility with node settings written with
-				that version.
-				This makes sure that the node settings were not overwritten by a newer
-				KNIME version, which would defeat the purpose of the workflow test.
-                <p>Note that version numbers from the drop-down don't necessarily correspond
-                to KNIME releases; these version strings are used internally in the framework
-                and are written to the workflow.knime.</p>
-			</option>
         </tab>
     </fullDescription>
     <ports />

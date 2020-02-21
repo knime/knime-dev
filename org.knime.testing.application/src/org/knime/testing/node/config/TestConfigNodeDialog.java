@@ -92,6 +92,7 @@ import org.knime.core.node.NodeSettingsWO;
 import org.knime.core.node.NotConfigurableException;
 import org.knime.core.node.workflow.NativeNodeContainer;
 import org.knime.core.node.workflow.NodeContainer;
+import org.knime.core.node.workflow.NodeContainerParent;
 import org.knime.core.node.workflow.NodeMessage;
 import org.knime.core.node.workflow.NodeMessage.Type;
 import org.knime.core.node.workflow.SubNodeContainer;
@@ -133,6 +134,8 @@ public class TestConfigNodeDialog extends NodeDialogPane {
 
     private final JCheckBox m_streamingTest = new JCheckBox();
 
+    private final JCheckBox m_testSubnodes = new JCheckBox();
+
     private final JComboBox<String> m_requiredLoadVersion = new JComboBox<>(Arrays
         .<LoadVersion> asList(LoadVersion.values()).stream().filter((val) -> val != LoadVersion.UNKNOWN).map(val -> {
             if (val == LoadVersion.FUTURE) {
@@ -160,14 +163,32 @@ public class TestConfigNodeDialog extends NodeDialogPane {
                     final Object value, final int index,
                     final boolean isSelected, final boolean cellHasFocus) {
                 if (value != null) {
-                    NodeContainer cont = (NodeContainer)value;
-                    String text = cont.getNameWithID();
-                    Component c = super.getListCellRendererComponent(list, text, index, isSelected, cellHasFocus);
-                    if (cont.getNodeMessage().getMessageType().equals(NodeMessage.Type.ERROR)) {
+                    final NodeContainer cont = (NodeContainer)value;
+
+                    final StringBuilder sb = new StringBuilder();
+                    // do not indent for the first two levels of nesting
+                    int minDepth = 2;
+                    for (NodeContainerParent parent = cont.getDirectNCParent(); parent != null; parent =
+                        parent.getDirectNCParent()) {
+                        // each SubNodeContainer contains a WorkflowManager, so we can ignore the SubNodeContainer
+                        if (parent instanceof SubNodeContainer) {
+                            continue;
+                        }
+                        if (minDepth-- <= 0) {
+                            sb.append("    ");
+                        }
+                    }
+
+                    final String text = sb.append(cont.getNameWithID()).toString();
+                    final Component c = super.getListCellRendererComponent(list, text, index, isSelected, cellHasFocus);
+                    if (cont instanceof SubNodeContainer && m_testSubnodes.isSelected()) {
+                        setForeground(Color.GRAY);
+                    } else if (cont.getNodeMessage().getMessageType().equals(NodeMessage.Type.ERROR)) {
                         setForeground(Color.RED.darker().darker());
                     } else {
                         setForeground(list.getForeground());
                     }
+
                     return c;
                 } else {
                     return super.getListCellRendererComponent(list, value,
@@ -226,6 +247,19 @@ public class TestConfigNodeDialog extends NodeDialogPane {
         c.fill = GridBagConstraints.HORIZONTAL;
         c.weightx = 1;
         p.add(m_streamingTest, c);
+
+        c.gridx = 0;
+        c.gridy++;
+        c.fill = GridBagConstraints.NONE;
+        c.weightx = 0;
+        p.add(new JLabel("Test nodes in components:   "), c);
+        c.gridx = 1;
+        c.fill = GridBagConstraints.HORIZONTAL;
+        c.weightx = 1;
+        p.add(m_testSubnodes, c);
+        m_testSubnodes.addChangeListener(e -> {
+            fillNodeList();
+        });
 
         c.gridx = 0;
         c.gridy++;
@@ -369,6 +403,12 @@ public class TestConfigNodeDialog extends NodeDialogPane {
                         updateNodeConfigurationFields(selected);
                     }
                 }
+
+                final NodeContainer cont = m_allNodes.getSelectedValue();
+                final boolean enable = !(cont instanceof SubNodeContainer && m_testSubnodes.isSelected());
+                m_mustFail.setEnabled(enable);
+                m_requiredError.setEnabled(enable);
+                m_requiredWarning.setEnabled(enable);
             }
         });
 
@@ -484,6 +524,7 @@ public class TestConfigNodeDialog extends NodeDialogPane {
         m_settings.timeout((Integer) m_timeout.getValue());
         m_settings.maxHiliteRows((Integer) m_maxHiliteRows.getValue());
         m_settings.streamingTest(m_streamingTest.isSelected());
+        m_settings.testSubnodes(m_testSubnodes.isSelected());
 
         final String requiredLoadVersionName = (String)m_requiredLoadVersion.getSelectedItem();
         m_settings.requiredLoadVersion(TestConfigSettings.parseLoadVersion(requiredLoadVersionName));
@@ -534,6 +575,7 @@ public class TestConfigNodeDialog extends NodeDialogPane {
         m_timeout.setValue(m_settings.timeout());
         m_maxHiliteRows.setValue(m_settings.maxHiliteRows());
         m_streamingTest.setSelected(m_settings.streamingTest());
+        m_testSubnodes.setSelected(m_settings.testSubnodes());
 
         LoadVersion loadVersion = m_settings.requiredLoadVersion();
         m_requiredLoadVersion
@@ -577,10 +619,12 @@ public class TestConfigNodeDialog extends NodeDialogPane {
                             .getWorkflowManager(), cont));
                 }
             } else if (cont instanceof SubNodeContainer) {
-//                m_allNodesModel.addElement(cont);
-//                existingNodeIds.add(TestConfigSettings
-//                        .getNodeIDWithoutRootPrefix(getNodeContext().getWorkflowManager(), cont));
-                fillNodeList(((SubNodeContainer)cont).getWorkflowManager(), existingNodeIds);
+                m_allNodesModel.addElement(cont);
+                existingNodeIds.add(TestConfigSettings
+                        .getNodeIDWithoutRootPrefix(getNodeContext().getWorkflowManager(), cont));
+                if (m_testSubnodes.isSelected()) {
+                    fillNodeList(((SubNodeContainer)cont).getWorkflowManager(), existingNodeIds);
+                }
             } else if (cont instanceof WorkflowManager) {
                 m_allNodesModel.addElement(cont);
                 existingNodeIds.add(TestConfigSettings

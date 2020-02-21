@@ -49,9 +49,11 @@ package org.knime.testing.core.ng;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 import org.apache.log4j.AppenderSkeleton;
@@ -61,6 +63,11 @@ import org.apache.log4j.spi.LoggingEvent;
 import org.apache.log4j.varia.LevelRangeFilter;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.knime.core.node.KNIMEConstants;
+import org.knime.core.node.NodeLogger.KNIMELogMessage;
+import org.knime.core.node.workflow.NodeContainer;
+import org.knime.core.node.workflow.NodeID;
+import org.knime.core.node.workflow.SubNodeContainer;
+import org.knime.core.node.workflow.WorkflowManager;
 import org.knime.core.util.EclipseUtil;
 
 import junit.framework.AssertionFailedError;
@@ -146,12 +153,34 @@ class WorkflowLogMessagesTest extends WorkflowTest {
         return "log messages";
     }
 
+    private void findSubNodes(final WorkflowManager root, final boolean inComponent, final boolean testSubnodes,
+        final Set<NodeID> ignoredIDs) {
+        for (NodeContainer node : root.getNodeContainers()) {
+            if (node instanceof SubNodeContainer) {
+                findSubNodes(((SubNodeContainer)node).getWorkflowManager(), true, testSubnodes, ignoredIDs);
+            } else {
+                if (node instanceof WorkflowManager) {
+                    findSubNodes((WorkflowManager)node, inComponent, testSubnodes, ignoredIDs);
+                }
+                if (inComponent && !testSubnodes) {
+                    // subnodes log error messages, which, depending in the testSubnodes setting, we should ignore
+                    ignoredIDs.add(node.getID());
+                }
+            }
+        }
+    }
+
     private void checkLogMessages(final TestResult result, final TestflowConfiguration flowConfiguration) {
         Map<Level, List<Pattern>> occurrenceMap = new HashMap<Level, List<Pattern>>();
         occurrenceMap.put(Level.ERROR, new ArrayList<Pattern>(flowConfiguration.getRequiredErrors()));
         occurrenceMap.put(Level.WARN, new ArrayList<Pattern>(flowConfiguration.getRequiredWarnings()));
         occurrenceMap.put(Level.INFO, new ArrayList<Pattern>(flowConfiguration.getRequiredInfos()));
         occurrenceMap.put(Level.DEBUG, new ArrayList<Pattern>(flowConfiguration.getRequiredDebugs()));
+
+        final Set<NodeID> ignoredIDs = new HashSet<>();
+        if (!flowConfiguration.testSubnodes()) {
+            findSubNodes(m_context.getWorkflowManager(), false, flowConfiguration.testSubnodes(), ignoredIDs);
+        }
 
         Map<Level, Map<String, Pattern>> leftOverMap = new HashMap<Level, Map<String, Pattern>>();
         Map<String, Pattern> m = new HashMap<>();
@@ -185,8 +214,15 @@ class WorkflowLogMessagesTest extends WorkflowTest {
 
 
         for (LoggingEvent logEvent : m_logEvents) {
-            String message = logEvent.getRenderedMessage().trim();
+            final Object o = logEvent.getMessage();
+            if (o instanceof KNIMELogMessage) {
+            	final KNIMELogMessage message = (KNIMELogMessage)o;
+                if (ignoredIDs.contains(message.getNodeID())) {
+                    continue;
+                }
+            }
 
+            String message = logEvent.getRenderedMessage().trim();
             boolean expected = false;
             List<Pattern> currentList = occurrenceMap.get(logEvent.getLevel());
             if (currentList != null) {

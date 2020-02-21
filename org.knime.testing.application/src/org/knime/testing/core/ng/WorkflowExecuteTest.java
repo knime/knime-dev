@@ -201,32 +201,40 @@ class WorkflowExecuteTest extends WorkflowTest {
     }
 
     private void checkExecutionStatus(final TestResult result, final WorkflowManager wfm,
-                                      final TestflowConfiguration flowConfiguration) {
-        for (NodeContainer node : wfm.getNodeContainers()) {
-            NodeContainerState status = node.getNodeContainerState();
+        final TestflowConfiguration flowConfiguration) {
 
+        for (NodeContainer node : wfm.getNodeContainers()) {
             if (node instanceof SubNodeContainer) {
-                checkExecutionStatus(result, ((SubNodeContainer)node).getWorkflowManager(), flowConfiguration);
+                if (flowConfiguration.testSubnodes()) {
+                    checkExecutionStatus(result, ((SubNodeContainer)node).getWorkflowManager(), flowConfiguration);
+                } else {
+                	checkNodeExecutionStatus(node, result, flowConfiguration);
+                }
             } else if (node instanceof WorkflowManager) {
                 checkExecutionStatus(result, (WorkflowManager)node, flowConfiguration);
             } else if (node instanceof SingleNodeContainer) {
-                if (!status.isExecuted() && !flowConfiguration.nodeMustFail(node.getID())) {
-                    NodeMessage nodeMessage = node.getNodeMessage();
-                    String error =
-                            "Node '" + node.getNameWithID() + "' is not executed. Error message is: "
-                                    + nodeMessage.getMessage();
-                    result.addFailure(this, new AssertionFailedError(error));
-
-                    Pattern p = Pattern.compile(Pattern.quote(nodeMessage.getMessage()));
-                    flowConfiguration.addNodeErrorMessage(node.getID(), p);
-                    flowConfiguration.addRequiredError(p);
-                } else if (status.isExecuted() && flowConfiguration.nodeMustFail(node.getID())) {
-                    String error = "Node '" + node.getNameWithID() + "' is executed although it should have failed.";
-                    result.addFailure(this, new AssertionFailedError(error));
-                }
+                checkNodeExecutionStatus(node, result, flowConfiguration);
             } else {
                 throw new IllegalStateException("Unknown node container type: " + node.getClass());
             }
+        }
+    }
+
+    private void checkNodeExecutionStatus(final NodeContainer node, final TestResult result,
+        final TestflowConfiguration flowConfiguration) {
+        NodeContainerState status = node.getNodeContainerState();
+        if (!status.isExecuted() && !flowConfiguration.nodeMustFail(node.getID())) {
+            NodeMessage nodeMessage = node.getNodeMessage();
+            String error =
+                "Node '" + node.getNameWithID() + "' is not executed. Error message is: " + nodeMessage.getMessage();
+            result.addFailure(this, new AssertionFailedError(error));
+
+            Pattern p = Pattern.compile(Pattern.quote(nodeMessage.getMessage()));
+            flowConfiguration.addNodeErrorMessage(node.getID(), p);
+            flowConfiguration.addRequiredError(p);
+        } else if (status.isExecuted() && flowConfiguration.nodeMustFail(node.getID())) {
+            String error = "Node '" + node.getNameWithID() + "' is executed although it should have failed.";
+            result.addFailure(this, new AssertionFailedError(error));
         }
     }
 }

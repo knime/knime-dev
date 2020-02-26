@@ -95,7 +95,7 @@ public class TestConfigSettings {
 
     private boolean m_streamingTest = false;
 
-    private boolean m_testSubnodes = false;
+    private boolean m_testNodesInComponents = false;
 
     private LoadVersion m_requiredLoadVersion = LoadVersion.FUTURE;
 
@@ -329,12 +329,12 @@ public class TestConfigSettings {
     }
 
     /**
-     * Whether subnodes in components should be included in the test
+     * Whether nodes in components should be included in the test
      *
-     * @param testSubnodes <code>true</code> if subnodes in components should be included in the test
+     * @param testNodesInComponents <code>true</code> if nodes in components should be included in the test
      */
-    public void testSubnodes(final boolean testSubnodes) {
-        m_testSubnodes = testSubnodes;
+    public void testNodesInComponents(final boolean testNodesInComponents) {
+        m_testNodesInComponents = testNodesInComponents;
     }
 
     /**
@@ -345,10 +345,10 @@ public class TestConfigSettings {
     }
 
     /**
-     * @return <code>true</code> if subnodes in components should be included in the test
+     * @return <code>true</code> if nodes in components should be included in the test
      */
-    public boolean testSubnodes() {
-        return m_testSubnodes;
+    public boolean testNodesInComponents() {
+        return m_testNodesInComponents;
     }
 
     /**
@@ -476,7 +476,7 @@ public class TestConfigSettings {
         m_requiredLoadVersion = parseLoadVersion(requiredLoadVersionName);
 
         // since 4.2
-        m_testSubnodes = settings.getBoolean("testSubnodes", true);
+        m_testNodesInComponents = settings.getBoolean("testNodesInComponents", true);
     }
 
     /**
@@ -564,7 +564,7 @@ public class TestConfigSettings {
 
         m_streamingTest = settings.getBoolean("streamingTest", true);
 
-        m_testSubnodes = settings.getBoolean("testSubnodes", true);
+        m_testNodesInComponents = settings.getBoolean("testNodesInComponents", true);
 
         final String requiredLoadVersionName = settings.getString("requiredLoadVersion", null);
         m_requiredLoadVersion = parseLoadVersion(requiredLoadVersionName);
@@ -626,7 +626,7 @@ public class TestConfigSettings {
         settings.addInt("maxHilitedRows", m_maxHiliteRows);
         settings.addStringArray("usedJanitors", m_usedJanitors.toArray(new String[m_usedJanitors.size()]));
         settings.addBoolean("streamingTest", m_streamingTest);
-        settings.addBoolean("testSubnodes", m_testSubnodes);
+        settings.addBoolean("testNodesInComponents", m_testNodesInComponents);
         settings.addString("requiredLoadVersion",
             (m_requiredLoadVersion == null) ? "" : m_requiredLoadVersion.getVersionString());
     }

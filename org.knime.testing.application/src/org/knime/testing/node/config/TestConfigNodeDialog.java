@@ -524,7 +524,7 @@ public class TestConfigNodeDialog extends NodeDialogPane {
         m_settings.timeout((Integer) m_timeout.getValue());
         m_settings.maxHiliteRows((Integer) m_maxHiliteRows.getValue());
         m_settings.streamingTest(m_streamingTest.isSelected());
-        m_settings.testSubnodes(m_testSubnodes.isSelected());
+        m_settings.testNodesInComponents(m_testSubnodes.isSelected());
 
         final String requiredLoadVersionName = (String)m_requiredLoadVersion.getSelectedItem();
         m_settings.requiredLoadVersion(TestConfigSettings.parseLoadVersion(requiredLoadVersionName));
@@ -575,7 +575,7 @@ public class TestConfigNodeDialog extends NodeDialogPane {
         m_timeout.setValue(m_settings.timeout());
         m_maxHiliteRows.setValue(m_settings.maxHiliteRows());
         m_streamingTest.setSelected(m_settings.streamingTest());
-        m_testSubnodes.setSelected(m_settings.testSubnodes());
+        m_testSubnodes.setSelected(m_settings.testNodesInComponents());
 
         LoadVersion loadVersion = m_settings.requiredLoadVersion();
         m_requiredLoadVersion

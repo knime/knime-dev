@@ -99,7 +99,7 @@ class WorkflowNodeMessagesTest extends WorkflowTest {
         for (NodeContainer node : wfm.getNodeContainers()) {
             if (!m_context.isPreExecutedNode(node)) {
                 if (node instanceof SubNodeContainer) {
-                    if (flowConfiguration.testSubnodes()) {
+                    if (flowConfiguration.testNodesInComponents()) {
                         checkNodeMessages(result, ((SubNodeContainer)node).getWorkflowManager(), flowConfiguration);
                     } else {
                         checkSingleNode(result, node, flowConfiguration);

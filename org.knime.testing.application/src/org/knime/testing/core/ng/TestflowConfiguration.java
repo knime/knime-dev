@@ -69,7 +69,6 @@ import org.knime.core.node.workflow.NativeNodeContainer;
 import org.knime.core.node.workflow.NodeContainer;
 import org.knime.core.node.workflow.NodeContext;
 import org.knime.core.node.workflow.NodeID;
-import org.knime.core.node.workflow.SubNodeContainer;
 import org.knime.core.node.workflow.WorkflowManager;
 import org.knime.core.util.LoadVersion;
 import org.knime.testing.core.TestrunConfiguration;
@@ -120,7 +119,7 @@ class TestflowConfiguration {
 
     private boolean m_streamingTest = false;
 
-    private boolean m_testSubnodes = false;
+    private boolean m_testNodesInComponents = false;
 
     /**
      * Creates a new testflow configuration. The configuration is read from the testflow configuration node inside the
@@ -224,7 +223,7 @@ class TestflowConfiguration {
         m_timeout = settings.timeout();
         m_maxHiliteRows = settings.maxHiliteRows();
         m_streamingTest = settings.streamingTest();
-        m_testSubnodes = settings.testSubnodes();
+        m_testNodesInComponents = settings.testNodesInComponents();
     }
 
     /**
@@ -558,12 +557,12 @@ class TestflowConfiguration {
     }
 
     /**
-     * Determines whether subnodes in components should be included in the test.
+     * Determines whether nodes in components should be included in the test.
      *
-     * @return <code>true</code> if subnodes in components should be included in the test
+     * @return <code>true</code> if nodes in components should be included in the test
      */
-    public boolean testSubnodes() {
-        return m_testSubnodes;
+    public boolean testNodesInComponents() {
+        return m_testNodesInComponents;
     }
 
     /**

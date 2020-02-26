@@ -205,7 +205,7 @@ class WorkflowExecuteTest extends WorkflowTest {
 
         for (NodeContainer node : wfm.getNodeContainers()) {
             if (node instanceof SubNodeContainer) {
-                if (flowConfiguration.testSubnodes()) {
+                if (flowConfiguration.testNodesInComponents()) {
                     checkExecutionStatus(result, ((SubNodeContainer)node).getWorkflowManager(), flowConfiguration);
                 } else {
                 	checkNodeExecutionStatus(node, result, flowConfiguration);

@@ -178,8 +178,8 @@ class WorkflowLogMessagesTest extends WorkflowTest {
         occurrenceMap.put(Level.DEBUG, new ArrayList<Pattern>(flowConfiguration.getRequiredDebugs()));
 
         final Set<NodeID> ignoredIDs = new HashSet<>();
-        if (!flowConfiguration.testSubnodes()) {
-            findSubNodes(m_context.getWorkflowManager(), false, flowConfiguration.testSubnodes(), ignoredIDs);
+        if (!flowConfiguration.testNodesInComponents()) {
+            findSubNodes(m_context.getWorkflowManager(), false, flowConfiguration.testNodesInComponents(), ignoredIDs);
         }
 
         Map<Level, Map<String, Pattern>> leftOverMap = new HashMap<Level, Map<String, Pattern>>();

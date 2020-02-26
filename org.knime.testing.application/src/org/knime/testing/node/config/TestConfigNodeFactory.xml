@@ -44,8 +44,9 @@
 			<option name="Test nodes in components">
 				If checked, nodes inside components will be listed in (and configurable
 				via) the Node settings tab. Conversely, if unchecked, nodes inside
-				components are not listed and the component itself can be found and
-				configured in the Node settings tab.
+				components are not listed and will be ignored for testing. Instead, the
+				component itself can then be found and configured in the Node settings
+				tab.
 			</option>
 			<option name="Require workflow version">
 				If set, the node will fail on execution if the workflow file was not in

@@ -48,6 +48,8 @@
  */
 package org.knime.testing.node.wfcapture.reader;
 
+import static java.util.Collections.emptyList;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -105,7 +107,8 @@ class WorkflowReaderNodeModel extends NodeModel {
         WorkflowFragment wf = new WorkflowFragment(readWorkflow(exec), Collections.emptyList(), Collections.emptyList(),
             Collections.emptySet());
         try {
-            return new PortObject[]{new WorkflowPortObject(new WorkflowPortObjectSpec(wf))};
+            return new PortObject[]{
+                new WorkflowPortObject(new WorkflowPortObjectSpec(wf, null, emptyList(), emptyList()))};
         } finally {
             wf.serializeAndDisposeWorkflow();
         }

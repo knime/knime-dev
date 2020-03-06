@@ -13,7 +13,6 @@
         <category name="knime-dev"/>
     </feature>
 
-
     <category-def name="knime-dev" label="Build artifacts from knime-dev">
         <description>Build artifacts from knime-dev</description>
     </category-def>

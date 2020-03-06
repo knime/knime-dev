@@ -1,6 +1,0 @@
-#
-#Tue Feb 10 15:04:41 CET 2015
-requires.2.name=org.knime.core.util.source
-requires.1.name=org.knime.features.base.source.feature.group
-requires.1.namespace=org.eclipse.equinox.p2.iu
-requires.2.namespace=org.eclipse.equinox.p2.iu

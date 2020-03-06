@@ -24,7 +24,6 @@
 	</properties>
 
 	<modules>
-		<module>org.knime.features.sdk</module>
 		<module>org.knime.features.testing.application</module>
 		<module>org.knime.features.wizard</module>
 		<module>org.knime.testing.application</module>

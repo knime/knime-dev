@@ -14,7 +14,7 @@ properties([
 try {
     knimetools.defaultTychoBuild('org.knime.update.dev')
 
-    workflowTests.runTests(dependencies: [ repositories: ['knime-dev', 'knime-jfreechart'] ])
+    workflowTests.runTests(dependencies: [ repositories: ['knime-dev', 'knime-jfreechart', 'knime-streaming', 'knime-js-base'] ])
 
     stage('Sonarqube analysis') {
         env.lastStage = env.STAGE_NAME

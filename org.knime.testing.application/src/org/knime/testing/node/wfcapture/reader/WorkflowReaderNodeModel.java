@@ -115,7 +115,7 @@ class WorkflowReaderNodeModel extends NodeModel {
     }
 
     private WorkflowManager readWorkflow(final ExecutionContext exec) throws Exception {
-        File wfFile = FileUtil.resolveToPath(new URL(m_selectedWorkflow.getPathOrURL())).toFile();
+        File wfFile = FileUtil.resolveToPath(new URL(m_selectedWorkflow.getPathOrURL().replace(" ", "%20"))).toFile();
         WorkflowLoadHelper loadHelper = new WorkflowLoadHelper(wfFile);
         WorkflowLoadResult loadResult = WorkflowManager.ROOT.load(wfFile, exec, loadHelper, false);
         WorkflowManager m = loadResult.getWorkflowManager();

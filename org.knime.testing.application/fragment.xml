@@ -34,6 +34,7 @@
       <node
             category-path="/testing"
             factory-class="org.knime.testing.imagecomp.ImageCompNodeFactory"
+            deprecated="true"
             >
       </node>
       <node

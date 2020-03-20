@@ -106,6 +106,21 @@
             category-path="/testing"
             deprecated="false"
             factory-class="org.knime.testing.node.database.DBConnectionCloserNodeFactory">
+      </node>
+      <node
+            deprecated="false"
+            factory-class="org.knime.testing.node.wfcapture.reader.WorkflowReaderNodeFactory"
+            hidden="true">
+      </node>
+      <node
+            deprecated="false"
+            factory-class="org.knime.testing.node.wfcapture.workflow2table.Workflow2TableNodeFactory"
+            hidden="true">
+      </node>
+      <node
+            deprecated="false"
+            factory-class="org.knime.testing.node.workflowsummary.WorkflowSummaryNodeFactory"
+            hidden="true">
       </node>     
    </extension>
    <extension

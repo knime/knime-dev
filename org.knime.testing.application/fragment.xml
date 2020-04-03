@@ -122,6 +122,10 @@
             deprecated="false"
             factory-class="org.knime.testing.node.workflowsummary.WorkflowSummaryNodeFactory"
             hidden="true">
+      </node>
+      <node
+            factory-class="org.knime.testing.node.description.NodeFactoryPropertiesExtractorNodeFactory"
+            hidden="true">
       </node>     
    </extension>
    <extension

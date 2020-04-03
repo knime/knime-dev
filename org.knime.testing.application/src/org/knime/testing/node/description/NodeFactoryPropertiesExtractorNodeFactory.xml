@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE knimeNode PUBLIC "-//UNIKN//DTD KNIME Node 2.0//EN" "http://www.knime.org/Node.dtd">
+<knimeNode type="Source">
+	<name>Node Factory Properties Extractor</name>
+
+	<shortDescription>
+		Extracts all node factory properties (e.g. node type) from all top-level nodes in this workflow (excluding this node, metanodes and components).
+	
+		FOR TESTING PURPOSES ONLY! DO NOT USE!
+	</shortDescription>
+
+	<fullDescription>
+		<intro>
+			Extracts all node factory properties (e.g. node type) from all top-level nodes in this workflow (excluding this node, metanodes and components).
+			Those factory properties are either added programmatically (dynamic nodes) or defined in the respective *NodeFactory.xml (common native nodes).
+			If a property to test is missing, just add it.
+	
+			FOR TESTING PURPOSES ONLY! DO NOT USE!
+		</intro>
+
+	</fullDescription>
+
+	<ports>
+		<outPort index="0" name="Node Description Details">The table with the node description details per node.
+		</outPort>
+	</ports>
+</knimeNode>

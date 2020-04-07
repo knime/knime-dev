@@ -117,7 +117,7 @@ class WorkflowReaderNodeModel extends NodeModel {
     private WorkflowManager readWorkflow(final ExecutionContext exec) throws Exception {
         File wfFile = FileUtil.resolveToPath(new URL(m_selectedWorkflow.getPathOrURL().replace(" ", "%20"))).toFile();
         WorkflowLoadHelper loadHelper = new WorkflowLoadHelper(wfFile);
-        WorkflowLoadResult loadResult = WorkflowManager.ROOT.load(wfFile, exec, loadHelper, false);
+        WorkflowLoadResult loadResult = WorkflowManager.EXTRACTED_WORKFLOW_ROOT.load(wfFile, exec, loadHelper, false);
         WorkflowManager m = loadResult.getWorkflowManager();
         if (m == null) {
             throw new Exception("Errors reading workflow: " + loadResult.getFilteredError("", LoadResultEntryType.Ok));
@@ -126,6 +126,7 @@ class WorkflowReaderNodeModel extends NodeModel {
                 case Ok:
                     break;
                 default:
+                    WorkflowManager.EXTRACTED_WORKFLOW_ROOT.removeProject(m.getID());
                     throw new Exception("Errors reading workflow: " + m_selectedWorkflow);
             }
         }

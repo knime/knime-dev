@@ -50,7 +50,6 @@ package org.knime.testing.core.ng;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
-import java.net.URISyntaxException;
 
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.knime.core.node.CanceledExecutionException;
@@ -65,6 +64,7 @@ import org.knime.core.node.workflow.WorkflowPersistor.LoadResultEntry.LoadResult
 import org.knime.core.node.workflow.WorkflowPersistor.WorkflowLoadResult;
 import org.knime.core.util.LoadVersion;
 import org.knime.core.util.LockFailedException;
+import org.knime.core.util.URIUtil;
 import org.knime.core.util.Version;
 import org.knime.testing.core.TestrunConfiguration;
 
@@ -175,13 +175,13 @@ public class WorkflowLoadTest extends WorkflowTest {
         fac.setMountpointRoot(testcaseRoot);
         // assumption here: workflow tests are always run within the local mountpoint
         // (there can only be one local mountpoint, always with the same id 'LOCAL')
-        try {
-            fac.setMountpointURI(new URI(workflowDir.toString().replace(testcaseRoot.toString(), "knime://LOCAL") + "/"
-                + WorkflowPersistor.WORKFLOW_FILE));
-        } catch (URISyntaxException e) {
-            //should never happen
-            throw new RuntimeException("Something went wrong while creating the mount point URI for testflow", e);
-        }
+        URI encodedMountpointURI = URIUtil
+            .createEncodedURI(workflowDir.toString().replace(testcaseRoot.toString(), "knime://LOCAL") + "/"
+                + WorkflowPersistor.WORKFLOW_FILE)
+            .orElseThrow(() -> new IllegalStateException(
+                "Something went wrong while creating the mount point URI for the testflow at '" + workflowDir.toString()
+                    + "'"));
+        fac.setMountpointURI(encodedMountpointURI);
         return fac.createContext();
     }
 

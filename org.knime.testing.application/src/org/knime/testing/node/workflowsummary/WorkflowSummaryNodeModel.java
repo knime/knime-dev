@@ -48,6 +48,8 @@
  */
 package org.knime.testing.node.workflowsummary;
 
+import static org.knime.core.util.workflowsummary.WorkflowSummaryGenerator.generate;
+
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -71,12 +73,14 @@ import org.knime.core.node.InvalidSettingsException;
 import org.knime.core.node.NodeModel;
 import org.knime.core.node.NodeSettingsRO;
 import org.knime.core.node.NodeSettingsWO;
+import org.knime.core.node.defaultnodesettings.SettingsModelBoolean;
 import org.knime.core.node.defaultnodesettings.SettingsModelStringArray;
 import org.knime.core.node.workflow.NodeContext;
 import org.knime.core.node.workflow.NodeID;
 import org.knime.core.node.workflow.NodeID.NodeIDSuffix;
 import org.knime.core.node.workflow.WorkflowManager;
-import org.knime.core.util.workflowsummary.WorkflowSummaryGenerator;
+import org.knime.core.util.workflowsummary.WorkflowSummaryConfiguration;
+import org.knime.core.util.workflowsummary.WorkflowSummaryConfiguration.SummaryFormat;
 
 /**
  *
@@ -88,7 +92,13 @@ class WorkflowSummaryNodeModel extends NodeModel {
         return new SettingsModelStringArray("nodes_to_ignore", new String[0]);
     }
 
+    static SettingsModelBoolean createIncludeExecutionInfoModel() {
+        return new SettingsModelBoolean("include_execution_info", false);
+    }
+
     private final SettingsModelStringArray m_nodesToIgnore = createNodesToIgnoreModel();
+
+    private final SettingsModelBoolean m_includeExecutionInfo = createIncludeExecutionInfoModel();
 
     WorkflowSummaryNodeModel() {
         super(0, 1);
@@ -113,11 +123,14 @@ class WorkflowSummaryNodeModel extends NodeModel {
             List<NodeID> nodesToIgnore = Arrays.stream(m_nodesToIgnore.getStringArrayValue())
                 .map(s -> NodeIDSuffix.fromString(s.substring(s.indexOf("(#") + 2, s.length() - 1)))
                 .map(s -> s.prependParent(wfm.getID())).collect(Collectors.toList());
-            WorkflowSummaryGenerator gen = new WorkflowSummaryGenerator(wfm, nodesToIgnore);
+            WorkflowSummaryConfiguration xmlConfig = WorkflowSummaryConfiguration.builder(SummaryFormat.XML)
+                .nodesToIgnore(nodesToIgnore).includeExecutionInfo(m_includeExecutionInfo.getBooleanValue()).build();
+            WorkflowSummaryConfiguration jsonConfig = WorkflowSummaryConfiguration.builder(SummaryFormat.JSON)
+                .nodesToIgnore(nodesToIgnore).includeExecutionInfo(m_includeExecutionInfo.getBooleanValue()).build();
             try (ByteArrayOutputStream outXML = new ByteArrayOutputStream();
                     ByteArrayOutputStream outJSON = new ByteArrayOutputStream()) {
-                gen.generateXML(outXML);
-                gen.generateJSON(outJSON);
+                generate(wfm, outXML, xmlConfig);
+                generate(wfm, outJSON, jsonConfig);
                 BufferedDataContainer container = exec.createDataContainer(createSpec());
                 container.addRowToTable(new DefaultRow("summary", XMLCellFactory.create(outXML.toString()),
                     JSONCellFactory.create(outJSON.toString(), false)));
@@ -158,6 +171,7 @@ class WorkflowSummaryNodeModel extends NodeModel {
     @Override
     protected void saveSettingsTo(final NodeSettingsWO settings) {
         m_nodesToIgnore.saveSettingsTo(settings);
+        m_includeExecutionInfo.saveSettingsTo(settings);
     }
 
     /**
@@ -166,6 +180,7 @@ class WorkflowSummaryNodeModel extends NodeModel {
     @Override
     protected void validateSettings(final NodeSettingsRO settings) throws InvalidSettingsException {
         m_nodesToIgnore.validateSettings(settings);
+        m_includeExecutionInfo.validateSettings(settings);
     }
 
     /**
@@ -174,6 +189,7 @@ class WorkflowSummaryNodeModel extends NodeModel {
     @Override
     protected void loadValidatedSettingsFrom(final NodeSettingsRO settings) throws InvalidSettingsException {
         m_nodesToIgnore.loadSettingsFrom(settings);
+        m_includeExecutionInfo.loadSettingsFrom(settings);
     }
 
     /**

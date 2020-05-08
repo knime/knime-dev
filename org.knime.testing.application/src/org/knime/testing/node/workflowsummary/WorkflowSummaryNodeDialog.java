@@ -55,6 +55,7 @@ import java.util.stream.Collectors;
 import org.knime.core.node.NodeSettingsRO;
 import org.knime.core.node.NotConfigurableException;
 import org.knime.core.node.defaultnodesettings.DefaultNodeSettingsPane;
+import org.knime.core.node.defaultnodesettings.DialogComponentBoolean;
 import org.knime.core.node.defaultnodesettings.DialogComponentStringListSelection;
 import org.knime.core.node.port.PortObjectSpec;
 import org.knime.core.node.workflow.NodeContext;
@@ -74,6 +75,8 @@ class WorkflowSummaryNodeDialog extends DefaultNodeSettingsPane {
         m_dc = new DialogComponentStringListSelection(WorkflowSummaryNodeModel.createNodesToIgnoreModel(),
             "Nodes to ignore", getNodes(), false, 30);
         addDialogComponent(m_dc);
+        addDialogComponent(new DialogComponentBoolean(WorkflowSummaryNodeModel.createIncludeExecutionInfoModel(),
+            "Include execution info"));
     }
 
     private static Collection<String> getNodes() {

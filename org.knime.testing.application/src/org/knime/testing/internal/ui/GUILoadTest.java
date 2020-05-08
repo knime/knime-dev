@@ -148,7 +148,9 @@ class GUILoadTest extends WorkflowTest {
              */
             @Override
             public WorkflowContext getWorkflowContext() {
-                return WorkflowLoadTest.createWorkflowContextForTest(workflowDir, testcaseRoot);
+                WorkflowContext.Factory fac = new WorkflowContext.Factory(workflowDir);
+                fac.setMountpointRoot(testcaseRoot);
+                return fac.createContext();
             }
         };
 

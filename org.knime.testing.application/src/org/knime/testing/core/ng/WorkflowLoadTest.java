@@ -49,7 +49,6 @@ package org.knime.testing.core.ng;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URI;
 
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.knime.core.node.CanceledExecutionException;
@@ -59,12 +58,10 @@ import org.knime.core.node.workflow.UnsupportedWorkflowVersionException;
 import org.knime.core.node.workflow.WorkflowContext;
 import org.knime.core.node.workflow.WorkflowLoadHelper;
 import org.knime.core.node.workflow.WorkflowManager;
-import org.knime.core.node.workflow.WorkflowPersistor;
 import org.knime.core.node.workflow.WorkflowPersistor.LoadResultEntry.LoadResultEntryType;
 import org.knime.core.node.workflow.WorkflowPersistor.WorkflowLoadResult;
 import org.knime.core.util.LoadVersion;
 import org.knime.core.util.LockFailedException;
-import org.knime.core.util.URIUtil;
 import org.knime.core.util.Version;
 import org.knime.testing.core.TestrunConfiguration;
 
@@ -134,7 +131,9 @@ public class WorkflowLoadTest extends WorkflowTest {
              */
             @Override
             public WorkflowContext getWorkflowContext() {
-                return createWorkflowContextForTest(workflowDir, testcaseRoot);
+                WorkflowContext.Factory fac = new WorkflowContext.Factory(workflowDir);
+                fac.setMountpointRoot(testcaseRoot);
+                return fac.createContext();
             }
 
             /**
@@ -161,28 +160,6 @@ public class WorkflowLoadTest extends WorkflowTest {
 
         wfm.addWorkflowVariables(true, runConfig.getFlowVariables());
         return wfm;
-    }
-
-    /**
-     * Helper method to create a workflow context specifically for test workflows.
-     *
-     * @param workflowDir the workflow directory itself
-     * @param testcaseRoot the root of the test workflows, aka mountpoint root
-     * @return a new workflow context instance, never <code>null</code>
-     */
-    public static WorkflowContext createWorkflowContextForTest(final File workflowDir, final File testcaseRoot) {
-        WorkflowContext.Factory fac = new WorkflowContext.Factory(workflowDir);
-        fac.setMountpointRoot(testcaseRoot);
-        // assumption here: workflow tests are always run within the local mountpoint
-        // (there can only be one local mountpoint, always with the same id 'LOCAL')
-        URI encodedMountpointURI = URIUtil
-            .createEncodedURI(workflowDir.toString().replace(testcaseRoot.toString(), "knime://LOCAL") + "/"
-                + WorkflowPersistor.WORKFLOW_FILE)
-            .orElseThrow(() -> new IllegalStateException(
-                "Something went wrong while creating the mount point URI for the testflow at '" + workflowDir.toString()
-                    + "'"));
-        fac.setMountpointURI(encodedMountpointURI);
-        return fac.createContext();
     }
 
     /**

@@ -126,6 +126,12 @@
       <node
             factory-class="org.knime.testing.node.description.NodeFactoryPropertiesExtractorNodeFactory"
             hidden="true">
+      </node>
+      <node
+            category-path="/testing"
+            deprecated="false"
+            factory-class="org.knime.testing.node.io.filehandling.file.FileDifferenceCheckerNodeFactory"
+            hidden="false">
       </node>     
    </extension>
    <extension

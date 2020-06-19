@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<knimeNode icon="equals.png" type="Other"
+	xmlns="http://knime.org/node/v4.1"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://knime.org/node/v4.1 http://knime.org/node/v4.1.xsd">
+	<name>File Difference Checker (Labs) </name>
+	<shortDescription>
+		Compares the two files.
+	</shortDescription>
+	<fullDescription>
+		<intro>
+			Used in regression tests to test if two files are equal. The node will 
+			compare the two selected files and fails with an exception if the files 
+			are different. In this case the node will throw an exception, i.e., it will
+			not transition into the <tt>Executed</tt> but the <tt>Failed</tt> state.
+		</intro>
+		<option name="File to be tested">
+			File chooser to select the file to be compared to the reference file. 
+		</option>
+		<option name="Reference File">
+			File chooser to select the reference file.
+		</option>
+	</fullDescription>
+	<ports>
+		<dynInPort group-identifier="Comparision File System Connection"
+			insert-before="0" name="File system connection (file to be compared)">The file system connection storing
+				the file to compare.
+		</dynInPort>
+		<dynInPort group-identifier="Reference File System Connection"
+			insert-before="0" name="File system connection (reference file)">The file system connection storing the 
+				reference file.
+		</dynInPort>
+	</ports>
+</knimeNode>

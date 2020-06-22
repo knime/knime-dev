@@ -50,7 +50,9 @@ package org.knime.testing.node.io.filehandling.file;
 
 import java.awt.Component;
 import java.awt.GridBagLayout;
+import java.awt.Insets;
 
+import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.JPanel;
 
@@ -76,7 +78,7 @@ public class FileDifferenceCheckerNodeDialog extends NodeDialogPane {
 
     private final DialogComponentReaderFileChooser m_referenceFileChooser;
 
-    private final DialogComponentReaderFileChooser m_fileChooser;
+    private final DialogComponentReaderFileChooser m_testFileChooser;
 
     FileDifferenceCheckerNodeDialog(final FileDifferenceCheckerConfiguration config) {
         m_referenceFileChooser = new DialogComponentReaderFileChooser(config.getReferenceFileChooser(), HISTORY_ID,
@@ -84,7 +86,7 @@ public class FileDifferenceCheckerNodeDialog extends NodeDialogPane {
                 FSLocationVariableType.INSTANCE),
             FilterMode.FILE);
 
-        m_fileChooser = new DialogComponentReaderFileChooser(config.getFileChooser(), HISTORY_ID,
+        m_testFileChooser = new DialogComponentReaderFileChooser(config.getFileChooser(), HISTORY_ID,
             createFlowVariableModel(config.getFileChooser().getKeysForFSLocation(), FSLocationVariableType.INSTANCE),
             FilterMode.FILE);
 
@@ -94,26 +96,35 @@ public class FileDifferenceCheckerNodeDialog extends NodeDialogPane {
     private Component layout() {
         final JPanel panel = new JPanel(new GridBagLayout());
         GBCBuilder gbc = new GBCBuilder();
-        gbc.anchorFirstLineStart().resetX().resetY().fillNone().setWeightX(0).setWeightY(0);
-        panel.add(m_fileChooser.getComponentPanel(), gbc.build());
+        gbc.anchorFirstLineStart().resetX().resetY().fillHorizontal().setWeightX(1).setWeightY(0)
+            .setInsets(new Insets(5, 0, 0, 0));
+        panel.add(createFileChooserPanel(m_testFileChooser, "Test File"), gbc.build());
         gbc.incY();
-        panel.add(m_referenceFileChooser.getComponentPanel(), gbc.build());
-        gbc.incY().setWeightX(1).fillBoth();
-        panel.add(Box.createVerticalBox());
+        panel.add(createFileChooserPanel(m_referenceFileChooser, "Reference File"), gbc.build());
+        gbc.incY().fillBoth().setWeightY(1);
+        panel.add(Box.createVerticalBox(), gbc.build());
+        return panel;
+    }
 
+    private static JPanel createFileChooserPanel(final DialogComponentReaderFileChooser chooser, final String title) {
+        final JPanel panel = new JPanel(new GridBagLayout());
+        GBCBuilder gbc = new GBCBuilder();
+        gbc.resetX().setWeightX(1).fillHorizontal().setInsets(new Insets(0, 5, 5, 5));
+        panel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), title));
+        panel.add(chooser.getComponentPanel(), gbc.build());
         return panel;
     }
 
     @Override
     protected void saveSettingsTo(final NodeSettingsWO settings) throws InvalidSettingsException {
-        m_fileChooser.saveSettingsTo(settings);
+        m_testFileChooser.saveSettingsTo(settings);
         m_referenceFileChooser.saveSettingsTo(settings);
     }
 
     @Override
     protected void loadSettingsFrom(final NodeSettingsRO settings, final PortObjectSpec[] specs)
         throws NotConfigurableException {
-        m_fileChooser.loadSettingsFrom(settings, specs);
+        m_testFileChooser.loadSettingsFrom(settings, specs);
         m_referenceFileChooser.loadSettingsFrom(settings, specs);
     }
 

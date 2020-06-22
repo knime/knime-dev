@@ -14,8 +14,8 @@
 			are different. In this case the node will throw an exception, i.e., it will
 			not transition into the <tt>Executed</tt> but the <tt>Failed</tt> state.
 		</intro>
-		<option name="File to be tested">
-			File chooser to select the file to be compared to the reference file. 
+		<option name="Test file">
+			File chooser to select the file to be tested against the reference file. 
 		</option>
 		<option name="Reference File">
 			File chooser to select the reference file.
@@ -24,7 +24,7 @@
 	<ports>
 		<dynInPort group-identifier="Comparision File System Connection"
 			insert-before="0" name="File system connection (file to be compared)">The file system connection storing
-				the file to compare.
+				the file to be tested.
 		</dynInPort>
 		<dynInPort group-identifier="Reference File System Connection"
 			insert-before="0" name="File system connection (reference file)">The file system connection storing the 

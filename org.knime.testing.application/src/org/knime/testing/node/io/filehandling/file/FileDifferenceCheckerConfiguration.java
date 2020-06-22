@@ -69,7 +69,7 @@ final class FileDifferenceCheckerConfiguration {
     FileDifferenceCheckerConfiguration(final PortsConfiguration portsConfig, final String filePortIdentifier,
         final String referencePortIdentifier) {
         m_fileChooser =
-            new SettingsModelReaderFileChooser("file_chooser", portsConfig, filePortIdentifier, FilterMode.FILE);
+            new SettingsModelReaderFileChooser("test_file_chooser", portsConfig, filePortIdentifier, FilterMode.FILE);
         m_referenceFileChooser = new SettingsModelReaderFileChooser("reference_file_chooser", portsConfig,
             referencePortIdentifier, FilterMode.FILE);
     }

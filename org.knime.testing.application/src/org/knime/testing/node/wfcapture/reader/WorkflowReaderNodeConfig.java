@@ -44,37 +44,19 @@
  * ---------------------------------------------------------------------
  *
  * History
- *   Feb 10, 2020 (hornm): created
+ *   24 Jun 2020 (Marc Bux, KNIME GmbH, Berlin, Germany): created
  */
 package org.knime.testing.node.wfcapture.reader;
 
 import org.knime.core.node.context.NodeCreationConfiguration;
-import org.knime.core.node.port.PortType;
-import org.knime.core.node.workflow.capture.WorkflowPortObject;
-import org.knime.filehandling.core.node.portobject.reader.PortObjectReaderNodeFactory;
+import org.knime.filehandling.core.node.portobject.reader.PortObjectReaderNodeConfig;
 
 /**
- * Test node to read workflows into a {@link WorkflowPortObject}.
- *
- * Minimal functionality! For testing purposes only!
- *
- * @author Martin Horn, KNIME GmbH, Konstanz, Germany
+ * @author Marc Bux, KNIME GmbH, Berlin, Germany
  */
-public final class WorkflowReaderNodeFactory extends PortObjectReaderNodeFactory<WorkflowReaderNodeModel, WorkflowReaderNodeDialog> {
+final class WorkflowReaderNodeConfig extends PortObjectReaderNodeConfig {
 
-    @Override
-    protected PortType getOutputPortType() {
-        return WorkflowPortObject.TYPE;
+    WorkflowReaderNodeConfig(final NodeCreationConfiguration creationConfig) {
+        super(creationConfig);
     }
-
-    @Override
-    protected WorkflowReaderNodeDialog createDialog(final NodeCreationConfiguration creationConfig) {
-        return new WorkflowReaderNodeDialog(creationConfig);
-    }
-
-    @Override
-    protected WorkflowReaderNodeModel createNodeModel(final NodeCreationConfiguration creationConfig) {
-        return new WorkflowReaderNodeModel(creationConfig);
-    }
-
 }

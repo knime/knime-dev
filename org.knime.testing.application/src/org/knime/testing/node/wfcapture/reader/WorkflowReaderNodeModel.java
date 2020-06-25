@@ -52,19 +52,15 @@ import static java.util.Collections.emptyList;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URL;
+import java.nio.file.Path;
 import java.util.Collections;
 
 import org.knime.core.node.CanceledExecutionException;
 import org.knime.core.node.ExecutionContext;
-import org.knime.core.node.ExecutionMonitor;
 import org.knime.core.node.InvalidSettingsException;
-import org.knime.core.node.NodeModel;
-import org.knime.core.node.NodeSettingsRO;
-import org.knime.core.node.NodeSettingsWO;
+import org.knime.core.node.context.NodeCreationConfiguration;
 import org.knime.core.node.port.PortObject;
-import org.knime.core.node.port.PortObjectSpec;
-import org.knime.core.node.port.PortType;
+import org.knime.core.node.workflow.UnsupportedWorkflowVersionException;
 import org.knime.core.node.workflow.WorkflowLoadHelper;
 import org.knime.core.node.workflow.WorkflowManager;
 import org.knime.core.node.workflow.WorkflowPersistor.LoadResultEntry.LoadResultEntryType;
@@ -72,40 +68,23 @@ import org.knime.core.node.workflow.WorkflowPersistor.WorkflowLoadResult;
 import org.knime.core.node.workflow.capture.WorkflowFragment;
 import org.knime.core.node.workflow.capture.WorkflowPortObject;
 import org.knime.core.node.workflow.capture.WorkflowPortObjectSpec;
-import org.knime.core.util.FileUtil;
-import org.knime.filehandling.core.defaultnodesettings.SettingsModelFileChooser2;
+import org.knime.core.util.LockFailedException;
+import org.knime.filehandling.core.node.portobject.reader.PortObjectFromPathReaderNodeModel;
 
 /**
  *
  * @author Martin Horn, KNIME GmbH, Konstanz, Germany
  */
-class WorkflowReaderNodeModel extends NodeModel {
+final class WorkflowReaderNodeModel extends PortObjectFromPathReaderNodeModel<WorkflowReaderNodeConfig> {
 
-    static final SettingsModelFileChooser2 createSelectedWorkflowModel() {
-        return new SettingsModelFileChooser2("selected_workflow");
+    protected WorkflowReaderNodeModel(final NodeCreationConfiguration creationConfig) {
+        super(creationConfig, new WorkflowReaderNodeConfig(creationConfig));
     }
 
-    private final SettingsModelFileChooser2 m_selectedWorkflow = createSelectedWorkflowModel();
-
-    protected WorkflowReaderNodeModel() {
-        super(new PortType[0], new PortType[]{WorkflowPortObject.TYPE});
-    }
-
-    /**
-     * {@inheritDoc}
-     */
     @Override
-    protected PortObjectSpec[] configure(final PortObjectSpec[] inSpecs) throws InvalidSettingsException {
-        return null;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    protected PortObject[] execute(final PortObject[] inObjects, final ExecutionContext exec) throws Exception {
-        WorkflowFragment wf = new WorkflowFragment(readWorkflow(exec), Collections.emptyList(), Collections.emptyList(),
-            Collections.emptySet());
+    protected PortObject[] readFromPath(final Path inputPath, final ExecutionContext exec) throws Exception {
+        WorkflowFragment wf = new WorkflowFragment(readWorkflow(inputPath, exec), Collections.emptyList(),
+            Collections.emptyList(), Collections.emptySet());
         try {
             return new PortObject[]{
                 new WorkflowPortObject(new WorkflowPortObjectSpec(wf, null, emptyList(), emptyList()))};
@@ -114,73 +93,23 @@ class WorkflowReaderNodeModel extends NodeModel {
         }
     }
 
-    private WorkflowManager readWorkflow(final ExecutionContext exec) throws Exception {
-        File wfFile = FileUtil.resolveToPath(new URL(m_selectedWorkflow.getPathOrURL().replace(" ", "%20"))).toFile();
-        WorkflowLoadHelper loadHelper = new WorkflowLoadHelper(wfFile);
-        WorkflowLoadResult loadResult = WorkflowManager.EXTRACTED_WORKFLOW_ROOT.load(wfFile, exec, loadHelper, false);
-        WorkflowManager m = loadResult.getWorkflowManager();
+    private static WorkflowManager readWorkflow(final Path inputPath, final ExecutionContext exec) throws IOException,
+        InvalidSettingsException, CanceledExecutionException, UnsupportedWorkflowVersionException, LockFailedException {
+
+        final File wfFile = inputPath.toFile();
+        final WorkflowLoadHelper loadHelper = new WorkflowLoadHelper(wfFile);
+        final WorkflowLoadResult loadResult =
+            WorkflowManager.EXTRACTED_WORKFLOW_ROOT.load(wfFile, exec, loadHelper, false);
+        final WorkflowManager m = loadResult.getWorkflowManager();
         if (m == null) {
-            throw new Exception("Errors reading workflow: " + loadResult.getFilteredError("", LoadResultEntryType.Ok));
+            throw new IOException(
+                "Errors reading workflow: " + loadResult.getFilteredError("", LoadResultEntryType.Ok));
         } else {
-            switch (loadResult.getType()) {
-                case Ok:
-                    break;
-                default:
-                    WorkflowManager.EXTRACTED_WORKFLOW_ROOT.removeProject(m.getID());
-                    throw new Exception("Errors reading workflow: " + m_selectedWorkflow);
+            if (loadResult.getType() != LoadResultEntryType.Ok) {
+                WorkflowManager.EXTRACTED_WORKFLOW_ROOT.removeProject(m.getID());
+                throw new IOException("Errors reading workflow: " + inputPath.toString());
             }
         }
         return loadResult.getWorkflowManager();
     }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    protected void loadInternals(final File nodeInternDir, final ExecutionMonitor exec)
-        throws IOException, CanceledExecutionException {
-        //
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    protected void saveInternals(final File nodeInternDir, final ExecutionMonitor exec)
-        throws IOException, CanceledExecutionException {
-        //
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    protected void saveSettingsTo(final NodeSettingsWO settings) {
-        m_selectedWorkflow.saveSettingsTo(settings);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    protected void validateSettings(final NodeSettingsRO settings) throws InvalidSettingsException {
-        m_selectedWorkflow.validateSettings(settings);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    protected void loadValidatedSettingsFrom(final NodeSettingsRO settings) throws InvalidSettingsException {
-        m_selectedWorkflow.loadSettingsFrom(settings);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    protected void reset() {
-        //
-    }
-
 }

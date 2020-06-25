@@ -48,27 +48,19 @@
  */
 package org.knime.testing.node.wfcapture.reader;
 
-import javax.swing.JFileChooser;
-
-import org.knime.core.node.FlowVariableModel;
-import org.knime.core.node.defaultnodesettings.DefaultNodeSettingsPane;
-import org.knime.core.node.workflow.FlowVariable.Type;
-import org.knime.filehandling.core.defaultnodesettings.DialogComponentFileChooser2;
-import org.knime.filehandling.core.defaultnodesettings.SettingsModelFileChooser2;
+import org.knime.core.node.context.NodeCreationConfiguration;
+import org.knime.filehandling.core.node.portobject.SelectionMode;
+import org.knime.filehandling.core.node.portobject.reader.PortObjectReaderNodeDialog;
 
 /**
  *
  * @author Martin Horn, KNIME GmbH, Konstanz, Germany
  */
-class WorkflowReaderNodeDialog extends DefaultNodeSettingsPane {
+final class WorkflowReaderNodeDialog extends PortObjectReaderNodeDialog<WorkflowReaderNodeConfig> {
 
-    WorkflowReaderNodeDialog() {
-        SettingsModelFileChooser2 fileChooserSettings = WorkflowReaderNodeModel.createSelectedWorkflowModel();
-        final FlowVariableModel fvm = createFlowVariableModel(
-            new String[]{fileChooserSettings.getConfigName(), SettingsModelFileChooser2.PATH_OR_URL_KEY}, Type.STRING);
+    static final SelectionMode SELECTION_MODE = SelectionMode.FOLDER;
 
-        addDialogComponent(new DialogComponentFileChooser2(0, fileChooserSettings, "selected_workflow",
-            JFileChooser.OPEN_DIALOG, JFileChooser.DIRECTORIES_ONLY, fvm));
+    WorkflowReaderNodeDialog(final NodeCreationConfiguration creationConfig) {
+        super(new WorkflowReaderNodeConfig(creationConfig), "workflow_reader", SELECTION_MODE);
     }
-
 }

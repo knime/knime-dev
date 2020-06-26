@@ -48,7 +48,13 @@
  */
 package org.knime.testing.node.wfcapture.reader;
 
+import org.knime.core.node.InvalidSettingsException;
+import org.knime.core.node.NodeSettingsRO;
+import org.knime.core.node.NodeSettingsWO;
+import org.knime.core.node.NotConfigurableException;
 import org.knime.core.node.context.NodeCreationConfiguration;
+import org.knime.core.node.defaultnodesettings.DialogComponentString;
+import org.knime.core.node.port.PortObjectSpec;
 import org.knime.filehandling.core.node.portobject.SelectionMode;
 import org.knime.filehandling.core.node.portobject.reader.PortObjectReaderNodeDialog;
 
@@ -60,7 +66,25 @@ final class WorkflowReaderNodeDialog extends PortObjectReaderNodeDialog<Workflow
 
     static final SelectionMode SELECTION_MODE = SelectionMode.FOLDER;
 
+    private final DialogComponentString m_workflowName;
+
     WorkflowReaderNodeDialog(final NodeCreationConfiguration creationConfig) {
         super(new WorkflowReaderNodeConfig(creationConfig), "workflow_reader", SELECTION_MODE);
+
+        m_workflowName = new DialogComponentString(getConfig().getWorkflowName(), "Workflow name: ", true, 30);
+        addAdditionalPanel(m_workflowName.getComponentPanel());
+    }
+
+    @Override
+    protected void saveSettingsTo(final NodeSettingsWO settings) throws InvalidSettingsException {
+        super.saveSettingsTo(settings);
+        m_workflowName.saveSettingsTo(settings);
+    }
+
+    @Override
+    protected void loadSettingsFrom(final NodeSettingsRO settings, final PortObjectSpec[] specs)
+            throws NotConfigurableException {
+        super.loadSettingsFrom(settings, specs);
+        m_workflowName.loadSettingsFrom(settings, specs);
     }
 }

@@ -48,7 +48,11 @@
  */
 package org.knime.testing.node.wfcapture.reader;
 
+import org.knime.core.node.InvalidSettingsException;
+import org.knime.core.node.NodeSettingsRO;
+import org.knime.core.node.NodeSettingsWO;
 import org.knime.core.node.context.NodeCreationConfiguration;
+import org.knime.core.node.defaultnodesettings.SettingsModelString;
 import org.knime.filehandling.core.node.portobject.reader.PortObjectReaderNodeConfig;
 
 /**
@@ -56,7 +60,33 @@ import org.knime.filehandling.core.node.portobject.reader.PortObjectReaderNodeCo
  */
 final class WorkflowReaderNodeConfig extends PortObjectReaderNodeConfig {
 
+    private static final String CUSTOM_NAME = "custom-name";
+
+    private final SettingsModelString m_workflowName = new SettingsModelString(CUSTOM_NAME, "");
+
     WorkflowReaderNodeConfig(final NodeCreationConfiguration creationConfig) {
         super(creationConfig);
+    }
+
+    SettingsModelString getWorkflowName() {
+        return m_workflowName;
+    }
+
+    @Override
+    protected void validateConfigurationForModel(final NodeSettingsRO settings) throws InvalidSettingsException {
+        super.validateConfigurationForModel(settings);
+        m_workflowName.validateSettings(settings);
+    }
+
+    @Override
+    protected void saveConfigurationForModel(final NodeSettingsWO settings) {
+        super.saveConfigurationForModel(settings);
+        m_workflowName.saveSettingsTo(settings);
+    }
+
+    @Override
+    protected void loadConfigurationForModel(final NodeSettingsRO settings) throws InvalidSettingsException {
+        super.loadConfigurationForModel(settings);
+        m_workflowName.loadSettingsFrom(settings);
     }
 }

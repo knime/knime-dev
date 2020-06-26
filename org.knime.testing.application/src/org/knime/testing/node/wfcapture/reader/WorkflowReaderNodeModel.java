@@ -93,10 +93,10 @@ final class WorkflowReaderNodeModel extends PortObjectFromPathReaderNodeModel<Wo
         }
     }
 
-    private static WorkflowManager readWorkflow(final Path inputPath, final ExecutionContext exec) throws IOException,
+    private WorkflowManager readWorkflow(final Path inputPath, final ExecutionContext exec) throws IOException,
         InvalidSettingsException, CanceledExecutionException, UnsupportedWorkflowVersionException, LockFailedException {
 
-        final File wfFile = inputPath.toFile();
+        final File wfFile = inputPath.resolve(getConfig().getWorkflowName().getStringValue()).toFile();
         final WorkflowLoadHelper loadHelper = new WorkflowLoadHelper(wfFile);
         final WorkflowLoadResult loadResult =
             WorkflowManager.EXTRACTED_WORKFLOW_ROOT.load(wfFile, exec, loadHelper, false);

@@ -52,6 +52,8 @@ import static java.util.Collections.emptyList;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.file.Path;
 import java.util.Collections;
 
@@ -68,7 +70,10 @@ import org.knime.core.node.workflow.WorkflowPersistor.WorkflowLoadResult;
 import org.knime.core.node.workflow.capture.WorkflowFragment;
 import org.knime.core.node.workflow.capture.WorkflowPortObject;
 import org.knime.core.node.workflow.capture.WorkflowPortObjectSpec;
+import org.knime.core.util.FileUtil;
 import org.knime.core.util.LockFailedException;
+import org.knime.filehandling.core.connections.knimerelativeto.RelativeToPath;
+import org.knime.filehandling.core.filechooser.NioFile;
 import org.knime.filehandling.core.node.portobject.reader.PortObjectFromPathReaderNodeModel;
 
 /**
@@ -93,13 +98,36 @@ final class WorkflowReaderNodeModel extends PortObjectFromPathReaderNodeModel<Wo
         }
     }
 
-    private WorkflowManager readWorkflow(final Path inputPath, final ExecutionContext exec) throws IOException,
-        InvalidSettingsException, CanceledExecutionException, UnsupportedWorkflowVersionException, LockFailedException {
+    private WorkflowManager readWorkflow(final Path inputPath, final ExecutionContext exec)
+        throws IOException, InvalidSettingsException, CanceledExecutionException, UnsupportedWorkflowVersionException,
+        LockFailedException, URISyntaxException {
 
-        final File wfFile = inputPath.resolve(getConfig().getWorkflowName().getStringValue()).toFile();
+        final String wfName = getConfig().getWorkflowName().getStringValue();
+
+        // this is fairly hacky and likely won't work universally (e.g., when node is executed on the server)
+        // should we ever decide to release this node, we should instead add a method to the WorkflowAware interface
+        final File wfFile;
+        switch (getConfig().getFileChooserModel().getLocation().getFSCategory()) {
+            case LOCAL:
+                wfFile = inputPath.resolve(wfName).toFile();
+                break;
+            case RELATIVE:
+                final NioFile nioFile = (NioFile)inputPath.resolve(wfName).toFile();
+                final RelativeToPath path = (RelativeToPath)nioFile.toPath();
+                final URL url = path.toKNIMEProtocolURI().toURL();
+                wfFile = FileUtil.resolveToPath(url).toFile();
+                break;
+            case MOUNTPOINT:
+            case CUSTOM_URL:
+            case CONNECTED:
+            default:
+                throw new UnsupportedOperationException("File system not yet implemented for this node.");
+        }
+
         final WorkflowLoadHelper loadHelper = new WorkflowLoadHelper(wfFile);
         final WorkflowLoadResult loadResult =
             WorkflowManager.EXTRACTED_WORKFLOW_ROOT.load(wfFile, exec, loadHelper, false);
+
         final WorkflowManager m = loadResult.getWorkflowManager();
         if (m == null) {
             throw new IOException(
@@ -112,4 +140,5 @@ final class WorkflowReaderNodeModel extends PortObjectFromPathReaderNodeModel<Wo
         }
         return loadResult.getWorkflowManager();
     }
+
 }

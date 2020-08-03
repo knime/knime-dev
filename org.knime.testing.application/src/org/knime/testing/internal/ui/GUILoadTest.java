@@ -68,6 +68,7 @@ import org.knime.core.node.workflow.WorkflowLoadHelper;
 import org.knime.core.node.workflow.WorkflowManager;
 import org.knime.core.node.workflow.WorkflowPersistor;
 import org.knime.core.node.workflow.WorkflowPersistor.LoadResultEntry.LoadResultEntryType;
+import org.knime.core.node.workflow.WorkflowPersistor.NodeContainerTemplateLinkUpdateResult;
 import org.knime.core.node.workflow.WorkflowPersistor.WorkflowLoadResult;
 import org.knime.core.ui.node.workflow.WorkflowManagerUI;
 import org.knime.core.ui.wrapper.WorkflowManagerWrapper;
@@ -163,8 +164,21 @@ class GUILoadTest extends WorkflowTest {
             result
                 .addFailure(test, new AssertionFailedError(loadRes.getFilteredError("", LoadResultEntryType.Warning)));
         }
+        WorkflowManager wfm = loadRes.getWorkflowManager();
 
-        WorkflowManagerUI manager = WorkflowManagerWrapper.wrap(loadRes.getWorkflowManager());
+        NodeContainerTemplateLinkUpdateResult updateLinksResult =
+                wfm.updateMetaNodeLinks(new WorkflowLoadHelper(true, wfm.getContext()), true, new ExecutionMonitor());
+
+        if (updateLinksResult.getType() == LoadResultEntryType.Error) {
+            result.addFailure(test, new AssertionFailedError("Errors updating links in the workflow - "
+                + updateLinksResult.getFilteredError("", LoadResultEntryType.Error)));
+        }
+        if (runConfig.isCheckForLoadWarnings() && updateLinksResult.hasWarningEntries()) {
+            result.addFailure(test, new AssertionFailedError("Warnings updating links in the workflow - "
+                + updateLinksResult.getFilteredError("", LoadResultEntryType.Warning)));
+        }
+
+        WorkflowManagerUI manager = WorkflowManagerWrapper.wrap(wfm);
 
         final IEditorInput editorInput = new WorkflowManagerInput(manager, workflowDir.toURI());
         final IEditorDescriptor editorDescriptor = IDE.getEditorDescriptor(WorkflowPersistor.WORKFLOW_FILE);

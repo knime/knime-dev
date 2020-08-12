@@ -48,6 +48,8 @@ package org.knime.testing.internal.ui;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -150,6 +152,19 @@ class GUILoadTest extends WorkflowTest {
             public WorkflowContext getWorkflowContext() {
                 WorkflowContext.Factory fac = new WorkflowContext.Factory(workflowDir);
                 fac.setMountpointRoot(testcaseRoot);
+
+                final String wfPathAbs = (new File(workflowDir, WorkflowPersistor.WORKFLOW_FILE)).getAbsolutePath();
+                final String testcaseRootAbs = testcaseRoot.getAbsolutePath();
+                if (wfPathAbs.startsWith(testcaseRootAbs)) {
+                    // similar to TestflowCollector#searchDirectory
+                    final String workflowPath = wfPathAbs.substring(testcaseRootAbs.length()).replace('\\', '/');
+                    try {
+                        // the mountpoint URI is optional in the wf context, so we are OK if an exception occurs here
+                        fac.setMountpointURI(new URI("knime", "LOCAL", workflowPath, null));
+                    } catch (URISyntaxException e) {
+                    }
+                }
+
                 return fac.createContext();
             }
         };

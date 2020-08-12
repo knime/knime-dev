@@ -49,6 +49,8 @@ package org.knime.testing.core.ng;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.knime.core.node.CanceledExecutionException;
@@ -58,6 +60,7 @@ import org.knime.core.node.workflow.UnsupportedWorkflowVersionException;
 import org.knime.core.node.workflow.WorkflowContext;
 import org.knime.core.node.workflow.WorkflowLoadHelper;
 import org.knime.core.node.workflow.WorkflowManager;
+import org.knime.core.node.workflow.WorkflowPersistor;
 import org.knime.core.node.workflow.WorkflowPersistor.LoadResultEntry.LoadResultEntryType;
 import org.knime.core.node.workflow.WorkflowPersistor.WorkflowLoadResult;
 import org.knime.core.util.LoadVersion;
@@ -133,6 +136,19 @@ public class WorkflowLoadTest extends WorkflowTest {
             public WorkflowContext getWorkflowContext() {
                 WorkflowContext.Factory fac = new WorkflowContext.Factory(workflowDir);
                 fac.setMountpointRoot(testcaseRoot);
+
+                final String wfPathAbs = (new File(workflowDir, WorkflowPersistor.WORKFLOW_FILE)).getAbsolutePath();
+                final String testcaseRootAbs = testcaseRoot.getAbsolutePath();
+                if (wfPathAbs.startsWith(testcaseRootAbs)) {
+                    // similar to TestflowCollector#searchDirectory
+                    final String workflowPath = wfPathAbs.substring(testcaseRootAbs.length()).replace('\\', '/');
+                    try {
+                        // the mountpoint URI is optional in the wf context, so we are OK if an exception occurs here
+                        fac.setMountpointURI(new URI("knime", "LOCAL", workflowPath, null));
+                    } catch (URISyntaxException e) {
+                    }
+                }
+
                 return fac.createContext();
             }
 

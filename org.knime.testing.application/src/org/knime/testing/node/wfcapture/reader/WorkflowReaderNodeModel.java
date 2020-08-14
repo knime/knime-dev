@@ -52,17 +52,20 @@ import static java.util.Collections.emptyList;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
 import java.nio.file.Path;
 import java.util.Collections;
 
+import org.eclipse.core.runtime.CoreException;
 import org.knime.core.node.CanceledExecutionException;
 import org.knime.core.node.ExecutionContext;
 import org.knime.core.node.InvalidSettingsException;
 import org.knime.core.node.context.NodeCreationConfiguration;
 import org.knime.core.node.port.PortObject;
+import org.knime.core.node.util.CheckUtils;
 import org.knime.core.node.workflow.UnsupportedWorkflowVersionException;
+import org.knime.core.node.workflow.WorkflowContext;
 import org.knime.core.node.workflow.WorkflowLoadHelper;
 import org.knime.core.node.workflow.WorkflowManager;
 import org.knime.core.node.workflow.WorkflowPersistor.LoadResultEntry.LoadResultEntryType;
@@ -70,11 +73,11 @@ import org.knime.core.node.workflow.WorkflowPersistor.WorkflowLoadResult;
 import org.knime.core.node.workflow.capture.WorkflowFragment;
 import org.knime.core.node.workflow.capture.WorkflowPortObject;
 import org.knime.core.node.workflow.capture.WorkflowPortObjectSpec;
-import org.knime.core.util.FileUtil;
 import org.knime.core.util.LockFailedException;
-import org.knime.filehandling.core.connections.knimerelativeto.RelativeToPath;
-import org.knime.filehandling.core.filechooser.NioFile;
+import org.knime.filehandling.core.connections.knimerelativeto.RelativeToUtil;
 import org.knime.filehandling.core.node.portobject.reader.PortObjectFromPathReaderNodeModel;
+import org.knime.workbench.explorer.ExplorerMountTable;
+import org.knime.workbench.explorer.filesystem.AbstractExplorerFileStore;
 
 /**
  *
@@ -112,10 +115,21 @@ final class WorkflowReaderNodeModel extends PortObjectFromPathReaderNodeModel<Wo
                 wfFile = inputPath.resolve(wfName).toFile();
                 break;
             case RELATIVE:
-                final NioFile nioFile = (NioFile)inputPath.resolve(wfName).toFile();
-                final RelativeToPath path = (RelativeToPath)nioFile.toPath();
-                final URL url = path.toKNIMEProtocolURI().toURL();
-                wfFile = FileUtil.resolveToPath(url).toFile();
+                // the way the destination path is determined here follows the same code path as
+                // LocalRelativeToFileSystemProvider#deployWorkflow -> ExplorerMountPointFileSystemAccess#deployWorkflow
+                final Path src = inputPath.resolve(wfName);
+                final Path absoluteSrc = src.toAbsolutePath().normalize();
+                final WorkflowContext context = RelativeToUtil.getWorkflowContext();
+                CheckUtils.checkState(context.getMountpointURI().isPresent(),
+                    "Cannot determine name of mountpoint to deploy workflow.");
+                final String currentMountpoint = context.getMountpointURI().get().getAuthority();
+                final URI uri = new URI("knime", currentMountpoint, absoluteSrc.toString(), null);
+                final AbstractExplorerFileStore store = ExplorerMountTable.getFileSystem().getStore(uri);
+                try {
+                    wfFile = store.toLocalFile();
+                } catch (CoreException e) {
+                    throw new IOException(e);
+                }
                 break;
             case MOUNTPOINT:
             case CUSTOM_URL:

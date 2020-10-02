@@ -199,7 +199,7 @@ public abstract class AbstractXMLResultWriter implements TestListener {
 
         Collection<Test> skippedTests = result.getSkippedTests();
         for (Test test : result.getAllTests()) {
-            if ((test instanceof TestWithName) && !(test instanceof WorkflowTestSuite)) {
+            if ((test instanceof TestWithName) && !(test instanceof WorkflowTestSuite) && (test != result.getSuite())) {
                 Element tc = createTestcaseElement((TestWithName)test, doc);
                 testSuite.appendChild(tc);
                 testcases.put(test, tc);

@@ -52,7 +52,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -198,7 +198,7 @@ class TestflowConfiguration {
                 }
             } catch (IllegalArgumentException ex) {
                 LOGGER.warn("No node with id '" + e.getKey() + "' found in "
-                    + "workflow, but we have a configuration for it. Ignoring the configuration.");
+                    + "workflow, but we have a configuration for it. Ignoring the configuration.", ex);
             }
         }
 
@@ -215,7 +215,7 @@ class TestflowConfiguration {
                 }
             } catch (IllegalArgumentException ex) {
                 LOGGER.warn("No node with id '" + e.getKey() + "' found in "
-                    + "workflow, but we have a configuration for it. Ignoring the configuration.");
+                    + "workflow, but we have a configuration for it. Ignoring the configuration.", ex);
             }
         }
 
@@ -251,29 +251,28 @@ class TestflowConfiguration {
             return;
         }
 
-        BufferedReader statusReader =
-            new BufferedReader(new InputStreamReader(new FileInputStream(statusFile), Charset.forName("UTF-8")));
+        try (BufferedReader statusReader =
+            new BufferedReader(new InputStreamReader(new FileInputStream(statusFile), StandardCharsets.UTF_8))) {
 
-        LOGGER.debug("Reading configuration file '" + statusFile + "' for node status / messages");
-        String line;
-        while ((line = statusReader.readLine()) != null) {
-            if (line.isEmpty()) {
-                // ignore empty lines
-                continue;
-            }
-            String uppercaseLine = line.toUpperCase();
-            if (uppercaseLine.startsWith("ERROR") || uppercaseLine.startsWith("WARN")
-                || uppercaseLine.startsWith("INFO") || uppercaseLine.startsWith("DEBUG")) {
-                // line specifies certain message that should appear in the log
-                parseMessageLine(line);
-            } else {
-                // line specifies a node status plus message
-                parseNodeStatusLine(line);
-            }
+            LOGGER.debug("Reading configuration file '" + statusFile + "' for node status / messages");
+            String line;
+            while ((line = statusReader.readLine()) != null) {
+                if (line.isEmpty()) {
+                    // ignore empty lines
+                    continue;
+                }
+                String uppercaseLine = line.toUpperCase();
+                if (uppercaseLine.startsWith("ERROR") || uppercaseLine.startsWith("WARN")
+                    || uppercaseLine.startsWith("INFO") || uppercaseLine.startsWith("DEBUG")) {
+                    // line specifies certain message that should appear in the log
+                    parseMessageLine(line);
+                } else {
+                    // line specifies a node status plus message
+                    parseNodeStatusLine(line);
+                }
 
+            }
         }
-
-        statusReader.close();
     }
 
     /**
@@ -406,15 +405,15 @@ class TestflowConfiguration {
      */
     private void readOwnersFromFile(final File ownerFile) throws IOException {
         if (ownerFile.exists()) {
-            BufferedReader r =
-                new BufferedReader(new InputStreamReader(new FileInputStream(ownerFile), Charset.forName("UTF-8")));
-            String line = null;
-            while ((line = r.readLine()) != null) {
-                if (line.trim().length() > 0) {
-                    m_owners.add(line.trim());
+            try (BufferedReader r =
+                new BufferedReader(new InputStreamReader(new FileInputStream(ownerFile), StandardCharsets.UTF_8))) {
+                String line = null;
+                while ((line = r.readLine()) != null) {
+                    if (line.trim().length() > 0) {
+                        m_owners.add(line.trim());
+                    }
                 }
             }
-            r.close();
         }
     }
 

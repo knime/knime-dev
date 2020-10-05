@@ -88,12 +88,12 @@ public abstract class AbstractXMLResultWriter implements TestListener {
     /**
      * Map with the start times of each test (in milliseconds since the epoch).
      */
-    protected final Map<Test, Long> m_startTimes = new HashMap<Test, Long>();
+    protected final Map<Test, Long> m_startTimes = new HashMap<>();
 
     /**
      * Map with the end times of each test (in milliseconds since the epoch).
      */
-    protected final Map<Test, Long> m_endTimes = new HashMap<Test, Long>();
+    protected final Map<Test, Long> m_endTimes = new HashMap<>();
 
     /**
      * Document builder for creating XML documents.
@@ -195,7 +195,7 @@ public abstract class AbstractXMLResultWriter implements TestListener {
     }
 
     private void addTestcases(final WorkflowTestResult result, final Document doc, final Element testSuite) {
-        Map<Test, Element> testcases = new HashMap<Test, Element>();
+        Map<Test, Element> testcases = new HashMap<>();
 
         Collection<Test> skippedTests = result.getSkippedTests();
         for (Test test : result.getAllTests()) {

@@ -53,7 +53,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 import javax.swing.JFileChooser;
 
@@ -72,21 +72,8 @@ import org.knime.core.util.FileUtil;
  * @deprecated the new testing framework (in <tt>org.knime.testing.core.ng</tt>) analyzes the log output on-the-fly
  */
 @Deprecated
+@SuppressWarnings({"squid:S106"})
 public class AnalyzeLogFile {
-    /*
-     * privately used enum
-     */
-    private enum ErrorCode {
-        /** good test. */
-        OK,
-        /** test produced error(s). */
-        ERROR,
-        /** test fails due to exception. */
-        EXCEPTION,
-        /** test has errors and exceptions. */
-        ERREXCEPT
-    }
-
     // this pattern in the log file indicates a starting test log
     private static final String TEST_START_CODE = "<Start> Test='";
 
@@ -166,13 +153,13 @@ public class AnalyzeLogFile {
         File failTests =
                 new File(m_tmpDir, "SummaryFailingTests_" + m_startTime
                         + ".txt");
-        m_summaryFailingTests = new OutputStreamWriter(new FileOutputStream(failTests), Charset.forName("UTF-8"));
+        m_summaryFailingTests = new OutputStreamWriter(new FileOutputStream(failTests), StandardCharsets.UTF_8);
 
         // global file writer. All methods write in there.
         File goodTests =
                 new File(m_tmpDir, "SummarySucceedingTests_" + m_startTime
                         + ".txt");
-        m_summarySucceedingTests = new OutputStreamWriter(new FileOutputStream(goodTests), Charset.forName("UTF-8"));
+        m_summarySucceedingTests = new OutputStreamWriter(new FileOutputStream(goodTests), StandardCharsets.UTF_8);
 
         checkWorkbenchInit(logCopy);
 
@@ -182,14 +169,13 @@ public class AnalyzeLogFile {
         m_summaryFailingTests.close();
         m_summarySucceedingTests.close();
 
-        BufferedReader negReader =
-                new BufferedReader(new InputStreamReader(new FileInputStream(failTests), Charset.forName("UTF-8")));
+        try (BufferedReader negReader =
+                new BufferedReader(new InputStreamReader(new FileInputStream(failTests), StandardCharsets.UTF_8));
         BufferedReader posReader =
-                new BufferedReader(new InputStreamReader(new FileInputStream(goodTests), Charset.forName("UTF-8")));
-        // combines the two summary files
-        createSummary(negReader, posReader);
-        negReader.close();
-        posReader.close();
+                new BufferedReader(new InputStreamReader(new FileInputStream(goodTests), StandardCharsets.UTF_8))) {
+            // combines the two summary files
+            createSummary(negReader, posReader);
+        }
 
         System.out.println("Results are in '" + m_tmpDir.getAbsolutePath()
                 + "'.");
@@ -201,61 +187,59 @@ public class AnalyzeLogFile {
     private void createSummary(final BufferedReader failTests,
             final BufferedReader goodTests) throws IOException {
         File summaryFile = new File(m_tmpDir, "_Summary_" + m_startTime + ".txt");
-        Writer summary = new OutputStreamWriter(new FileOutputStream(summaryFile), Charset.forName("UTF-8"));
+        try (Writer summary = new OutputStreamWriter(new FileOutputStream(summaryFile), StandardCharsets.UTF_8)) {
+            int posTests = m_numOfTestsRun - m_numOfFailingTests;
+            int posRate = (int)Math.floor((posTests * 100.0) / m_numOfTestsRun);
 
-        int posTests = m_numOfTestsRun - m_numOfFailingTests;
-        int posRate = (int)Math.floor((posTests * 100.0) / m_numOfTestsRun);
+            summary.write("Regression run on " + m_startTime + CRLF);
+            summary.write("Tests run: " + m_numOfTestsRun + ", failing: "
+                    + m_numOfFailingTests + ", succeeding: " + posTests + CRLF);
+            summary.write("Success rate: " + posRate + "%" + CRLF);
+            summary.write(CRLF);
+            summary.write("--------------------------------------");
+            summary.write("--------------------------------------" + CRLF);
+            summary.write("--------------------------------------");
+            summary.write("--------------------------------------" + CRLF);
+            summary
+                    .write("Failing tests: (see individual logs for details)"
+                            + CRLF);
+            summary.write("--------------------------------------");
+            summary.write("--------------------------------------" + CRLF);
+            summary.write("--------------------------------------");
+            summary.write("--------------------------------------" + CRLF);
 
-        summary.write("Regression run on " + m_startTime + CRLF);
-        summary.write("Tests run: " + m_numOfTestsRun + ", failing: "
-                + m_numOfFailingTests + ", succeeding: " + posTests + CRLF);
-        summary.write("Success rate: " + posRate + "%" + CRLF);
-        summary.write(CRLF);
-        summary.write("--------------------------------------");
-        summary.write("--------------------------------------" + CRLF);
-        summary.write("--------------------------------------");
-        summary.write("--------------------------------------" + CRLF);
-        summary
-                .write("Failing tests: (see individual logs for details)"
-                        + CRLF);
-        summary.write("--------------------------------------");
-        summary.write("--------------------------------------" + CRLF);
-        summary.write("--------------------------------------");
-        summary.write("--------------------------------------" + CRLF);
+            // copy the failing tests summary
+            String line;
+            int cnt = 0;
+            while ((line = failTests.readLine()) != null) {
+                summary.write(line + CRLF);
+                cnt++;
+            }
+            if (cnt == 0) {
+                summary.write("Hooray, no failures today!");
+            }
 
-        // copy the failing tests summary
-        String line;
-        int cnt = 0;
-        while ((line = failTests.readLine()) != null) {
-            summary.write(line + CRLF);
-            cnt++;
+            summary.write(CRLF);
+            summary.write("--------------------------------------");
+            summary.write("--------------------------------------" + CRLF);
+            summary.write("--------------------------------------");
+            summary.write("--------------------------------------" + CRLF);
+            summary.write("Succeeding tests: (no individual log exists)" + CRLF);
+            summary.write("--------------------------------------");
+            summary.write("--------------------------------------" + CRLF);
+            summary.write("--------------------------------------");
+            summary.write("--------------------------------------" + CRLF);
+
+            // copy the good tests summary
+            cnt = 0;
+            while ((line = goodTests.readLine()) != null) {
+                summary.write(line + CRLF);
+                cnt++;
+            }
+            if (cnt == 0) {
+                summary.write("Ooops. Who broke the system?!?");
+            }
         }
-        if (cnt == 0) {
-            summary.write("Hooray, no failures today!");
-        }
-
-        summary.write(CRLF);
-        summary.write("--------------------------------------");
-        summary.write("--------------------------------------" + CRLF);
-        summary.write("--------------------------------------");
-        summary.write("--------------------------------------" + CRLF);
-        summary.write("Succeeding tests: (no individual log exists)" + CRLF);
-        summary.write("--------------------------------------");
-        summary.write("--------------------------------------" + CRLF);
-        summary.write("--------------------------------------");
-        summary.write("--------------------------------------" + CRLF);
-
-        // copy the good tests summary
-        cnt = 0;
-        while ((line = goodTests.readLine()) != null) {
-            summary.write(line + CRLF);
-            cnt++;
-        }
-        if (cnt == 0) {
-            summary.write("Ooops. Who broke the system?!?");
-        }
-
-        summary.close();
     }
 
     /**
@@ -268,52 +252,52 @@ public class AnalyzeLogFile {
      * @throws IOException if the log file is not accessible
      */
     private void checkWorkbenchInit(final File logFile) throws IOException {
-        BufferedReader logReader =
-                new BufferedReader(new InputStreamReader(new FileInputStream(logFile), Charset.forName("UTF-8")));
+        boolean workbenchInitFailed = false;
         String testName = "_workbenchInitializing";
         String ownerAddress = FullWorkflowTest.REGRESSIONS_OWNER;
+        File testFile = new File(m_tmpDir, testName + "_" + m_startTime + ".txt");
 
-        File testFile =
-                new File(m_tmpDir, testName + "_" + m_startTime + ".txt");
-        Writer testFileWriter = new OutputStreamWriter(new FileOutputStream(testFile), Charset.forName("UTF-8"));
-        testFileWriter.write(ownerAddress + CRLF);
+        try (BufferedReader logReader =
+                new BufferedReader(new InputStreamReader(new FileInputStream(logFile), StandardCharsets.UTF_8))) {
 
-        String line = null;
-        boolean workbenchInitFailed = false;
+            try (Writer testFileWriter =
+                new OutputStreamWriter(new FileOutputStream(testFile), StandardCharsets.UTF_8)) {
+                testFileWriter.write(ownerAddress + CRLF);
 
-        boolean exceptionStartLine = false;
-        while ((line = logReader.readLine()) != null) {
+                String line = null;
 
-            if (line.contains(TEST_START_CODE)) {
-                // regression tests start here. Workbench initialization done.
-                break;
-            }
+                boolean exceptionStartLine = false;
+                while ((line = logReader.readLine()) != null) {
 
-            testFileWriter.write(line + CRLF);
-
-            if (line.indexOf("Exception: ") > 0) {
-                exceptionStartLine = true;
-            } else if ((line.indexOf(" ERROR ") == 23)
-                    || (line.indexOf(" FATAL ") == 23)) {
-                // an error during workbench init is not good.
-                workbenchInitFailed = true;
-            } else {
-                if (exceptionStartLine) {
-                    // if the previous line started an exception dump
-                    // this should be the first line of the stacktrace
-                    if (line.matches("^\\tat .*\\(.*\\)$")) {
-                        workbenchInitFailed = true;
-                        // continue here, we want to copy the entire
-                        // log file header in the testlog file
+                    if (line.contains(TEST_START_CODE)) {
+                        // regression tests start here. Workbench initialization done.
+                        break;
                     }
-                    exceptionStartLine = false;
+
+                    testFileWriter.write(line + CRLF);
+
+                    if (line.indexOf("Exception: ") >= 0) {
+                        exceptionStartLine = true;
+                    } else if ((line.indexOf(" ERROR ") == 23)
+                            || (line.indexOf(" FATAL ") == 23)) {
+                        // an error during workbench init is not good.
+                        workbenchInitFailed = true;
+                    } else {
+                        if (exceptionStartLine) {
+                            // if the previous line started an exception dump
+                            // this should be the first line of the stacktrace
+                            if (line.matches("^\\tat .*\\(.*\\)$")) {
+                                workbenchInitFailed = true;
+                                // continue here, we want to copy the entire
+                                // log file header in the testlog file
+                            }
+                            exceptionStartLine = false;
+                        }
+                    }
                 }
             }
-
         }
 
-        testFileWriter.close();
-        logReader.close();
 
         if (workbenchInitFailed) {
             m_summaryFailingTests.write("Test '" + testName
@@ -328,60 +312,57 @@ public class AnalyzeLogFile {
     }
 
     private void extractFailingTests(final File logFile) throws IOException {
-        BufferedReader logReader =
-                new BufferedReader(new InputStreamReader(new FileInputStream(logFile), Charset.forName("UTF-8")));
+        try (BufferedReader logReader =
+                new BufferedReader(new InputStreamReader(new FileInputStream(logFile), StandardCharsets.UTF_8))) {
 
-        String startKey = TEST_START_CODE;
-        String startLine;
+            String startKey = TEST_START_CODE;
+            String startLine;
 
-        while ((startLine = getLineContaining(startKey, logReader)) != null) {
+            while ((startLine = getLineContaining(startKey, logReader)) != null) {
 
-            String testName =
-                    startLine.substring(startLine.indexOf('\'') + 1, startLine
-                            .lastIndexOf('\''));
-            File testFile =
-                    new File(m_tmpDir, testName + "_" + m_startTime + ".txt");
-            Writer testFileWriter = new OutputStreamWriter(new FileOutputStream(testFile), Charset.forName("UTF-8"));
+                String testName =
+                        startLine.substring(startLine.indexOf('\'') + 1, startLine
+                                .lastIndexOf('\''));
+                File testFile =
+                        new File(m_tmpDir, testName + "_" + m_startTime + ".txt");
+                boolean testSucceeded;
+                String ownerAddress = null;
+                try (Writer testFileWriter = new OutputStreamWriter(new FileOutputStream(testFile), StandardCharsets.UTF_8)) {
+                    String ownerKey = "TestOwners=";
+                    String ownerLine = getLineContaining(ownerKey, logReader);
+                    if (ownerLine != null) {
+                        // All tests MUST have an owner line (even ownerless ones - they
+                        // must be owned by the regression master)
+                        ownerAddress =
+                                ownerLine.substring(ownerLine.indexOf(ownerKey)
+                                        + ownerKey.length());
+                        testFileWriter.write(ownerAddress + CRLF);
+                    }
 
-            String ownerKey = "TestOwners=";
-            String ownerLine = getLineContaining(ownerKey, logReader);
-            String ownerAddress = null;
-            if (ownerLine != null) {
-                // All tests MUST have an owner line (even ownerless ones - they
-                // must be owned by the regression master)
-                ownerAddress =
-                        ownerLine.substring(ownerLine.indexOf(ownerKey)
-                                + ownerKey.length());
-                testFileWriter.write(ownerAddress + CRLF);
-            }
+                    // also add the first line
+                    testFileWriter.write(startLine + CRLF);
 
-            // also add the first line
-            testFileWriter.write(startLine + CRLF);
+                    // copy all lines into the testfile and analyze them
+                    testSucceeded = writeOneTest(testFileWriter, logReader, testName);
+                }
 
-            // copy all lines into the testfile and analyze them
-            boolean testSucceeded =
-                    writeOneTest(testFileWriter, logReader, testName);
-            testFileWriter.close();
-
-            m_numOfTestsRun++;
-            if (testSucceeded) {
-                m_summarySucceedingTests.write("Test '" + testName
-                        + "' succeeded ");
-                m_summarySucceedingTests.write("(Owner: " + ownerAddress + ")."
-                        + CRLF);
-                // delete the file of succeeding tests
-                testFile.delete();
-            } else {
-                // this text is parsed by the nightly test scripts!
-                m_numOfFailingTests++;
-                m_summaryFailingTests.write("Test '" + testName + "' failed.");
-                m_summaryFailingTests.write("(Owner: " + ownerAddress + ")."
-                        + CRLF);
+                m_numOfTestsRun++;
+                if (testSucceeded) {
+                    m_summarySucceedingTests.write("Test '" + testName
+                            + "' succeeded ");
+                    m_summarySucceedingTests.write("(Owner: " + ownerAddress + ")."
+                            + CRLF);
+                    // delete the file of succeeding tests
+                    testFile.delete();
+                } else {
+                    // this text is parsed by the nightly test scripts!
+                    m_numOfFailingTests++;
+                    m_summaryFailingTests.write("Test '" + testName + "' failed.");
+                    m_summaryFailingTests.write("(Owner: " + ownerAddress + ")."
+                            + CRLF);
+                }
             }
         }
-
-        logReader.close();
-
     }
 
     /*
@@ -390,7 +371,7 @@ public class AnalyzeLogFile {
      * returns true, if it sound the success pattern, or false, if it found the
      * fail pattern.
      */
-    private boolean writeOneTest(final Writer testFile,
+    private static boolean writeOneTest(final Writer testFile,
             final BufferedReader logReader, final String testName)
             throws IOException {
 
@@ -433,38 +414,35 @@ public class AnalyzeLogFile {
      * the date in the log file).
      */
     private String extractTimestamp(final File logFile) throws IOException {
-        BufferedReader logReader =
-                new BufferedReader(new InputStreamReader(new FileInputStream(logFile), Charset.forName("UTF-8")));
-
         String result = "unknown";
-        String key = "logging date=";
+        try (BufferedReader logReader =
+                new BufferedReader(new InputStreamReader(new FileInputStream(logFile), StandardCharsets.UTF_8))) {
+            String key = "logging date=";
 
-        String line = getLineContaining(key, logReader);
+            String line = getLineContaining(key, logReader);
 
-        if ((line != null)
-                && (line.indexOf(key) + key.length() + 1 < line.length())) {
-            String dateStr = line.substring(line.indexOf(key) + key.length());
-            // dateStr should look like "Tue Jan 16 15:54:47 CET 2007"
-            String[] segm = dateStr.split(" ");
-            if (segm.length > 3) {
-                // we want to create something like "Jan16_15_54_47"
-                String[] timeSegm = segm[3].split(":");
-                if (timeSegm.length == 3) {
-                    result =
-                            segm[1] + segm[2] + "_" + timeSegm[0] + "_"
-                                    + timeSegm[1] + "_" + timeSegm[2];
+            if ((line != null)
+                    && (line.indexOf(key) + key.length() + 1 < line.length())) {
+                String dateStr = line.substring(line.indexOf(key) + key.length());
+                // dateStr should look like "Tue Jan 16 15:54:47 CET 2007"
+                String[] segm = dateStr.split(" ");
+                if (segm.length > 3) {
+                    // we want to create something like "Jan16_15_54_47"
+                    String[] timeSegm = segm[3].split(":");
+                    if (timeSegm.length == 3) {
+                        result =
+                                segm[1] + segm[2] + "_" + timeSegm[0] + "_"
+                                        + timeSegm[1] + "_" + timeSegm[2];
+                    }
                 }
             }
-        }
 
-        logReader.close();
+        }
 
         return result;
     }
 
-    private String getLineContaining(final String key,
-            final BufferedReader logReader) throws IOException {
-
+    private static String getLineContaining(final String key, final BufferedReader logReader) throws IOException {
         String result;
         while ((result = logReader.readLine()) != null) {
 
@@ -473,7 +451,6 @@ public class AnalyzeLogFile {
             }
         }
         return result;
-
     }
 
     /**

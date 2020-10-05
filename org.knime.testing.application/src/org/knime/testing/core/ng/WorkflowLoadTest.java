@@ -145,7 +145,7 @@ public class WorkflowLoadTest extends WorkflowTest {
                     try {
                         // the mountpoint URI is optional in the wf context, so we are OK if an exception occurs here
                         fac.setMountpointURI(new URI("knime", "LOCAL", workflowPath, null));
-                    } catch (URISyntaxException e) {
+                    } catch (URISyntaxException e) { // NOSONAR
                     }
                 }
 

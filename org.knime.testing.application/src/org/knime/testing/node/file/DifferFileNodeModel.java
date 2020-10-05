@@ -238,11 +238,11 @@ public class DifferFileNodeModel extends NodeModel {
         try {
             URL url = new URL(loc);
             return FileUtil.openStreamWithTimeout(url);
-        } catch (Exception e) {
-            // see if they specified a file without giving the protocol
+        } catch (IOException e) {
+            // see if they specified a file path without giving the protocol
             File file = new File(loc);
             if (!file.exists()) {
-				throw new InvalidSettingsException("No such file: " + loc);
+				throw new InvalidSettingsException("No such file: " + loc, e);
 			}
 			return new FileInputStream(file);
         }

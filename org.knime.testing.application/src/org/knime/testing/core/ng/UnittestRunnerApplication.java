@@ -265,11 +265,12 @@ public class UnittestRunnerApplication implements IApplication {
     private void logMemoryStatus(final NodeLogger logger) {
         MemoryUsage usage = WorkflowTest.getHeapUsage();
 
-        Formatter formatter = new Formatter();
-        formatter.format("===== Memory statistics: %1$,.3f MB max, %2$,.3f MB used, %3$,.3f MB free ====",
-            usage.getMax() / 1024.0 / 1024.0, usage.getUsed() / 1024.0 / 1024.0,
-            (usage.getMax() - usage.getUsed()) / 1024.0 / 1024.0);
-        logger.info(formatter.out().toString());
+        try (Formatter formatter = new Formatter()) {
+            formatter.format("===== Memory statistics: %1$,.3f MB max, %2$,.3f MB used, %3$,.3f MB free ====",
+                usage.getMax() / 1024.0 / 1024.0, usage.getUsed() / 1024.0 / 1024.0,
+                (usage.getMax() - usage.getUsed()) / 1024.0 / 1024.0);
+            logger.info(formatter.out().toString());
+        }
     }
 
 

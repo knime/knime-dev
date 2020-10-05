@@ -118,32 +118,31 @@ public class URIContentDifferenceChecker extends AbstractDifferenceChecker<URIDa
 
     private Result compare(final URIDataValue expected, final URIDataValue got) throws MalformedURLException,
             IOException {
-        final BufferedInputStream buffInA =
-                new BufferedInputStream(expected.getURIContent().getURI().toURL().openStream(), 8192);
-        final BufferedInputStream buffInB =
-                new BufferedInputStream(got.getURIContent().getURI().toURL().openStream(), 8192);
+        try (BufferedInputStream buffInA =
+            new BufferedInputStream(expected.getURIContent().getURI().toURL().openStream(), 8192);
+                BufferedInputStream buffInB =
+                    new BufferedInputStream(got.getURIContent().getURI().toURL().openStream(), 8192)) {
 
-        long readBytes = 0;
-        while (true) {
-            int read1 = buffInA.read();
-            int read2 = buffInB.read();
-            if (read1 == read2) {
-                if (read1 == -1) {
-                    break;
-                }
-            } else {
-                if (read1 == -1) {
-                    return new Result("Contents of '" + got.getURIContent().getURI() + "' are longer than expected");
-                } else if (read2 == -1) {
-                    return new Result("Contents of '" + got.getURIContent().getURI() + "' are shorter than expected");
+            long readBytes = 0;
+            while (true) {
+                int read1 = buffInA.read();
+                int read2 = buffInB.read();
+                if (read1 == read2) {
+                    if (read1 == -1) {
+                        break;
+                    }
                 } else {
-                    return new Result("Expected " + read1 + ", got " + read2 + " at byte position " + readBytes);
+                    if (read1 == -1) {
+                        return new Result("Contents of '" + got.getURIContent().getURI() + "' are longer than expected");
+                    } else if (read2 == -1) {
+                        return new Result("Contents of '" + got.getURIContent().getURI() + "' are shorter than expected");
+                    } else {
+                        return new Result("Expected " + read1 + ", got " + read2 + " at byte position " + readBytes);
+                    }
                 }
+                readBytes++;
             }
-            readBytes++;
         }
-        buffInA.close();
-        buffInB.close();
 
         return OK;
     }

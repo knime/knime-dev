@@ -65,6 +65,7 @@ import org.eclipse.core.runtime.IExtensionRegistry;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.equinox.app.IApplication;
 import org.eclipse.equinox.app.IApplicationContext;
+import org.knime.core.node.Node;
 import org.knime.core.node.NodeFactory;
 import org.knime.core.node.NodeModel;
 
@@ -100,9 +101,10 @@ public class HeadlessNodeInstantiationApplication implements IApplication {
         public void run(final TestResult result) {
             result.startTest(this);
             try {
-                NodeFactory<? extends NodeModel> factory =
-                    (NodeFactory<? extends NodeModel>)m_nodeExtension.createExecutableExtension("factory-class");
-                factory.createNodeModel();
+                @SuppressWarnings("unchecked")
+                NodeFactory<NodeModel> factory =
+                    (NodeFactory<NodeModel>)m_nodeExtension.createExecutableExtension("factory-class");
+                new Node(factory).getNodeModel();
             } catch (Exception ex) {
                 AssertionFailedError err = new AssertionFailedError("Could not instantiate "
                         + m_nodeExtension.getAttribute("factory-class") + ": " + ex.getMessage());

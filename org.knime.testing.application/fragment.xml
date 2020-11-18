@@ -132,6 +132,11 @@
             deprecated="false"
             factory-class="org.knime.testing.node.io.filehandling.file.FileDifferenceCheckerNodeFactory"
             hidden="false">
+      </node>
+      <node
+            deprecated="false"
+            factory-class="org.knime.testing.node.workflowsummary.WorkflowSummaryConvertionTestNodeFactory"
+            hidden="true">
       </node>     
    </extension>
    <extension

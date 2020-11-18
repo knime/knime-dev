@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE knimeNode PUBLIC "-//UNIKN//DTD KNIME Node 2.0//EN" "http://www.knime.org/Node.dtd">
+<knimeNode type="Source">
+	<name>Workflow Summary Conversion Test</name>
+
+	<shortDescription>
+		Converts a JSON summary to a XML summary.
+
+		FOR TESTING
+		PURPOSES ONLY! DO NOT
+		USE!
+	</shortDescription>
+
+	<fullDescription>
+		<intro>
+			Converts a JSON summary to a XML summary.
+
+			FOR
+			TESTING PURPOSES
+			ONLY! DO NOT
+			USE!
+		</intro>
+	</fullDescription>
+
+	<ports>
+		<inPort name="JSON Summary" index="0">The JSON workflow summary to
+			convert.
+		</inPort>
+		<outPort index="0" name="XML Summary">The converted XML workflow summary
+		</outPort>
+	</ports>
+</knimeNode>

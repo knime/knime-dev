@@ -51,10 +51,10 @@ package org.knime.testing.node.workflowsummary;
 import org.knime.core.node.NodeDialogPane;
 import org.knime.core.node.NodeFactory;
 import org.knime.core.node.NodeView;
-import org.knime.core.util.workflowsummary.WorkflowSummaryGenerator;
+import org.knime.core.util.workflowsummary.WorkflowSummaryCreator;
 
 /**
- * Node to enable workflow tests to test workflow summary generation via {@link WorkflowSummaryGenerator}.
+ * Node to enable workflow tests to test workflow summary generation via {@link WorkflowSummaryCreator}.
  * 
  * @author Martin Horn, KNIME GmbH, Konstanz, Germany
  */

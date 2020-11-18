@@ -48,11 +48,13 @@
  */
 package org.knime.testing.node.workflowsummary;
 
-import static org.knime.core.util.workflowsummary.WorkflowSummaryGenerator.generate;
+import static org.knime.core.util.workflowsummary.WorkflowSummaryUtil.writeJSON;
+import static org.knime.core.util.workflowsummary.WorkflowSummaryUtil.writeXML;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -79,8 +81,8 @@ import org.knime.core.node.workflow.NodeContext;
 import org.knime.core.node.workflow.NodeID;
 import org.knime.core.node.workflow.NodeID.NodeIDSuffix;
 import org.knime.core.node.workflow.WorkflowManager;
-import org.knime.core.util.workflowsummary.WorkflowSummaryConfiguration;
-import org.knime.core.util.workflowsummary.WorkflowSummaryConfiguration.SummaryFormat;
+import org.knime.core.util.workflowsummary.WorkflowSummary;
+import org.knime.core.util.workflowsummary.WorkflowSummaryCreator;
 
 /**
  *
@@ -123,17 +125,17 @@ class WorkflowSummaryNodeModel extends NodeModel {
             List<NodeID> nodesToIgnore = Arrays.stream(m_nodesToIgnore.getStringArrayValue())
                 .map(s -> NodeIDSuffix.fromString(s.substring(s.indexOf("(#") + 2, s.length() - 1)))
                 .map(s -> s.prependParent(wfm.getID())).collect(Collectors.toList());
-            WorkflowSummaryConfiguration xmlConfig = WorkflowSummaryConfiguration.builder(SummaryFormat.XML)
-                .nodesToIgnore(nodesToIgnore).includeExecutionInfo(m_includeExecutionInfo.getBooleanValue()).build();
-            WorkflowSummaryConfiguration jsonConfig = WorkflowSummaryConfiguration.builder(SummaryFormat.JSON)
-                .nodesToIgnore(nodesToIgnore).includeExecutionInfo(m_includeExecutionInfo.getBooleanValue()).build();
             try (ByteArrayOutputStream outXML = new ByteArrayOutputStream();
                     ByteArrayOutputStream outJSON = new ByteArrayOutputStream()) {
-                generate(wfm, outXML, xmlConfig);
-                generate(wfm, outJSON, jsonConfig);
+                WorkflowSummary ws =
+                    WorkflowSummaryCreator.create(wfm, m_includeExecutionInfo.getBooleanValue(), nodesToIgnore);
+                writeJSON(outJSON, ws, m_includeExecutionInfo.getBooleanValue());
+                writeXML(outXML, ws, m_includeExecutionInfo.getBooleanValue());
+
                 BufferedDataContainer container = exec.createDataContainer(createSpec());
-                container.addRowToTable(new DefaultRow("summary", XMLCellFactory.create(outXML.toString()),
-                    JSONCellFactory.create(outJSON.toString(), false)));
+                container.addRowToTable(
+                    new DefaultRow("summary", XMLCellFactory.create(outXML.toString(StandardCharsets.UTF_8.name())),
+                        JSONCellFactory.create(outJSON.toString(StandardCharsets.UTF_8.name()), false)));
                 container.close();
                 return new BufferedDataTable[]{container.getTable()};
             }

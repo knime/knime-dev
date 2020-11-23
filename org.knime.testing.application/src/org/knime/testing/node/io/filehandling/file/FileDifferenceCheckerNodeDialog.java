@@ -128,4 +128,10 @@ public class FileDifferenceCheckerNodeDialog extends NodeDialogPane {
         m_referenceFileChooser.loadSettingsFrom(settings, specs);
     }
 
+    @Override
+    public void onClose() {
+        m_referenceFileChooser.onClose();
+        m_testFileChooser.onClose();
+    }
+
 }

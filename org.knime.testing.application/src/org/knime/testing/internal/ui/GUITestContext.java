@@ -74,4 +74,10 @@ class GUITestContext extends WorkflowTestContext {
     public IEditorPart getEditorPart() {
         return m_editorPart;
     }
+
+    @Override
+    public void clear() {
+        m_editorPart = null;
+        super.clear();
+    }
 }

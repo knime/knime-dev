@@ -55,6 +55,7 @@ import java.util.regex.Pattern;
 
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.knime.core.node.InvalidSettingsException;
+import org.knime.core.node.KNIMEConstants;
 import org.knime.core.node.NodeLogger;
 import org.knime.core.node.workflow.NativeNodeContainer;
 import org.knime.core.node.workflow.NodeContainer;
@@ -157,6 +158,10 @@ class WorkflowExecuteTest extends WorkflowTest {
                             }
                         }
                         NodeLogger.getLogger(WorkflowExecuteTest.class).info(message);
+                        NodeLogger.getLogger(WorkflowExecuteTest.class).infoWithFormat(
+                            "KNIME Global ThreadPool Stats:" + "%d running tasks of %d maximum",
+                            KNIMEConstants.GLOBAL_THREAD_POOL.getRunningThreads(),
+                            KNIMEConstants.GLOBAL_THREAD_POOL.getMaxThreads());
                         result.addFailure(WorkflowExecuteTest.this, new AssertionFailedError(message));
                         m_context.getWorkflowManager().getParent().cancelExecution(m_context.getWorkflowManager());
                         this.cancel();

@@ -44,6 +44,8 @@ Require-Bundle: org.eclipse.core.filesystem;bundle-version="[1.7.0,2.0.0)",
  com.fasterxml.jackson.core.jackson-databind;bundle-version="[2.11.0,3.0.0)",
  com.fasterxml.jackson.core.jackson-core;bundle-version="[2.11.0,3.0.0)",
  com.fasterxml.jackson.dataformat.jackson-dataformat-xml;bundle-version="[2.11.0,3.0.0)"
-Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Bundle-RequiredExecutionEnvironment: JavaSE-11
 Eclipse-RegisterBuddy: org.knime.base
 Bundle-ActivationPolicy: lazy
+Automatic-Module-Name: org.knime.testing.application
+Import-Package: org.w3c.dom.events;version="3.0.0"

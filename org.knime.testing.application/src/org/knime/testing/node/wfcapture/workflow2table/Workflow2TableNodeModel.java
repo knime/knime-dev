@@ -84,7 +84,7 @@ import org.knime.core.node.workflow.NodeContainer;
 import org.knime.core.node.workflow.NodeID;
 import org.knime.core.node.workflow.NodeID.NodeIDSuffix;
 import org.knime.core.node.workflow.WorkflowManager;
-import org.knime.core.node.workflow.capture.WorkflowFragment;
+import org.knime.core.node.workflow.capture.WorkflowSegment;
 import org.knime.core.node.workflow.capture.WorkflowPortObject;
 import org.knime.core.node.workflow.capture.WorkflowPortObjectSpec;
 
@@ -113,8 +113,8 @@ class Workflow2TableNodeModel extends NodeModel {
     @Override
     protected PortObject[] execute(final PortObject[] inObjects, final ExecutionContext exec) throws Exception {
         WorkflowPortObjectSpec spec = ((WorkflowPortObject)inObjects[0]).getSpec();
-        WorkflowFragment wf = spec.getWorkflowFragment();
-        WorkflowManager wfm = wf.loadWorkflow();
+        WorkflowSegment ws = spec.getWorkflowSegment();
+        WorkflowManager wfm = ws.loadWorkflow();
         try {
             BufferedDataContainer nodeDC = exec.createDataContainer(createNodeTableSpec());
             //TODO support nested workflows
@@ -138,7 +138,7 @@ class Workflow2TableNodeModel extends NodeModel {
 
             return new PortObject[]{nodeDC.getTable(), connectionDC.getTable(), metadataDC.getTable()};
         } finally {
-            wf.disposeWorkflow();
+            ws.disposeWorkflow();
         }
     }
 

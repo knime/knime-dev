@@ -70,7 +70,7 @@ import org.knime.core.node.workflow.WorkflowLoadHelper;
 import org.knime.core.node.workflow.WorkflowManager;
 import org.knime.core.node.workflow.WorkflowPersistor.LoadResultEntry.LoadResultEntryType;
 import org.knime.core.node.workflow.WorkflowPersistor.WorkflowLoadResult;
-import org.knime.core.node.workflow.capture.WorkflowFragment;
+import org.knime.core.node.workflow.capture.WorkflowSegment;
 import org.knime.core.node.workflow.capture.WorkflowPortObject;
 import org.knime.core.node.workflow.capture.WorkflowPortObjectSpec;
 import org.knime.core.util.LockFailedException;
@@ -91,13 +91,13 @@ final class WorkflowReaderNodeModel extends PortObjectFromPathReaderNodeModel<Wo
 
     @Override
     protected PortObject[] readFromPath(final Path inputPath, final ExecutionContext exec) throws Exception {
-        WorkflowFragment wf = new WorkflowFragment(readWorkflow(inputPath, exec), Collections.emptyList(),
+        WorkflowSegment ws = new WorkflowSegment(readWorkflow(inputPath, exec), Collections.emptyList(),
             Collections.emptyList(), Collections.emptySet());
         try {
             return new PortObject[]{
-                new WorkflowPortObject(new WorkflowPortObjectSpec(wf, null, emptyList(), emptyList()))};
+                new WorkflowPortObject(new WorkflowPortObjectSpec(ws, null, emptyList(), emptyList()))};
         } finally {
-            wf.serializeAndDisposeWorkflow();
+            ws.serializeAndDisposeWorkflow();
         }
     }
 

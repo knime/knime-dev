@@ -55,7 +55,6 @@ import org.knime.core.node.NotConfigurableException;
 import org.knime.core.node.context.NodeCreationConfiguration;
 import org.knime.core.node.defaultnodesettings.DialogComponentString;
 import org.knime.core.node.port.PortObjectSpec;
-import org.knime.filehandling.core.node.portobject.SelectionMode;
 import org.knime.filehandling.core.node.portobject.reader.PortObjectReaderNodeDialog;
 
 /**
@@ -64,12 +63,10 @@ import org.knime.filehandling.core.node.portobject.reader.PortObjectReaderNodeDi
  */
 final class WorkflowReaderNodeDialog extends PortObjectReaderNodeDialog<WorkflowReaderNodeConfig> {
 
-    static final SelectionMode SELECTION_MODE = SelectionMode.FOLDER;
-
     private final DialogComponentString m_workflowName;
 
     WorkflowReaderNodeDialog(final NodeCreationConfiguration creationConfig) {
-        super(new WorkflowReaderNodeConfig(creationConfig), "workflow_reader", SELECTION_MODE);
+        super(new WorkflowReaderNodeConfig(creationConfig), "workflow_reader");
 
         m_workflowName = new DialogComponentString(getConfig().getWorkflowName(), "Workflow name: ", true, 30);
         addAdditionalPanel(m_workflowName.getComponentPanel());

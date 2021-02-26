@@ -53,6 +53,7 @@ import org.knime.core.node.NodeSettingsRO;
 import org.knime.core.node.NodeSettingsWO;
 import org.knime.core.node.context.NodeCreationConfiguration;
 import org.knime.core.node.defaultnodesettings.SettingsModelString;
+import org.knime.filehandling.core.node.portobject.SelectionMode;
 import org.knime.filehandling.core.node.portobject.reader.PortObjectReaderNodeConfig;
 
 /**
@@ -65,7 +66,7 @@ final class WorkflowReaderNodeConfig extends PortObjectReaderNodeConfig {
     private final SettingsModelString m_workflowName = new SettingsModelString(CUSTOM_NAME, "");
 
     WorkflowReaderNodeConfig(final NodeCreationConfiguration creationConfig) {
-        super(creationConfig);
+        super(PortObjectReaderNodeConfig.builder(creationConfig).withSelectionMode(SelectionMode.FILE_AND_FOLDER));
     }
 
     SettingsModelString getWorkflowName() {

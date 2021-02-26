@@ -64,7 +64,6 @@ import org.knime.core.node.NotConfigurableException;
 import org.knime.core.node.port.PortObjectSpec;
 import org.knime.filehandling.core.data.location.variable.FSLocationVariableType;
 import org.knime.filehandling.core.defaultnodesettings.filechooser.reader.DialogComponentReaderFileChooser;
-import org.knime.filehandling.core.defaultnodesettings.filtermode.SettingsModelFilterMode.FilterMode;
 import org.knime.filehandling.core.util.GBCBuilder;
 
 /**
@@ -83,12 +82,10 @@ public class FileDifferenceCheckerNodeDialog extends NodeDialogPane {
     FileDifferenceCheckerNodeDialog(final FileDifferenceCheckerConfiguration config) {
         m_referenceFileChooser = new DialogComponentReaderFileChooser(config.getReferenceFileChooser(), HISTORY_ID,
             createFlowVariableModel(config.getReferenceFileChooser().getKeysForFSLocation(),
-                FSLocationVariableType.INSTANCE),
-            FilterMode.FILE);
+                FSLocationVariableType.INSTANCE));
 
         m_testFileChooser = new DialogComponentReaderFileChooser(config.getFileChooser(), HISTORY_ID,
-            createFlowVariableModel(config.getFileChooser().getKeysForFSLocation(), FSLocationVariableType.INSTANCE),
-            FilterMode.FILE);
+            createFlowVariableModel(config.getFileChooser().getKeysForFSLocation(), FSLocationVariableType.INSTANCE));
 
         addTab("Settings", layout());
     }

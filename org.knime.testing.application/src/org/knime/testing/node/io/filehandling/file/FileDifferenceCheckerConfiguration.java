@@ -52,6 +52,7 @@ import org.knime.core.node.InvalidSettingsException;
 import org.knime.core.node.NodeSettingsRO;
 import org.knime.core.node.NodeSettingsWO;
 import org.knime.core.node.context.ports.PortsConfiguration;
+import org.knime.filehandling.core.defaultnodesettings.EnumConfig;
 import org.knime.filehandling.core.defaultnodesettings.filechooser.reader.SettingsModelReaderFileChooser;
 import org.knime.filehandling.core.defaultnodesettings.filtermode.SettingsModelFilterMode.FilterMode;
 
@@ -68,10 +69,10 @@ final class FileDifferenceCheckerConfiguration {
 
     FileDifferenceCheckerConfiguration(final PortsConfiguration portsConfig, final String filePortIdentifier,
         final String referencePortIdentifier) {
-        m_fileChooser =
-            new SettingsModelReaderFileChooser("test_file_chooser", portsConfig, filePortIdentifier, FilterMode.FILE);
+        m_fileChooser = new SettingsModelReaderFileChooser("test_file_chooser", portsConfig, filePortIdentifier,
+            EnumConfig.create(FilterMode.FILE));
         m_referenceFileChooser = new SettingsModelReaderFileChooser("reference_file_chooser", portsConfig,
-            referencePortIdentifier, FilterMode.FILE);
+            referencePortIdentifier, EnumConfig.create(FilterMode.FILE));
     }
 
     SettingsModelReaderFileChooser getReferenceFileChooser() {

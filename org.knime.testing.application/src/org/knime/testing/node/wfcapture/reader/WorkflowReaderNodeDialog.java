@@ -53,6 +53,7 @@ import org.knime.core.node.NodeSettingsRO;
 import org.knime.core.node.NodeSettingsWO;
 import org.knime.core.node.NotConfigurableException;
 import org.knime.core.node.context.NodeCreationConfiguration;
+import org.knime.core.node.defaultnodesettings.DialogComponentBoolean;
 import org.knime.core.node.defaultnodesettings.DialogComponentString;
 import org.knime.core.node.port.PortObjectSpec;
 import org.knime.filehandling.core.node.portobject.reader.PortObjectReaderNodeDialog;
@@ -64,18 +65,29 @@ import org.knime.filehandling.core.node.portobject.reader.PortObjectReaderNodeDi
 final class WorkflowReaderNodeDialog extends PortObjectReaderNodeDialog<WorkflowReaderNodeConfig> {
 
     private final DialogComponentString m_workflowName;
+    private final DialogComponentBoolean m_removeIONodes;
+    private final DialogComponentBoolean m_updatePortObjectReaderRefs;
 
     WorkflowReaderNodeDialog(final NodeCreationConfiguration creationConfig) {
         super(new WorkflowReaderNodeConfig(creationConfig), "workflow_reader");
 
         m_workflowName = new DialogComponentString(getConfig().getWorkflowName(), "Workflow name: ", true, 30);
         addAdditionalPanel(m_workflowName.getComponentPanel());
+
+        m_removeIONodes = new DialogComponentBoolean(getConfig().getRemoveIONodes(), "Remove input and output nodes");
+        addAdditionalPanel(m_removeIONodes.getComponentPanel());
+
+        m_updatePortObjectReaderRefs = new DialogComponentBoolean(getConfig().getUpdatePortObjectReaderRefs(),
+            "Update port object reader references");
+        addAdditionalPanel(m_updatePortObjectReaderRefs.getComponentPanel());
     }
 
     @Override
     protected void saveSettingsTo(final NodeSettingsWO settings) throws InvalidSettingsException {
         super.saveSettingsTo(settings);
         m_workflowName.saveSettingsTo(settings);
+        m_removeIONodes.saveSettingsTo(settings);
+        m_updatePortObjectReaderRefs.saveSettingsTo(settings);
     }
 
     @Override
@@ -83,5 +95,7 @@ final class WorkflowReaderNodeDialog extends PortObjectReaderNodeDialog<Workflow
             throws NotConfigurableException {
         super.loadSettingsFrom(settings, specs);
         m_workflowName.loadSettingsFrom(settings, specs);
+        m_removeIONodes.loadSettingsFrom(settings, specs);
+        m_updatePortObjectReaderRefs.loadSettingsFrom(settings, specs);
     }
 }

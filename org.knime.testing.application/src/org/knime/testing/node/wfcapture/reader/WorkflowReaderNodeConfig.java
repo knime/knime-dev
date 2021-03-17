@@ -52,6 +52,7 @@ import org.knime.core.node.InvalidSettingsException;
 import org.knime.core.node.NodeSettingsRO;
 import org.knime.core.node.NodeSettingsWO;
 import org.knime.core.node.context.NodeCreationConfiguration;
+import org.knime.core.node.defaultnodesettings.SettingsModelBoolean;
 import org.knime.core.node.defaultnodesettings.SettingsModelString;
 import org.knime.filehandling.core.node.portobject.SelectionMode;
 import org.knime.filehandling.core.node.portobject.reader.PortObjectReaderNodeConfig;
@@ -63,7 +64,16 @@ final class WorkflowReaderNodeConfig extends PortObjectReaderNodeConfig {
 
     private static final String CUSTOM_NAME = "custom-name";
 
+    private static final String REMOVE_IO_NODES = "remove-io-nodes";
+
+    private static final String UPDATE_PORT_OBJECT_READER_REFERENCES = "update-port-opbject-reader-references";
+
     private final SettingsModelString m_workflowName = new SettingsModelString(CUSTOM_NAME, "");
+
+    private final SettingsModelBoolean m_removeIONodes = new SettingsModelBoolean(REMOVE_IO_NODES, false);
+
+    private final SettingsModelBoolean m_updatePortObjectReaderRefs =
+        new SettingsModelBoolean(UPDATE_PORT_OBJECT_READER_REFERENCES, false);
 
     WorkflowReaderNodeConfig(final NodeCreationConfiguration creationConfig) {
         super(PortObjectReaderNodeConfig.builder(creationConfig).withSelectionMode(SelectionMode.FILE_AND_FOLDER));
@@ -73,21 +83,43 @@ final class WorkflowReaderNodeConfig extends PortObjectReaderNodeConfig {
         return m_workflowName;
     }
 
+    SettingsModelBoolean getRemoveIONodes() {
+        return m_removeIONodes;
+    }
+
+    SettingsModelBoolean getUpdatePortObjectReaderRefs() {
+        return m_updatePortObjectReaderRefs;
+    }
+
     @Override
     protected void validateConfigurationForModel(final NodeSettingsRO settings) throws InvalidSettingsException {
         super.validateConfigurationForModel(settings);
         m_workflowName.validateSettings(settings);
-    }
+        try {
+            m_removeIONodes.validateSettings(settings);
+            m_updatePortObjectReaderRefs.validateSettings(settings);
+        } catch (InvalidSettingsException e) {
+            // backwards compatibility
+        }
+   }
 
     @Override
     protected void saveConfigurationForModel(final NodeSettingsWO settings) {
         super.saveConfigurationForModel(settings);
         m_workflowName.saveSettingsTo(settings);
+        m_removeIONodes.saveSettingsTo(settings);
+        m_updatePortObjectReaderRefs.saveSettingsTo(settings);
     }
 
     @Override
     protected void loadConfigurationForModel(final NodeSettingsRO settings) throws InvalidSettingsException {
         super.loadConfigurationForModel(settings);
         m_workflowName.loadSettingsFrom(settings);
+        try {
+            m_removeIONodes.loadSettingsFrom(settings);
+            m_updatePortObjectReaderRefs.loadSettingsFrom(settings);
+        } catch (InvalidSettingsException e) {
+            // backwards compatibility
+        }
     }
 }

@@ -62,6 +62,8 @@ import org.knime.core.data.def.DefaultRow;
 import org.knime.core.data.def.DoubleCell;
 import org.knime.core.data.def.IntCell;
 import org.knime.core.data.def.StringCell;
+import org.knime.core.data.json.JSONCell;
+import org.knime.core.data.json.JSONCellFactory;
 import org.knime.core.node.BufferedDataContainer;
 import org.knime.core.node.BufferedDataTable;
 import org.knime.core.node.CanceledExecutionException;
@@ -84,9 +86,9 @@ import org.knime.core.node.workflow.NodeContainer;
 import org.knime.core.node.workflow.NodeID;
 import org.knime.core.node.workflow.NodeID.NodeIDSuffix;
 import org.knime.core.node.workflow.WorkflowManager;
-import org.knime.core.node.workflow.capture.WorkflowSegment;
 import org.knime.core.node.workflow.capture.WorkflowPortObject;
 import org.knime.core.node.workflow.capture.WorkflowPortObjectSpec;
+import org.knime.core.node.workflow.capture.WorkflowSegment;
 
 /**
  *
@@ -147,11 +149,12 @@ class Workflow2TableNodeModel extends NodeModel {
         NodeSettings settings = new NodeSettings("settings");
         nc.getParent().saveNodeSettings(nc.getID(), settings);
         StringWriter settingsString = new StringWriter();
+
         JSONConfig.writeJSON(settings, settingsString, WriterConfig.PRETTY);
         return new DefaultRow(NodeIDSuffix.create(nc.getParent().getID(), nc.getID()).toString(),
             new StringCell(nc.getName()), new StringCell(nc.getNodeAnnotation().getText()),
-            new StringCell(settingsString.toString()), new IntCell(bounds[0]), new IntCell(bounds[1]),
-            new IntCell(bounds[2]), new IntCell(bounds[3]));
+            JSONCellFactory.create(settingsString.toString(), false),
+            new IntCell(bounds[0]), new IntCell(bounds[1]), new IntCell(bounds[2]), new IntCell(bounds[3]));
     }
 
     private static DataRow createRowFromConnection(final ConnectionContainer cc, final int idx, final NodeID parent) {
@@ -177,7 +180,7 @@ class Workflow2TableNodeModel extends NodeModel {
         DataColumnSpec[] colSpecs =
             new DataColumnSpec[]{new DataColumnSpecCreator("node name", StringCell.TYPE).createSpec(),
                 new DataColumnSpecCreator("annotation", StringCell.TYPE).createSpec(),
-                new DataColumnSpecCreator("settings", StringCell.TYPE).createSpec(),
+                new DataColumnSpecCreator("settings", JSONCell.TYPE).createSpec(),
                 new DataColumnSpecCreator("x", IntCell.TYPE).createSpec(),
                 new DataColumnSpecCreator("y", IntCell.TYPE).createSpec(),
                 new DataColumnSpecCreator("w", IntCell.TYPE).createSpec(),

@@ -110,11 +110,6 @@
       </node>
       <node
             deprecated="false"
-            factory-class="org.knime.testing.node.wfcapture.reader.WorkflowReaderNodeFactory"
-            hidden="true">
-      </node>
-      <node
-            deprecated="false"
             factory-class="org.knime.testing.node.wfcapture.workflow2table.Workflow2TableNodeFactory"
             hidden="true">
       </node>

@@ -78,15 +78,13 @@ class WorkflowExecuteStreamingTest extends WorkflowExecuteTest {
     private static final NodeLogger LOGGER = NodeLogger.getLogger(WorkflowExecuteStreamingTest.class);
 
     private final File m_workflowDir;
-    private final File m_testcaseRoot;
 
     WorkflowExecuteStreamingTest(final File workflowDir, final File testcaseRoot, final String workflowName,
         final IProgressMonitor monitor, final TestrunConfiguration runConfiguration,
         final WorkflowTestContext context) {
-        super(workflowName, monitor, runConfiguration, context);
+        super(testcaseRoot, workflowName, monitor, runConfiguration, context);
 
         m_workflowDir = workflowDir;
-        m_testcaseRoot = testcaseRoot;
     }
 
 

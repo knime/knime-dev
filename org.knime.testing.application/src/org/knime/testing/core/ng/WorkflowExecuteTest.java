@@ -47,6 +47,7 @@
  */
 package org.knime.testing.core.ng;
 
+import java.io.File;
 import java.lang.management.MemoryUsage;
 import java.util.Formatter;
 import java.util.Timer;
@@ -54,6 +55,7 @@ import java.util.TimerTask;
 import java.util.regex.Pattern;
 
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.Path;
 import org.knime.core.node.InvalidSettingsException;
 import org.knime.core.node.KNIMEConstants;
 import org.knime.core.node.NodeLogger;
@@ -67,6 +69,7 @@ import org.knime.core.node.workflow.WorkflowManager;
 import org.knime.core.util.ThreadUtils;
 import org.knime.testing.core.TestrunConfiguration;
 import org.knime.testing.node.config.TestConfigNodeModel;
+import org.knime.workbench.explorer.localworkspace.LocalWorkspaceFileStore;
 
 import junit.framework.AssertionFailedError;
 import junit.framework.TestResult;
@@ -85,9 +88,12 @@ class WorkflowExecuteTest extends WorkflowTest {
      */
     protected final TestrunConfiguration m_runConfiguration;
 
-    WorkflowExecuteTest(final String workflowName, final IProgressMonitor monitor,
-                        final TestrunConfiguration runConfiguration, final WorkflowTestContext context) {
+    protected final File m_testcaseRoot;
+
+    WorkflowExecuteTest(final File mountPointRoot, final String workflowName, final IProgressMonitor monitor,
+        final TestrunConfiguration runConfiguration, final WorkflowTestContext context) {
         super(workflowName, monitor, context);
+        m_testcaseRoot = mountPointRoot;
         m_runConfiguration = runConfiguration;
     }
 
@@ -107,6 +113,8 @@ class WorkflowExecuteTest extends WorkflowTest {
      */
     @Override
     public void run(final TestResult result) {
+        LocalWorkspaceFileStore
+            .setLocalMountPointRootSupplier(() -> Path.fromPortableString(m_testcaseRoot.getAbsolutePath()));
         result.startTest(this);
 
         TimerTask watchdog = null;
@@ -178,6 +186,7 @@ class WorkflowExecuteTest extends WorkflowTest {
             result.addError(this, t);
         } finally {
             result.endTest(this);
+            LocalWorkspaceFileStore.resetLocalMountPointRootSupplier();
             if (watchdog != null) {
                 watchdog.cancel();
             }

@@ -49,22 +49,32 @@
 package org.knime.workbench.extension.wizards;
 
 import java.io.IOException;
+import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.FileLocator;
+import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Platform;
+import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.SubMonitor;
-import org.osgi.framework.Version;
+import org.eclipse.pde.core.target.ITargetDefinition;
+import org.eclipse.pde.core.target.ITargetHandle;
+import org.eclipse.pde.core.target.ITargetPlatformService;
+import org.eclipse.pde.core.target.LoadTargetDefinitionJob;
+import org.osgi.framework.Bundle;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.FrameworkUtil;
+import org.osgi.framework.ServiceReference;
 
 /**
- * Helper class to access some target platform related functionality. The API changed in Eclipse 3.8, therefore
- * we need to distinguish between 3.7 and 3.8 and upwards. The {@link #getInstance()} method creates the right
- * implementation depending on the PDE version.
+ * Helper class to access some target platform related functionality.
  *
  * @author Thorsten Meinl, KNIME AG, Zurich, Switzerland
  */
-abstract class TPHelper {
-    private static final Version PDE_CHANGE_VERSION = new Version(3, 8, 0);
+final class TPHelper {
+    private TPHelper() { }
 
     /**
      * Sets up the KNIME target platform that is bundled in this plug-in.
@@ -75,21 +85,95 @@ abstract class TPHelper {
      * @throws CoreException if a core problem occurs
      * @throws IOException if an I/O error occurs
      */
-    public abstract void setupTargetPlatform(final SubMonitor monitor) throws URISyntaxException, CoreException,
-        IOException;
+	public static void setupTargetPlatform(final SubMonitor monitor) throws URISyntaxException, CoreException, IOException {
+        monitor.subTask("Setting up target platform");
+        Bundle myself = FrameworkUtil.getBundle(TPHelper.class);
+        BundleContext bundleContext = myself.getBundleContext();
+
+        ServiceReference<ITargetPlatformService> serviceRef =
+            bundleContext.getServiceReference(ITargetPlatformService.class);
+        monitor.worked(2);
+        try {
+            ITargetPlatformService tpService = bundleContext.getService(serviceRef);
+            // load KNIME TP definition from bundle
+
+            URL url = FileLocator.toFileURL(myself.getEntry("KNIME.target"));
+            URI uri = new URI(url.getProtocol(), url.getUserInfo(), url.getHost(), url.getPort(), url.getPath(),
+                url.getQuery(), url.getRef());
+            ITargetHandle knimeTPHandle = tpService.getTarget(uri);
+            ITargetDefinition knimeTP = knimeTPHandle.getTargetDefinition();
+
+            ITargetHandle defaultTpHandle = tpService.getWorkspaceTargetHandle();
+            if (defaultTpHandle != null) {
+                ITargetDefinition defaultTp = defaultTpHandle.getTargetDefinition();
+
+                // check if we are already using the KNIME TP and return in this case
+                if ((defaultTp.getName() != null) && defaultTp.getName().equals(knimeTP.getName())) {
+                    return;
+                }
+            }
+
+            // check if the KNIME TP is already present but not activated
+            ITargetDefinition newTp = null;
+            for (ITargetHandle th : tpService.getTargets(monitor.newChild(1))) {
+                ITargetDefinition td = th.getTargetDefinition();
+                if ((th != knimeTPHandle) && (td.getName() != null) && td.getName().equals(knimeTP.getName())) {
+                    newTp = td;
+                    break;
+                }
+            }
+
+            if (newTp == null) {
+                newTp = tpService.newTarget();
+                tpService.copyTargetDefinition(knimeTP, newTp);
+                tpService.saveTargetDefinition(newTp);
+            }
+            tpService.deleteTarget(knimeTPHandle);
+
+            monitor.subTask("Resolving target platform");
+            IStatus status = newTp.resolve(monitor.newChild(25));
+            if (status.getSeverity() == IStatus.ERROR) {
+                throw new CoreException(status);
+            }
+
+            LoadTargetDefinitionJob job = new LoadTargetDefinitionJob(newTp);
+            monitor.subTask("Setting default target platform");
+            status = job.runInWorkspace(monitor.newChild(2));
+            if (status.getSeverity() == IStatus.ERROR) {
+                throw new CoreException(status);
+            }
+        } finally {
+            bundleContext.ungetService(serviceRef);
+        }
+    }
 
     /**
      * Returns whether the currently active target platform is the "Running Platform".
      *
      * @return <code>true</code> if it is the running platform, <code>false</code> if it's something else
      */
-    public abstract boolean currentTPIsRunningPlatform();
+	public static boolean currentTPIsRunningPlatform() {
+        Bundle myself = FrameworkUtil.getBundle(TPHelper.class);
+        BundleContext bundleContext = myself.getBundleContext();
 
-    public static TPHelper getInstance() {
-        if (Platform.getBundle("org.eclipse.pde.core").getVersion().compareTo(PDE_CHANGE_VERSION) >= 0) {
-            return new TPHelperImpl38();
-        } else {
-            return new TPHelperImpl37();
+        ServiceReference<ITargetPlatformService> serviceRef =
+            bundleContext.getServiceReference(ITargetPlatformService.class);
+        try {
+            ITargetPlatformService tpService = bundleContext.getService(serviceRef);
+            ITargetHandle defaultTpHandle = tpService.getWorkspaceTargetHandle();
+            if (defaultTpHandle == null) {
+                return true;
+            }
+
+            ITargetDefinition defaultTp = defaultTpHandle.getTargetDefinition();
+            return "Running Platform".equals(defaultTp.getName());
+        } catch (CoreException ex) {
+            Platform.getLog(myself).log(
+                new Status(IStatus.ERROR, myself.getSymbolicName(), "Could not check current target platform: "
+                    + ex.getMessage(), ex));
+            return false;
+        } finally {
+            bundleContext.ungetService(serviceRef);
         }
     }
 }

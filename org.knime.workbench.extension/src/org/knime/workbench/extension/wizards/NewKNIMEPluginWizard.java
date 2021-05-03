@@ -405,7 +405,7 @@ public class NewKNIMEPluginWizard extends Wizard implements INewWizard {
             monitor.beginTask("Adding classes to " + projectName, activateTP ? 42 : 12);
         }
         if (activateTP) {
-            TPHelper.getInstance().setupTargetPlatform(monitor);
+            TPHelper.setupTargetPlatform(monitor);
         }
 
         // set the current year in the substitutions

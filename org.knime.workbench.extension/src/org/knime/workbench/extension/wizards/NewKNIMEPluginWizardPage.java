@@ -492,9 +492,10 @@ public class NewKNIMEPluginWizardPage extends WizardPage implements Listener {
         data.horizontalIndent = 7;
         // data.horizontalAlignment = SWT.CENTER;
         m_activateTP.setLayoutData(data);
-        m_activateTP.setSelection(!knimePluginsInstalled() && TPHelper.getInstance().currentTPIsRunningPlatform());
+        m_activateTP.setSelection(!knimePluginsInstalled() && TPHelper.currentTPIsRunningPlatform());
     }
-    private boolean knimePluginsInstalled() {
+
+    private static boolean knimePluginsInstalled() {
         return (Platform.getBundle("org.knime.core") != null)
                 && (Platform.getBundle("org.knime.workbench.repository") != null);
     }

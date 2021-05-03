@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
+	xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+	<modelVersion>4.0.0</modelVersion>
+
+	<parent>
+		<groupId>org.knime</groupId>
+		<artifactId>knime-dev</artifactId>
+		<version>${revision}${changelist}</version>
+	</parent>
+
+	<groupId>org.knime</groupId>
+	<artifactId>org.knime.workbench.extension</artifactId>
+	<version>4.4.0-SNAPSHOT</version>
+	<packaging>${packaging.default}</packaging>
+	
+	<properties>
+	   <knime.feature.version>${parsedVersion.majorVersion}.${parsedVersion.minorVersion}</knime.feature.version>
+	</properties>
+	<build>
+		<plugins>
+			<plugin>
+				<artifactId>maven-resources-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>copy-p2-to-filter-initialize</id>
+						<phase>generate-sources</phase>
+						<goals>
+							<goal>copy-resources</goal>
+						</goals>
+						<configuration>
+							<overwrite>true</overwrite>
+							<outputDirectory>.</outputDirectory>
+							<resources>
+								<resource>
+									<directory>templates</directory>
+									<filtering>true</filtering>
+									<includes>
+										<include>KNIME.target</include>
+									</includes>
+								</resource>
+							</resources>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
+</project>

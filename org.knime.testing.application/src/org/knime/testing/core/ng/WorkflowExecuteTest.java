@@ -55,7 +55,7 @@ import java.util.TimerTask;
 import java.util.regex.Pattern;
 
 import org.eclipse.core.runtime.IProgressMonitor;
-import org.eclipse.core.runtime.Path;
+import org.knime.core.internal.KNIMEPath;
 import org.knime.core.node.InvalidSettingsException;
 import org.knime.core.node.KNIMEConstants;
 import org.knime.core.node.NodeLogger;
@@ -69,7 +69,6 @@ import org.knime.core.node.workflow.WorkflowManager;
 import org.knime.core.util.ThreadUtils;
 import org.knime.testing.core.TestrunConfiguration;
 import org.knime.testing.node.config.TestConfigNodeModel;
-import org.knime.workbench.explorer.localworkspace.LocalWorkspaceFileStore;
 
 import junit.framework.AssertionFailedError;
 import junit.framework.TestResult;
@@ -113,8 +112,8 @@ class WorkflowExecuteTest extends WorkflowTest {
      */
     @Override
     public void run(final TestResult result) {
-        LocalWorkspaceFileStore
-            .setLocalMountPointRootSupplier(() -> Path.fromPortableString(m_testcaseRoot.getAbsolutePath()));
+        KNIMEPath.setWorkspaceDirPath(m_testcaseRoot);
+
         result.startTest(this);
 
         TimerTask watchdog = null;
@@ -186,7 +185,7 @@ class WorkflowExecuteTest extends WorkflowTest {
             result.addError(this, t);
         } finally {
             result.endTest(this);
-            LocalWorkspaceFileStore.resetLocalMountPointRootSupplier();
+            KNIMEPath.setWorkspaceDirPath(null);
             if (watchdog != null) {
                 watchdog.cancel();
             }

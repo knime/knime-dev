@@ -53,6 +53,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.knime.core.internal.KNIMEPath;
 import org.knime.core.node.CanceledExecutionException;
 import org.knime.core.node.ExecutionMonitor;
 import org.knime.core.node.InvalidSettingsException;
@@ -106,6 +107,7 @@ public class WorkflowLoadTest extends WorkflowTest {
      */
     @Override
     public void run(final TestResult result) {
+        KNIMEPath.setWorkspaceDirPath(m_testcaseRoot);
         result.startTest(this);
         try {
             m_context.setWorkflowManager(loadWorkflow(this, result, m_workflowDir, m_testcaseRoot, m_runConfiguration));
@@ -114,6 +116,7 @@ public class WorkflowLoadTest extends WorkflowTest {
             result.addError(this, t);
         } finally {
             result.endTest(this);
+            KNIMEPath.setWorkspaceDirPath(null);
         }
     }
 

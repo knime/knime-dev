@@ -52,7 +52,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import org.eclipse.core.runtime.IProgressMonitor;
-import org.knime.core.internal.KNIMEPath;
 import org.knime.core.node.ExecutionMonitor;
 import org.knime.core.node.NodeLogger;
 import org.knime.core.node.util.ViewUtils;
@@ -100,7 +99,7 @@ class WorkflowLoadSaveLoadTest extends WorkflowTest {
      */
     @Override
     public void run(final TestResult result) {
-        KNIMEPath.setWorkspaceDirPath(m_testcaseRoot);
+        boolean resetToDefaultWorkspaceDirRequired = setCustomWorkspaceDirPath(m_testcaseRoot);
         result.startTest(this);
         try {
             LOGGER.info("Loading workflow '" + m_workflowName + "'");
@@ -123,7 +122,9 @@ class WorkflowLoadSaveLoadTest extends WorkflowTest {
             result.addError(this, t);
         } finally {
             result.endTest(this);
-            KNIMEPath.setWorkspaceDirPath(null);
+            if (resetToDefaultWorkspaceDirRequired) {
+                setDefaultWorkspaceDirPath();
+            }
         }
     }
 

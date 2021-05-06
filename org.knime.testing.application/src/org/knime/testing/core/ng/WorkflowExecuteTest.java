@@ -55,7 +55,6 @@ import java.util.TimerTask;
 import java.util.regex.Pattern;
 
 import org.eclipse.core.runtime.IProgressMonitor;
-import org.knime.core.internal.KNIMEPath;
 import org.knime.core.node.InvalidSettingsException;
 import org.knime.core.node.KNIMEConstants;
 import org.knime.core.node.NodeLogger;
@@ -112,7 +111,7 @@ class WorkflowExecuteTest extends WorkflowTest {
      */
     @Override
     public void run(final TestResult result) {
-        KNIMEPath.setWorkspaceDirPath(m_testcaseRoot);
+        boolean resetToDefaultWorkspaceDirRequired = setCustomWorkspaceDirPath(m_testcaseRoot);
 
         result.startTest(this);
 
@@ -185,7 +184,9 @@ class WorkflowExecuteTest extends WorkflowTest {
             result.addError(this, t);
         } finally {
             result.endTest(this);
-            KNIMEPath.setWorkspaceDirPath(null);
+            if (resetToDefaultWorkspaceDirRequired) {
+                setDefaultWorkspaceDirPath();
+            }
             if (watchdog != null) {
                 watchdog.cancel();
             }

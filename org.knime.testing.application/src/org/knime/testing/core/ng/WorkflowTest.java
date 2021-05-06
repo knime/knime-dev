@@ -47,6 +47,7 @@
  */
 package org.knime.testing.core.ng;
 
+import java.io.File;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryPoolMXBean;
 import java.lang.management.MemoryType;
@@ -54,6 +55,7 @@ import java.lang.management.MemoryUsage;
 
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.NullProgressMonitor;
+import org.knime.core.internal.KNIMEPath;
 import org.knime.core.node.KNIMEConstants;
 
 /**
@@ -216,5 +218,29 @@ public abstract class WorkflowTest implements TestWithName {
             }
         }
         return new MemoryUsage(initUndefined ? -1 : initMem, usedMem, committedMem, maxUndefined ? -1 : maxMem);
+    }
+
+    /**
+     * Helper to set the workspace directory path. Will only be set if the default workspace directory differs from the
+     * provided one.
+     *
+     * @param wsDir the new workspace directory to be set
+     * @return <code>true</code> if the workspace directory has been set, <code>false</code> if the passed directory is
+     *         already the set one
+     */
+    protected static boolean setCustomWorkspaceDirPath(final File wsDir) {
+        if (!KNIMEPath.getWorkspaceDirPath().equals(wsDir)) {
+            KNIMEPath.setWorkspaceDirPath(wsDir);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * Resets the workspace directory path to the default one.
+     */
+    protected static void setDefaultWorkspaceDirPath() {
+        KNIMEPath.setWorkspaceDirPath(null);
     }
 }

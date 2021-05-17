@@ -132,7 +132,13 @@
             deprecated="false"
             factory-class="org.knime.testing.node.workflowsummary.WorkflowSummaryConvertionTestNodeFactory"
             hidden="true">
-      </node>     
+      </node>
+      <node
+            category-path="/labs/captureworkflows"
+            deprecated="false"
+            factory-class="org.knime.testing.node.workflowsummaryextractor.WorkflowSummaryExtractorNodeFactory"
+            hidden="false">
+      </node>
    </extension>
    <extension
          point="org.knime.workbench.repository.categories">

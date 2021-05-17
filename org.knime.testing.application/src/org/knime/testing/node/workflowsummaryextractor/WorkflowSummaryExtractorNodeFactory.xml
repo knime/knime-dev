@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE knimeNode PUBLIC "-//UNIKN//DTD KNIME Node 2.0//EN" "http://www.knime.org/Node.dtd">
+<knimeNode type="Manipulator" icon="./workflow_summary_extractor.png">
+	<name>Workflow Summary Extractor</name>
+
+	<shortDescription>
+		Extracts a workflow summary in xml- and json-format from a workflow port object.
+	</shortDescription>
+
+	<fullDescription>
+		<intro>
+		Extracts a workflow summary in xml- and json-format from a workflow port object.
+		</intro>
+	</fullDescription>
+
+	<ports>
+		<inPort index="0" name="Workflow">The workflow to analyze</inPort>
+		<outPort index="0" name="Summary">The table with node information</outPort>
+	</ports>
+</knimeNode>

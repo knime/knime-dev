@@ -134,7 +134,7 @@
             hidden="true">
       </node>
       <node
-            category-path="/labs/captureworkflows"
+            category-path="/flowabstraction/captureworkflows"
             deprecated="false"
             factory-class="org.knime.testing.node.workflowsummaryextractor.WorkflowSummaryExtractorNodeFactory"
             hidden="false">

@@ -89,6 +89,11 @@
       <node
             after="org.knime.testing.node.filestore.fsobject2cell.FileStoreObjectToCellNodeFactory"
             category-path="/testing/filestore"
+            factory-class="org.knime.testing.node.filestore.infos.FileStoreInfosNodeFactory">
+      </node>
+      <node
+            after="org.knime.testing.node.filestore.fsobject2cell.FileStoreObjectToCellNodeFactory"
+            category-path="/testing/filestore"
             deprecated="false"
             factory-class="org.knime.testing.node.blob.create.CreateTestBlobNodeFactory">
       </node>

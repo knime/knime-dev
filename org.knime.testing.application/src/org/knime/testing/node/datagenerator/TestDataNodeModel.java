@@ -104,6 +104,7 @@ import org.knime.core.node.NodeSettingsWO;
 import org.knime.core.node.defaultnodesettings.SettingsModelInteger;
 import org.knime.core.node.defaultnodesettings.SettingsModelIntegerBounded;
 import org.knime.core.node.defaultnodesettings.SettingsModelString;
+import org.knime.time.util.DateTimeUtils;
 
 
 /**
@@ -150,7 +151,7 @@ public class TestDataNodeModel extends NodeModel {
                 date = ZonedDateTime.of(LocalDateTime.MAX, ZoneId.systemDefault());
                 break;
             default:
-                date = ZonedDateTime.now();
+                date = DateTimeUtils.nowZonedDateTimeMillis();
             }
             return date;
         }

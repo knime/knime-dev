@@ -74,6 +74,7 @@ import org.knime.core.node.CanceledExecutionException;
 import org.knime.core.node.ExecutionContext;
 import org.knime.core.node.ExecutionMonitor;
 import org.knime.core.node.InvalidSettingsException;
+import org.knime.core.node.NodeLogger;
 import org.knime.core.node.NodeModel;
 import org.knime.core.node.NodeSettingsRO;
 import org.knime.core.node.NodeSettingsWO;
@@ -90,6 +91,8 @@ import org.knime.testing.internal.diffcheckers.IgnoreChecker;
  * @author Thorsten Meinl, KNIME AG, Zurich, Switzerland
  */
 class DifferenceCheckerNodeModel extends NodeModel {
+    static final NodeLogger LOGGER = NodeLogger.getLogger(DifferenceCheckerNodeModel.class);
+
     private final DifferenceCheckerSettings m_settings = new DifferenceCheckerSettings();
 
     private final Map<DataColumnSpec, DifferenceChecker<? extends DataValue>> m_checkers =
@@ -122,8 +125,15 @@ class DifferenceCheckerNodeModel extends NodeModel {
                     throw new InvalidSettingsException("No checker configured for column '" + dcs.getName() + "'");
                 }
 
-                DataType type =
-                        dcs.getType().isCollectionType() ? dcs.getType().getCollectionElementType() : dcs.getType();
+                DataType type = dcs.getType();
+                if (type.isMissingValueType()) {
+                    LOGGER.coding("MissingValue type should not be used for columns");
+                }
+
+                if (type.isCollectionType() && !type.isMissingValueType()) {
+                    type = type.getCollectionElementType();
+                }
+
                 if (!type.isCompatible(fac.getType())) {
                     throw new InvalidSettingsException("Difference checker '" + fac.getDescription()
                             + "' is not compatible with data type " + dcs.getType());

@@ -727,10 +727,6 @@ license terms applicable to such Node, including when such Node is
 propagated with or for interoperation with KNIME.
    </license>
 
-   <includes
-         id="org.knime.features.testing.core"
-         version="0.0.0"/>
-
    <requires>
       <import plugin="org.eclipse.jdt.junit" version="3.10.0" match="greaterOrEqual"/>
    </requires>
@@ -742,5 +738,19 @@ propagated with or for interoperation with KNIME.
          version="0.0.0"
          fragment="true"
          unpack="false"/>
+
+   <plugin
+         id="org.eclipse.ant.optional.junit"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         fragment="true"
+         unpack="false"/>
+
+   <plugin
+         id="org.knime.testing"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"/>
 
 </feature>

@@ -56,6 +56,7 @@ import org.eclipse.core.runtime.IProgressMonitor;
 import org.knime.core.node.CanceledExecutionException;
 import org.knime.core.node.ExecutionMonitor;
 import org.knime.core.node.InvalidSettingsException;
+import org.knime.core.node.KNIMEConstants;
 import org.knime.core.node.workflow.UnsupportedWorkflowVersionException;
 import org.knime.core.node.workflow.WorkflowContext;
 import org.knime.core.node.workflow.WorkflowLoadHelper;
@@ -160,9 +161,24 @@ public class WorkflowLoadTest extends WorkflowTest {
              * {@inheritDoc}
              */
             @Override
-            public UnknownKNIMEVersionLoadPolicy getUnknownKNIMEVersionLoadPolicy(final LoadVersion workflowKNIMEVersion,
-                final Version createdByKNIMEVersion, final boolean isNightlyBuild) {
-                return UnknownKNIMEVersionLoadPolicy.Try;
+            public UnknownKNIMEVersionLoadPolicy getUnknownKNIMEVersionLoadPolicy(
+                final LoadVersion workflowKNIMEVersion, final Version createdByKNIMEVersion,
+                final boolean isNightlyBuild) {
+
+                // unknown version, (likely very old)
+                if (createdByKNIMEVersion == null) {
+                    return UnknownKNIMEVersionLoadPolicy.Try;
+                }
+
+                // allow loading versions with a higher qualifier and created by nightly builds,
+                // but disallow loading of future versions
+                final Version currentVersion = new Version(KNIMEConstants.VERSION);
+                if (createdByKNIMEVersion.getMajor() <= currentVersion.getMajor()
+                    && createdByKNIMEVersion.getMinor() <= currentVersion.getMinor()
+                    && createdByKNIMEVersion.getRevision() <= currentVersion.getRevision()) {
+                    return UnknownKNIMEVersionLoadPolicy.Try;
+                }
+                return UnknownKNIMEVersionLoadPolicy.Abort;
             }
         };
 

@@ -78,6 +78,8 @@ import junit.framework.TestResult;
  * @author Thorsten Meinl, KNIME AG, Zurich, Switzerland
  */
 public class WorkflowLoadTest extends WorkflowTest {
+    private static final Version CURRENT_VERSION = new Version(KNIMEConstants.VERSION);
+
     private final File m_workflowDir;
 
     private final File m_testcaseRoot;
@@ -165,19 +167,19 @@ public class WorkflowLoadTest extends WorkflowTest {
                 final LoadVersion workflowKNIMEVersion, final Version createdByKNIMEVersion,
                 final boolean isNightlyBuild) {
 
-                // unknown version, (likely very old)
                 if (createdByKNIMEVersion == null) {
+                    // unknown version, (likely very old)
+                    return UnknownKNIMEVersionLoadPolicy.Try;
+                } else if (CURRENT_VERSION.isSameOrNewer(createdByKNIMEVersion)) {
+                    // workflow created by an older AP version than the current one
+                    return UnknownKNIMEVersionLoadPolicy.Try;
+                } else if ((createdByKNIMEVersion.getMajor() == CURRENT_VERSION.getMajor()) &&
+                        (createdByKNIMEVersion.getMinor() == CURRENT_VERSION.getMinor())) {
+                    // workflow created by same minor release line (e.g. 4.4.1 vs. 4.4.0)
                     return UnknownKNIMEVersionLoadPolicy.Try;
                 }
 
-                // allow loading versions with a higher qualifier and created by nightly builds,
-                // but disallow loading of future versions
-                final Version currentVersion = new Version(KNIMEConstants.VERSION);
-                if (createdByKNIMEVersion.getMajor() <= currentVersion.getMajor()
-                    && createdByKNIMEVersion.getMinor() <= currentVersion.getMinor()
-                    && createdByKNIMEVersion.getRevision() <= currentVersion.getRevision()) {
-                    return UnknownKNIMEVersionLoadPolicy.Try;
-                }
+                // workflow created by newer minor (or major) version
                 return UnknownKNIMEVersionLoadPolicy.Abort;
             }
         };

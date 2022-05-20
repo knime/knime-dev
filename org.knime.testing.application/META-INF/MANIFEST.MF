@@ -49,4 +49,4 @@ Bundle-RequiredExecutionEnvironment: JavaSE-11
 Eclipse-RegisterBuddy: org.knime.base
 Bundle-ActivationPolicy: lazy
 Automatic-Module-Name: org.knime.testing.application
-Import-Package: org.w3c.dom.events;version="3.0.0"
+

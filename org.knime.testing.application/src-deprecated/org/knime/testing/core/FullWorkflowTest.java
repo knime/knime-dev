@@ -98,11 +98,11 @@ import org.knime.core.node.workflow.NodeContainerState;
 import org.knime.core.node.workflow.NodeContext;
 import org.knime.core.node.workflow.NodeID;
 import org.knime.core.node.workflow.NodeMessage;
-import org.knime.core.node.workflow.WorkflowContext;
 import org.knime.core.node.workflow.WorkflowLoadHelper;
 import org.knime.core.node.workflow.WorkflowManager;
 import org.knime.core.node.workflow.WorkflowPersistor.LoadResultEntry.LoadResultEntryType;
 import org.knime.core.node.workflow.WorkflowPersistor.WorkflowLoadResult;
+import org.knime.core.node.workflow.contextv2.WorkflowContextV2;
 import org.knime.core.util.Pointer;
 import org.knime.testing.node.config.TestConfigNodeModel;
 import org.knime.testing.node.config.TestConfigSettings;
@@ -1550,14 +1550,15 @@ public class FullWorkflowTest extends TestCase implements WorkflowTest {
                 + "--------------");
 
         WorkflowLoadHelper loadHelper = new WorkflowLoadHelper() {
-            /**
-             * {@inheritDoc}
-             */
             @Override
-            public WorkflowContext getWorkflowContext() {
-                WorkflowContext.Factory fac = new WorkflowContext.Factory(m_knimeWorkFlow.getParentFile());
-                fac.setMountpointRoot(m_testcaseRoot);
-                return fac.createContext();
+            public WorkflowContextV2 getWorkflowContext() {
+                return WorkflowContextV2.builder()
+                    .withAnalyticsPlatformExecutor(exec -> exec
+                        .withCurrentUserAsUserId()
+                        .withLocalWorkflowPath(m_knimeWorkFlow.getParentFile().toPath())
+                        .withMountpoint("LOCAL", m_testcaseRoot.toPath()))
+                    .withLocalLocation()
+                    .build();
             }
         };
 

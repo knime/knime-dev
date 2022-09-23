@@ -49,21 +49,19 @@ package org.knime.testing.core.ng;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
 
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.knime.core.node.CanceledExecutionException;
 import org.knime.core.node.ExecutionMonitor;
 import org.knime.core.node.InvalidSettingsException;
 import org.knime.core.node.KNIMEConstants;
+import org.knime.core.node.NodeLogger;
 import org.knime.core.node.workflow.UnsupportedWorkflowVersionException;
-import org.knime.core.node.workflow.WorkflowContext;
 import org.knime.core.node.workflow.WorkflowLoadHelper;
 import org.knime.core.node.workflow.WorkflowManager;
-import org.knime.core.node.workflow.WorkflowPersistor;
 import org.knime.core.node.workflow.WorkflowPersistor.LoadResultEntry.LoadResultEntryType;
 import org.knime.core.node.workflow.WorkflowPersistor.WorkflowLoadResult;
+import org.knime.core.node.workflow.contextv2.WorkflowContextV2;
 import org.knime.core.util.LoadVersion;
 import org.knime.core.util.LockFailedException;
 import org.knime.core.util.Version;
@@ -78,6 +76,9 @@ import junit.framework.TestResult;
  * @author Thorsten Meinl, KNIME AG, Zurich, Switzerland
  */
 public class WorkflowLoadTest extends WorkflowTest {
+
+    private static final NodeLogger LOGGER = NodeLogger.getLogger(WorkflowLoadTest.class);
+
     private static final Version CURRENT_VERSION = new Version(KNIMEConstants.VERSION);
 
     private final File m_workflowDir;
@@ -104,9 +105,6 @@ public class WorkflowLoadTest extends WorkflowTest {
         m_runConfiguration = runConfiguration;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void run(final TestResult result) {
         boolean resetToDefaultWorkspaceDirRequired = setCustomWorkspaceDirPath(m_testcaseRoot);
@@ -124,9 +122,6 @@ public class WorkflowLoadTest extends WorkflowTest {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String getName() {
         return "load workflow";
@@ -135,33 +130,24 @@ public class WorkflowLoadTest extends WorkflowTest {
     static WorkflowManager loadWorkflow(final WorkflowTest test, final TestResult result, final File workflowDir,
         final File testcaseRoot, final TestrunConfiguration runConfig) throws IOException, InvalidSettingsException,
         CanceledExecutionException, UnsupportedWorkflowVersionException, LockFailedException {
-        WorkflowLoadHelper loadHelper = new WorkflowLoadHelper() {
-            /**
-             * {@inheritDoc}
-             */
-            @Override
-            public WorkflowContext getWorkflowContext() {
-                WorkflowContext.Factory fac = new WorkflowContext.Factory(workflowDir);
-                fac.setMountpointRoot(testcaseRoot);
-
-                final String wfPathAbs = (new File(workflowDir, WorkflowPersistor.WORKFLOW_FILE)).getAbsolutePath();
-                final String testcaseRootAbs = testcaseRoot.getAbsolutePath();
-                if (wfPathAbs.startsWith(testcaseRootAbs)) {
-                    // similar to TestflowCollector#searchDirectory
-                    final String workflowPath = wfPathAbs.substring(testcaseRootAbs.length()).replace('\\', '/');
+        final var ctx = WorkflowContextV2.builder()
+                .withAnalyticsPlatformExecutor(exec -> {
+                    final var exec2 = exec
+                            .withCurrentUserAsUserId()
+                            .withLocalWorkflowPath(workflowDir.getAbsoluteFile().toPath());
                     try {
                         // the mountpoint URI is optional in the wf context, so we are OK if an exception occurs here
-                        fac.setMountpointURI(new URI("knime", "LOCAL", workflowPath, null));
-                    } catch (URISyntaxException e) { // NOSONAR
+                        exec2.withMountpoint("LOCAL", testcaseRoot.getAbsoluteFile().toPath());
+                    } catch (IllegalArgumentException e) { // NOSONAR
+                        LOGGER.warn(String.format("Could not set mountpoint '%s' for workflow located at '%s'.",
+                            testcaseRoot, workflowDir), e);
                     }
-                }
+                    return exec2;
+                })
+                .withLocalLocation()
+                .build();
 
-                return fac.createContext();
-            }
-
-            /**
-             * {@inheritDoc}
-             */
+        WorkflowLoadHelper loadHelper = new WorkflowLoadHelper(ctx) {
             @Override
             public UnknownKNIMEVersionLoadPolicy getUnknownKNIMEVersionLoadPolicy(
                 final LoadVersion workflowKNIMEVersion, final Version createdByKNIMEVersion,

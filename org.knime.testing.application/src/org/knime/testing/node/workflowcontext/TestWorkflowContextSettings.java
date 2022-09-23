@@ -64,8 +64,10 @@ public class TestWorkflowContextSettings {
     /**
      * Used to verify the result of {@link WorkflowContextV2#toString()}. Built from {@link #m_patternStringModel} using
      * {@link #createPatternFromMessage(String)}.
+     *
+     * When creating a new node and the dialog has never been opened, use a pattern that matches everything.
      */
-    private Pattern m_contextStringRepresentationPattern;
+    private Pattern m_contextStringRepresentationPattern = createPatternFromMessage("_!_.*_!_");
 
     /**
      * This describes all valid outputs of {@link WorkflowContextV2#toString()}. By enclosing regular expressions within

@@ -86,7 +86,6 @@ public class TestWorkflowContextNodeDialog extends NodeDialogPane {
         // initialize with current context
         final var contextV2 = NodeContext.getContext().getWorkflowManager().getContextV2();
         m_currentWorkflowContext.setStringValue(contextV2.toString());
-        m_currentWorkflowContext.setEnabled(false);
 
         addTab("Workflow Context", createWorkflowContextPanel());
     }

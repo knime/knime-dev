@@ -48,8 +48,6 @@ package org.knime.testing.internal.ui;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -64,13 +62,13 @@ import org.eclipse.ui.ide.IDE;
 import org.knime.core.node.CanceledExecutionException;
 import org.knime.core.node.ExecutionMonitor;
 import org.knime.core.node.InvalidSettingsException;
+import org.knime.core.node.NodeLogger;
 import org.knime.core.node.workflow.UnsupportedWorkflowVersionException;
-import org.knime.core.node.workflow.WorkflowContext;
 import org.knime.core.node.workflow.WorkflowLoadHelper;
 import org.knime.core.node.workflow.WorkflowManager;
 import org.knime.core.node.workflow.WorkflowPersistor;
 import org.knime.core.node.workflow.WorkflowPersistor.LoadResultEntry.LoadResultEntryType;
-import org.knime.core.node.workflow.WorkflowPersistor.WorkflowLoadResult;
+import org.knime.core.node.workflow.contextv2.WorkflowContextV2;
 import org.knime.core.ui.node.workflow.WorkflowManagerUI;
 import org.knime.core.ui.wrapper.WorkflowManagerWrapper;
 import org.knime.core.ui.wrapper.Wrapper;
@@ -91,6 +89,9 @@ import junit.framework.TestResult;
  * @author Thorsten Meinl, KNIME AG, Zurich, Switzerland
  */
 class GUILoadTest extends WorkflowTest {
+
+    private static final NodeLogger LOGGER = NodeLogger.getLogger(GUILoadTest.class);
+
     private final File m_workflowDir;
 
     private final File m_testcaseRoot;
@@ -108,33 +109,28 @@ class GUILoadTest extends WorkflowTest {
      * @param context the test context, must not be <code>null</code>
      */
     public GUILoadTest(final File workflowDir, final File testcaseRoot, final String workflowName,
-        final IProgressMonitor monitor, final TestrunConfiguration runConfiguration, final WorkflowTestContext context) {
+            final IProgressMonitor monitor, final TestrunConfiguration runConfiguration,
+            final WorkflowTestContext context) {
         super(workflowName, monitor, context);
         m_workflowDir = workflowDir;
         m_testcaseRoot = testcaseRoot;
         m_runConfiguration = runConfiguration;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void run(final TestResult result) {
         result.startTest(this);
         try {
-            m_context.setWorkflowManager(Wrapper.unwrapWFM(loadWorkflow(this, result, m_workflowDir, m_testcaseRoot, m_runConfiguration,
-                (GUITestContext)m_context)));
+            m_context.setWorkflowManager(Wrapper.unwrapWFM(loadWorkflow(this, result, m_workflowDir, m_testcaseRoot,
+                m_runConfiguration, (GUITestContext)m_context)));
             WorkflowLoadTest.checkLoadVersion(this, result);
-        } catch (Throwable t) {
+        } catch (Throwable t) { // NOSONAR this is only test code, catching Throwable is OK
             result.addError(this, t);
         } finally {
             result.endTest(this);
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String getName() {
         return "load workflow";
@@ -144,32 +140,26 @@ class GUILoadTest extends WorkflowTest {
         final File testcaseRoot, final TestrunConfiguration runConfig, final GUITestContext context)
         throws IOException, InvalidSettingsException, CanceledExecutionException, UnsupportedWorkflowVersionException,
         LockFailedException, PartInitException {
-        WorkflowLoadHelper loadHelper = new WorkflowLoadHelper() {
-            /**
-             * {@inheritDoc}
-             */
-            @Override
-            public WorkflowContext getWorkflowContext() {
-                WorkflowContext.Factory fac = new WorkflowContext.Factory(workflowDir);
-                fac.setMountpointRoot(testcaseRoot);
 
-                final String wfPathAbs = (new File(workflowDir, WorkflowPersistor.WORKFLOW_FILE)).getAbsolutePath();
-                final String testcaseRootAbs = testcaseRoot.getAbsolutePath();
-                if (wfPathAbs.startsWith(testcaseRootAbs)) {
-                    // similar to TestflowCollector#searchDirectory
-                    final String workflowPath = wfPathAbs.substring(testcaseRootAbs.length()).replace('\\', '/');
+        final var ctx = WorkflowContextV2.builder()
+                .withAnalyticsPlatformExecutor(exec -> { // NOSONAR
+                    final var exec2 = exec
+                            .withCurrentUserAsUserId()
+                            .withLocalWorkflowPath(workflowDir.getAbsoluteFile().toPath());
                     try {
                         // the mountpoint URI is optional in the wf context, so we are OK if an exception occurs here
-                        fac.setMountpointURI(new URI("knime", "LOCAL", workflowPath, null));
-                    } catch (URISyntaxException e) {
+                        exec2.withMountpoint("LOCAL", testcaseRoot.getAbsoluteFile().toPath());
+                    } catch (IllegalArgumentException e) {
+                        LOGGER.warn(String.format("Could not set mountpoint '%s' for workflow located at '%s'.",
+                            testcaseRoot, workflowDir), e);
                     }
-                }
+                    return exec2;
+                })
+                .withLocalLocation()
+                .build();
 
-                return fac.createContext();
-            }
-        };
-
-        WorkflowLoadResult loadRes = WorkflowManager.loadProject(workflowDir, new ExecutionMonitor(), loadHelper);
+        final var loadRes = WorkflowManager.loadProject(workflowDir, new ExecutionMonitor(),
+            new WorkflowLoadHelper(ctx));
         if ((loadRes.getType() == LoadResultEntryType.Error)
             || ((loadRes.getType() == LoadResultEntryType.DataLoadError) && loadRes.getGUIMustReportDataLoadErrors())) {
             result.addFailure(test, new AssertionFailedError(loadRes.getFilteredError("", LoadResultEntryType.Error)));
@@ -183,18 +173,15 @@ class GUILoadTest extends WorkflowTest {
 
         final IEditorInput editorInput = new WorkflowManagerInput(manager, workflowDir.toURI());
         final IEditorDescriptor editorDescriptor = IDE.getEditorDescriptor(WorkflowPersistor.WORKFLOW_FILE);
-        final AtomicReference<PartInitException> exRef = new AtomicReference<PartInitException>();
-        Display.getDefault().syncExec(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    IWorkbenchWindow activeWindow = PlatformUI.getWorkbench().getActiveWorkbenchWindow();
-                    IEditorPart editor = activeWindow.getActivePage().openEditor(editorInput, editorDescriptor.getId());
-                    context.setEditorPart(editor);
-                    ProjectWorkflowMap.putWorkflowUI(workflowDir.toURI(), manager);
-                } catch (PartInitException ex) {
-                    exRef.set(ex);
-                }
+        final AtomicReference<PartInitException> exRef = new AtomicReference<>();
+        Display.getDefault().syncExec(() -> {
+            try {
+                IWorkbenchWindow activeWindow = PlatformUI.getWorkbench().getActiveWorkbenchWindow();
+                IEditorPart editor = activeWindow.getActivePage().openEditor(editorInput, editorDescriptor.getId());
+                context.setEditorPart(editor);
+                ProjectWorkflowMap.putWorkflowUI(workflowDir.toURI(), manager);
+            } catch (PartInitException ex) {
+                exRef.set(ex);
             }
         });
         if (exRef.get() != null) {

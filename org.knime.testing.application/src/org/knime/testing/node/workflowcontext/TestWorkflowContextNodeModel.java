@@ -50,18 +50,26 @@ package org.knime.testing.node.workflowcontext;
 import java.io.File;
 import java.io.IOException;
 
+import org.knime.core.data.DataColumnSpec;
+import org.knime.core.data.DataColumnSpecCreator;
 import org.knime.core.data.DataTableSpec;
+import org.knime.core.data.DataTableSpecCreator;
+import org.knime.core.data.def.DefaultRow;
+import org.knime.core.data.def.StringCell;
+import org.knime.core.data.def.StringCell.StringCellFactory;
+import org.knime.core.data.json.JSONCell;
+import org.knime.core.data.json.JSONCellFactory;
 import org.knime.core.node.BufferedDataTable;
 import org.knime.core.node.CanceledExecutionException;
 import org.knime.core.node.ExecutionContext;
 import org.knime.core.node.ExecutionMonitor;
 import org.knime.core.node.InvalidSettingsException;
+import org.knime.core.node.NodeLogger;
 import org.knime.core.node.NodeModel;
 import org.knime.core.node.NodeSettingsRO;
 import org.knime.core.node.NodeSettingsWO;
 import org.knime.core.node.workflow.NodeContext;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
+import org.knime.shared.workflow.storage.text.util.ObjectMapperUtil;
 
 /**
  *
@@ -69,18 +77,33 @@ import com.fasterxml.jackson.core.JsonProcessingException;
  */
 public class TestWorkflowContextNodeModel extends NodeModel {
 
+    private static final DataColumnSpec LOCATION_INFO =
+        new DataColumnSpecCreator("Location Information", JSONCell.TYPE).createSpec();
+
+    private static final DataColumnSpec EXECUTOR_INFO =
+        new DataColumnSpecCreator("Executor Information", JSONCell.TYPE).createSpec();
+
+    private static final DataColumnSpec WORKFLOW_CONTEXT_DUMP =
+            new DataColumnSpecCreator("Raw Information", StringCell.TYPE).createSpec();
+
+    private static final DataTableSpec OUTPUT_SPEC =
+        new DataTableSpecCreator().addColumns(LOCATION_INFO, EXECUTOR_INFO, WORKFLOW_CONTEXT_DUMP).createSpec();
+
     private final TestWorkflowContextSettings m_settings = new TestWorkflowContextSettings();
 
     /**
      * Creates a new node model.
      */
     public TestWorkflowContextNodeModel() {
-        super(0, 0);
+        super(0, 1);
     }
 
+    /**
+     * The first output table contains location info. The second output table contains the executor info.
+     */
     @Override
     protected DataTableSpec[] configure(final DataTableSpec[] inSpecs) throws InvalidSettingsException {
-        return new DataTableSpec[0];
+        return new DataTableSpec[]{OUTPUT_SPEC};
     }
 
     /**
@@ -88,22 +111,39 @@ public class TestWorkflowContextNodeModel extends NodeModel {
      *
      * {@inheritDoc}
      *
-     * @throws JsonProcessingException
+     * @throws IOException
      */
     @Override
     protected BufferedDataTable[] execute(final BufferedDataTable[] inData, final ExecutionContext exec)
-        throws JsonProcessingException {
+        throws IOException {
 
-        final var currentContext = NodeContext.getContext().getWorkflowManager().getContextV2();
+        final var context = NodeContext.getContext().getWorkflowManager().getContextV2();
+
+        NodeLogger.getLogger(getClass()).info(String.format("WorkflowContextV2%n%s", context));
+
+        // display a warning if the string representation of the workflow context does not match the expected pattern
         final var contextStringRepresentationPattern = m_settings.getContextStringRepresentationPattern();
         final var invalid = contextStringRepresentationPattern.asMatchPredicate().negate();
-
-        if (invalid.test(currentContext.toString())) {
-            throw new IllegalStateException(String.format("Current workflow context%n%s%ndoes not match pattern%n%s",
-                currentContext, contextStringRepresentationPattern));
+        final var contextAsString = context.toString();
+        if (invalid.test(contextAsString)) {
+            final var message = String.format("Expected workflow context%n%s%nGot%n%s",
+                contextStringRepresentationPattern, contextAsString);
+            setWarningMessage(message);
         }
 
-        return new BufferedDataTable[0];
+        // create JSON representation of location and executor info
+        var om = ObjectMapperUtil.getInstance().getObjectMapper();
+        var locationJson = om.writeValueAsString(context.getLocationInfo());
+        var executorJson = om.writeValueAsString(context.getExecutorInfo());
+
+        // create output table (currently there's no JSON flow variable type, so we go with a one row table)
+        final var row = new DefaultRow("WorkflowContextProperties", JSONCellFactory.create(locationJson),
+            JSONCellFactory.create(executorJson), StringCellFactory.create(contextAsString));
+        var container = exec.createDataContainer(OUTPUT_SPEC);
+        container.addRowToTable(row);
+        container.close();
+
+        return new BufferedDataTable[]{container.getTable()};
     }
 
     @Override

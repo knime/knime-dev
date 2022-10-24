@@ -109,6 +109,11 @@
             factory-class="org.knime.testing.node.database.DBConnectionCloserNodeFactory">
       </node>
       <node
+            category-path="/testing"
+            deprecated="false"
+            factory-class="org.knime.testing.node.workflowcontext.TestWorkflowContextNodeFactory">
+      </node>
+      <node
             deprecated="false"
             factory-class="org.knime.testing.node.wfcapture.workflow2table.Workflow2TableNodeFactory"
             hidden="true">

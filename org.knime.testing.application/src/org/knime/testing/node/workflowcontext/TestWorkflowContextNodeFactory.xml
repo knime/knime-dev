@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE knimeNode PUBLIC "-//UNIKN//DTD KNIME Node 2.0//EN" "http://www.knime.org/Node.dtd">
+<knimeNode type="Other" icon="hammer.png">
+    <name>Test Workflow Context Properties</name>
+
+    <shortDescription>
+        Tests that the current workflow context has given properties.
+	</shortDescription>
+
+    <fullDescription>
+        <intro>
+            Enter the expected string representation of the workflow context on the right side.
+            You can insert regular expressions by enclosing them in _!_ 
+        </intro>
+    </fullDescription>
+    <ports />
+</knimeNode>

@@ -4,20 +4,24 @@
     <name>Test Workflow Context Properties</name>
 
     <shortDescription>
-        Tests that the current workflow context has given properties.
+        Outputs properties of the current workflow context.
 	</shortDescription>
 
     <fullDescription>
         <intro>
-            Enter the expected string representation of the workflow context on the right side.
-            You can insert regular expressions by enclosing them in _!_ 
+             
         </intro>
     </fullDescription>
     <ports>
 		<outPort index="0" name="Workflow Context Properties">
-		Outputs two JSON columns and one string column. The first JSON describes the location, i.e., the source environment of the workflow, e.g., the KNIME Hub address the workflow is located on.
-		The second JSON column describes the executor of the workflow, i.e., the software that is used to run the workflow, e.g., the Analytics Platform that displays the workflow, has it opened, or executes it; or a KNIME Hub executor.
-		The string column contains the result of converting the workflow to a string. 
+		Outputs two JSON columns and one string column. <ul>
+		<li>The first JSON column describes the location, i.e., the source environment of the workflow, e.g., 
+		the KNIME Hub address the workflow is located on. </li>
+		<li>The second JSON column describes the executor of the workflow, i.e., the software that is used to run 
+		the workflow, e.g., the Analytics Platform that displays the workflow, has it opened, or executes it; 
+		or a KNIME Hub executor.</li>
+		<li>The string column contains the result of converting the workflow to a string. </li>
+		</ul>
 		</outPort>
 	</ports>
 </knimeNode>

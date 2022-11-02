@@ -69,13 +69,33 @@ import org.knime.core.node.NodeModel;
 import org.knime.core.node.NodeSettingsRO;
 import org.knime.core.node.NodeSettingsWO;
 import org.knime.core.node.workflow.NodeContext;
-import org.knime.shared.workflow.storage.text.util.ObjectMapperUtil;
+import org.knime.core.node.workflow.contextv2.HubSpaceLocationInfo;
+import org.knime.core.node.workflow.contextv2.ServerLocationInfo;
+import org.knime.core.util.auth.Authenticator;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  *
  * @author Carl Witt, KNIME AG, Zurich, Switzerland
  */
 public class TestWorkflowContextNodeModel extends NodeModel {
+
+    /**
+     * The authenticator might leak sensitive information or throw an exception during serialization if not
+     * authenticated.
+     */
+    private interface IgnoreAuthenticator {
+        @JsonIgnore
+        abstract Authenticator getAuthenticator();
+    }
+
+    private static final ObjectMapper MAPPER = new ObjectMapper();
+    static {
+        MAPPER.addMixIn(HubSpaceLocationInfo.class, IgnoreAuthenticator.class);
+        MAPPER.addMixIn(ServerLocationInfo.class, IgnoreAuthenticator.class);
+    }
 
     private static final DataColumnSpec LOCATION_INFO =
         new DataColumnSpecCreator("Location Information", JSONCell.TYPE).createSpec();
@@ -84,12 +104,10 @@ public class TestWorkflowContextNodeModel extends NodeModel {
         new DataColumnSpecCreator("Executor Information", JSONCell.TYPE).createSpec();
 
     private static final DataColumnSpec WORKFLOW_CONTEXT_DUMP =
-            new DataColumnSpecCreator("Raw Information", StringCell.TYPE).createSpec();
+        new DataColumnSpecCreator("Raw Information", StringCell.TYPE).createSpec();
 
     private static final DataTableSpec OUTPUT_SPEC =
         new DataTableSpecCreator().addColumns(LOCATION_INFO, EXECUTOR_INFO, WORKFLOW_CONTEXT_DUMP).createSpec();
-
-    private final TestWorkflowContextSettings m_settings = new TestWorkflowContextSettings();
 
     /**
      * Creates a new node model.
@@ -121,24 +139,13 @@ public class TestWorkflowContextNodeModel extends NodeModel {
 
         NodeLogger.getLogger(getClass()).info(String.format("WorkflowContextV2%n%s", context));
 
-        // display a warning if the string representation of the workflow context does not match the expected pattern
-        final var contextStringRepresentationPattern = m_settings.getContextStringRepresentationPattern();
-        final var invalid = contextStringRepresentationPattern.asMatchPredicate().negate();
-        final var contextAsString = context.toString();
-        if (invalid.test(contextAsString)) {
-            final var message = String.format("Expected workflow context%n%s%nGot%n%s",
-                contextStringRepresentationPattern, contextAsString);
-            setWarningMessage(message);
-        }
-
         // create JSON representation of location and executor info
-        var om = ObjectMapperUtil.getInstance().getObjectMapper();
-        var locationJson = om.writeValueAsString(context.getLocationInfo());
-        var executorJson = om.writeValueAsString(context.getExecutorInfo());
+        var locationJson = MAPPER.writeValueAsString(context.getLocationInfo());
+        var executorJson = MAPPER.writeValueAsString(context.getExecutorInfo());
 
         // create output table (currently there's no JSON flow variable type, so we go with a one row table)
         final var row = new DefaultRow("WorkflowContextProperties", JSONCellFactory.create(locationJson),
-            JSONCellFactory.create(executorJson), StringCellFactory.create(contextAsString));
+            JSONCellFactory.create(executorJson), StringCellFactory.create(context.toString()));
         var container = exec.createDataContainer(OUTPUT_SPEC);
         container.addRowToTable(row);
         container.close();
@@ -148,18 +155,17 @@ public class TestWorkflowContextNodeModel extends NodeModel {
 
     @Override
     protected void validateSettings(final NodeSettingsRO settings) throws InvalidSettingsException {
-        var s = new TestWorkflowContextSettings();
-        s.loadSettings(settings);
+        // no configuration to validate
     }
 
     @Override
     protected void loadValidatedSettingsFrom(final NodeSettingsRO settings) throws InvalidSettingsException {
-        m_settings.loadSettings(settings);
+        // no configuration to load
     }
 
     @Override
     protected void saveSettingsTo(final NodeSettingsWO settings) {
-        m_settings.saveSettings(settings);
+        // no configuration to persist
     }
 
     @Override

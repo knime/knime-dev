@@ -68,17 +68,11 @@ import org.knime.core.node.workflow.NodeContext;
  */
 public class TestWorkflowContextNodeDialog extends NodeDialogPane {
 
-    TestWorkflowContextSettings m_settings = new TestWorkflowContextSettings();
-
     SettingsModelString m_currentWorkflowContext = new SettingsModelString("never persisted", "");
 
     /** Shows the current workflow context. Not editable. */
     DialogComponentMultiLineString m_currentContext =
         new DialogComponentMultiLineString(m_currentWorkflowContext, "Current");
-
-    /** Shows the pattern that describes accepted outputs of workflow context toString() */
-    DialogComponentMultiLineString m_expectedPattern =
-        new DialogComponentMultiLineString(m_settings.getPatternStringModel(), "Expected");
 
     /**
      */
@@ -93,26 +87,19 @@ public class TestWorkflowContextNodeDialog extends NodeDialogPane {
     private JPanel createWorkflowContextPanel() {
         var p = new JPanel(new FlowLayout());
         m_currentContext.getComponentPanel().setPreferredSize(new Dimension(610, 300));
-        m_expectedPattern.getComponentPanel().setPreferredSize(new Dimension(610, 300));
-
         p.add(m_currentContext.getComponentPanel());
-        p.add(m_expectedPattern.getComponentPanel());
         return p;
     }
 
     @Override
     protected void saveSettingsTo(final NodeSettingsWO settings) throws InvalidSettingsException {
-        m_settings.saveSettings(settings);
+        // no configuration to persist
     }
 
     @Override
     protected void loadSettingsFrom(final NodeSettingsRO settings, final PortObjectSpec[] specs)
         throws NotConfigurableException {
-        try {
-            m_settings.loadSettings(settings);
-        } catch (InvalidSettingsException e) {
-            throw new NotConfigurableException("", e);
-        }
+        // no configuration to load
     }
 
 }

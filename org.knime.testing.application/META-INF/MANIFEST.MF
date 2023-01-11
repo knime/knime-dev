@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Test-Node extension for KNIME Workbench
 Bundle-SymbolicName: org.knime.testing.application;singleton:=true
-Fragment-Host: org.knime.testing;bundle-version="[4.1.0,6.0.0)"
+Fragment-Host: org.knime.testing;bundle-version="[5.0.0,6.0.0)"
 Bundle-Version: 5.0.0.qualifier
 Bundle-ClassPath: .
 Bundle-Vendor: KNIME AG, Zurich, Switzerland
@@ -26,21 +26,21 @@ Export-Package: org.knime.testing,
 Require-Bundle: org.eclipse.core.filesystem;bundle-version="[1.7.0,2.0.0)",
  org.eclipse.ui.ide;bundle-version="[3.13.1,4.0.0)",
  org.eclipse.jdt.junit.core;bundle-version="[3.9.100,4.0.0)",
- org.knime.core.ui;bundle-version="[4.0.0,6.0.0)",
- org.knime.base;bundle-version="[4.1.0,6.0.0)",
- org.knime.product;bundle-version="[4.0.0,6.0.0)",
- org.knime.time;bundle-version="[4.0.0,6.0.0)",
- org.knime.ext.svg;bundle-version="[4.0.0,6.0.0)",
- org.knime.workbench.core;bundle-version="[4.0.0,6.0.0)",
- org.knime.workbench.repository;bundle-version="[4.0.0,6.0.0)",
- org.knime.workbench.ui;bundle-version="[4.0.0,6.0.0)",
- org.knime.workbench.editor;bundle-version="[4.0.0,6.0.0)",
+ org.knime.core.ui;bundle-version="[5.0.0,6.0.0)",
+ org.knime.base;bundle-version="[5.0.0,6.0.0)",
+ org.knime.product;bundle-version="[5.0.0,6.0.0)",
+ org.knime.time;bundle-version="[5.0.0,6.0.0)",
+ org.knime.ext.svg;bundle-version="[5.0.0,6.0.0)",
+ org.knime.workbench.core;bundle-version="[5.0.0,6.0.0)",
+ org.knime.workbench.repository;bundle-version="[5.0.0,6.0.0)",
+ org.knime.workbench.ui;bundle-version="[5.0.0,6.0.0)",
+ org.knime.workbench.editor;bundle-version="[5.0.0,6.0.0)",
  org.knime.workbench.explorer.view;bundle-version="[8.5.0,9.0.0)",
- com.knime.enterprise.server.rest.api;bundle-version="[4.9.0,6.0.0)";resolution:=optional,
- com.knime.enterprise.utility;bundle-version="[4.1.0,6.0.0)";resolution:=optional,
- com.knime.enterprise.client.filesystem;bundle-version="[4.9.0,6.0.0)";resolution:=optional,
- org.knime.filehandling.core;bundle-version="[4.4.0,6.0.0)",
- org.knime.json;bundle-version="[4.2.0,6.0.0)",
+ com.knime.enterprise.server.rest.api;bundle-version="[4.9.0,5.0.0)";resolution:=optional,
+ com.knime.enterprise.utility;bundle-version="[4.1.0,5.0.0)";resolution:=optional,
+ com.knime.enterprise.client.filesystem;bundle-version="[4.9.0,5.0.0)";resolution:=optional,
+ org.knime.filehandling.core;bundle-version="[5.0.0,6.0.0)",
+ org.knime.json;bundle-version="[5.0.0,6.0.0)",
  com.fasterxml.jackson.core.jackson-databind;bundle-version="[2.13.2.2,3.0.0)",
  com.fasterxml.jackson.core.jackson-core;bundle-version="[2.13.2,3.0.0)",
  com.fasterxml.jackson.dataformat.jackson-dataformat-xml;bundle-version="[2.13.2,3.0.0)",

@@ -1,0 +1,24 @@
+{
+    "elements": [
+       {
+            "type": "Section",
+            "label": "Extracting Fields",
+            "elements": [
+            	{
+                    "type": "Control",
+                    "scope": "#/properties/model/properties/includeKeywords",
+                    "options": {
+                        "format": "checkbox"
+                    }
+                },
+            	{
+                    "type": "Control",
+                    "scope": "#/properties/model/properties/includeNodeDescription",
+                    "options": {
+                        "format": "checkbox"
+                    }
+                }
+            ]
+        }
+    ]
+}

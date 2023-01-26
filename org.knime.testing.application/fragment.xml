@@ -138,6 +138,11 @@
             factory-class="org.knime.testing.node.workflowsummary.WorkflowSummaryConvertionTestNodeFactory"
             hidden="true">
       </node>
+      <node
+            deprecated="false"
+            factory-class="org.knime.testing.node.extractor.NodeListExtractorNodeFactory"
+            hidden="false">
+      </node>
    </extension>
    <extension
          point="org.knime.workbench.repository.categories">

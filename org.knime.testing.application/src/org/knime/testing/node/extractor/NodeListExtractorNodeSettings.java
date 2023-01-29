@@ -58,6 +58,11 @@ import org.knime.core.webui.node.dialog.persistence.field.Persist;
  */
 public final class NodeListExtractorNodeSettings implements DefaultNodeSettings {
 
+    @Persist(configKey = "includeNodeFactory")
+    @Schema(title = "NodeFactory Class",
+    description = "The node factory class name (internally used identifier)")
+    boolean m_includeNodeFactory;
+
     @Persist(configKey = "includeNodeDescription")
     @Schema(title = "Node Description",
     description = "If selected, includes a column containing the full node description")
@@ -67,11 +72,6 @@ public final class NodeListExtractorNodeSettings implements DefaultNodeSettings 
     @Schema(title = "Keywords",
     description = "If selected, includes a column containing the keywords used during (fuzzy) node search")
     boolean m_includeKeywords;
-
-    @Persist(configKey = "includeNodeFactory")
-    @Schema(title = "NodeFactory Class",
-    description = "The node factory class name")
-    boolean m_includeNodeFactory;
 
 
 }

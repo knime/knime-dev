@@ -49,6 +49,9 @@
 package org.knime.testing.node.extractor;
 
 import java.io.StringWriter;
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
 
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
@@ -57,7 +60,6 @@ import javax.xml.transform.TransformerFactoryConfigurationError;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
-import org.assertj.core.util.IterableUtil;
 import org.knime.core.data.DataColumnSpecCreator;
 import org.knime.core.data.DataTableSpec;
 import org.knime.core.data.DataTableSpecCreator;
@@ -73,11 +75,15 @@ import org.knime.core.node.ExecutionContext;
 import org.knime.core.node.InvalidSettingsException;
 import org.knime.core.node.NodeFactory;
 import org.knime.core.node.NodeModel;
+import org.knime.core.node.extension.InvalidNodeFactoryExtensionException;
 import org.knime.core.node.extension.NodeFactoryExtension;
 import org.knime.core.node.extension.NodeFactoryExtensionManager;
+import org.knime.core.node.extension.NodeSetFactoryExtension;
 import org.knime.core.webui.node.dialog.impl.WebUINodeConfiguration;
 import org.knime.core.webui.node.dialog.impl.WebUINodeModel;
 import org.w3c.dom.Element;
+
+import com.google.common.collect.Streams;
 
 /**
  *
@@ -104,15 +110,21 @@ public class NodeListExtractorNodeModel extends WebUINodeModel<NodeListExtractor
             var i = 0;
             var n = 0;
             final var nodeFactoryExtensions = NodeFactoryExtensionManager.getInstance().getNodeFactoryExtensions();
-            var size = IterableUtil.sizeOf(nodeFactoryExtensions);
-            for (NodeFactoryExtension ext : nodeFactoryExtensions) {
+            final var nodeFactorySetExtensions = NodeFactoryExtensionManager.getInstance().getNodeSetFactoryExtensions();
+            List<SingleNode> allNodes = Streams.concat( //
+                Streams.stream(nodeFactoryExtensions).map(StandardNode::new), //
+                Streams.stream(nodeFactorySetExtensions).flatMap(
+                    setExt -> setExt.getNodeFactoryIds().stream().map(id -> new NodeSetExtensionNode(setExt, id))))
+                .collect(Collectors.toList());
+            var size = allNodes.size();
+            for (SingleNode singleNode : allNodes) {
                 n += 1;
                 NodeFactory<? extends NodeModel> f;
                 try {
-                    f = ext.getFactory();
-                } catch (Exception e) {
-                    getLogger().warn("Unable to instantiate node " + ext.getFactoryClassName() + ": " + e.getMessage(),
-                        e);
+                    f = singleNode.getOrCreateFactory();
+                } catch (InvalidSettingsException | InvalidNodeFactoryExtensionException e) {
+                    getLogger()
+                        .warn("Unable to instantiate node " + singleNode.getFallbackName() + ": " + e.getMessage(), e);
                     continue;
                 }
                 exec.setProgress(n / (double)size, String.format("Indexing \"%s\" (%d/%d)", f.getNodeName(), n, size));
@@ -121,12 +133,12 @@ public class NodeListExtractorNodeModel extends WebUINodeModel<NodeListExtractor
                 var rowWrite = writeCursor.forward();
                 int col = 0;
                 ((StringWriteValue)rowWrite.getWriteValue(col++)).setStringValue(f.getNodeName());
-                ((StringWriteValue)rowWrite.getWriteValue(col++)).setStringValue(ext.getCategoryPath());
-                ((StringWriteValue)rowWrite.getWriteValue(col++)).setStringValue(ext.getPlugInSymbolicName());
-                ((BooleanWriteValue)rowWrite.getWriteValue(col++)).setBooleanValue(ext.isDeprecated());
-                ((BooleanWriteValue)rowWrite.getWriteValue(col++)).setBooleanValue(ext.isHidden());
+                ((StringWriteValue)rowWrite.getWriteValue(col++)).setStringValue(singleNode.getCategoryPath());
+                ((StringWriteValue)rowWrite.getWriteValue(col++)).setStringValue(singleNode.getPlugInSymbolicName());
+                ((BooleanWriteValue)rowWrite.getWriteValue(col++)).setBooleanValue(singleNode.isDeprecated());
+                ((BooleanWriteValue)rowWrite.getWriteValue(col++)).setBooleanValue(singleNode.isHidden());
                 if (s.m_includeNodeFactory) {
-                    ((StringWriteValue)rowWrite.getWriteValue(col++)).setStringValue(ext.getFactoryClassName());
+                    ((StringWriteValue)rowWrite.getWriteValue(col++)).setStringValue(singleNode.getFactoryClassname());
                 }
                 if (s.m_includeNodeDescription) {
                     ((StringWriteValue)rowWrite.getWriteValue(col++)).setStringValue(toDocument(f.getXMLDescription()));
@@ -172,6 +184,139 @@ public class NodeListExtractorNodeModel extends WebUINodeModel<NodeListExtractor
         StreamResult sr = new StreamResult(sw);
         transformer.transform(domSource, sr);
         return sw.toString();
+    }
+
+    interface SingleNode {
+
+        String getFallbackName();
+        String getNodeName();
+        String getCategoryPath();
+        String getPlugInSymbolicName();
+        boolean isDeprecated();
+        boolean isHidden();
+        String getFactoryClassname();
+
+        NodeFactory<? extends NodeModel> getOrCreateFactory()
+            throws InvalidNodeFactoryExtensionException, InvalidSettingsException;
+    }
+
+    static final class StandardNode implements SingleNode {
+
+        private final NodeFactoryExtension m_nodeFactoryExtension;
+        private NodeFactory<? extends NodeModel> m_nodeFactory;
+
+        StandardNode(final NodeFactoryExtension nodeFactoryExtension) {
+            m_nodeFactoryExtension = nodeFactoryExtension;
+        }
+
+        @Override
+        public String getFallbackName() {
+            return m_nodeFactoryExtension.getFactoryClassName();
+        }
+
+        @Override
+        public String getNodeName() {
+            return m_nodeFactory.getNodeName();
+        }
+
+        @Override
+        public String getCategoryPath() {
+            return m_nodeFactoryExtension.getCategoryPath();
+        }
+
+        @Override
+        public String getPlugInSymbolicName() {
+            return m_nodeFactoryExtension.getPlugInSymbolicName();
+        }
+
+        @Override
+        public boolean isDeprecated() {
+            return m_nodeFactoryExtension.isDeprecated();
+        }
+
+        @Override
+        public boolean isHidden() {
+            return m_nodeFactoryExtension.isHidden();
+        }
+
+        @Override
+        public String getFactoryClassname() {
+            return m_nodeFactoryExtension.getFactoryClassName();
+        }
+
+        @Override
+        public NodeFactory<? extends NodeModel> getOrCreateFactory() throws InvalidNodeFactoryExtensionException {
+            if (m_nodeFactory == null) {
+                m_nodeFactory = m_nodeFactoryExtension.getFactory();
+            }
+            return m_nodeFactory;
+        }
+
+        static Callable<SingleNode> factory(final NodeFactoryExtension ext) {
+            return () -> new StandardNode(ext);
+        }
+    }
+
+
+    private static final class NodeSetExtensionNode implements SingleNode {
+
+        private final String m_id;
+        private final NodeSetFactoryExtension m_nodeSetFactoryExtension;
+        private NodeFactory<? extends NodeModel> m_nodeFactory;
+
+        NodeSetExtensionNode(final NodeSetFactoryExtension nodeSetFactoryExtension, final String id) {
+            m_id = id;
+            m_nodeSetFactoryExtension = nodeSetFactoryExtension;
+        }
+
+        @Override
+        public String getFallbackName() {
+            return m_nodeSetFactoryExtension.getClass().getName() + "#" + m_id;
+        }
+
+        @Override
+        public String getNodeName() {
+            return m_nodeFactory.getNodeName();
+        }
+
+        @Override
+        public String getCategoryPath() {
+            return m_nodeSetFactoryExtension.getCategoryPath(m_id);
+        }
+
+        @Override
+        public String getPlugInSymbolicName() {
+            return m_nodeSetFactoryExtension.getPlugInSymbolicName();
+        }
+
+        @Override
+        public boolean isDeprecated() {
+            return m_nodeSetFactoryExtension.isDeprecated() || m_nodeFactory.isDeprecated();
+        }
+
+        @Override
+        public boolean isHidden() {
+            return false;
+        }
+
+        @Override
+        public String getFactoryClassname() {
+            return m_nodeFactory.getClass().getName() + "#" + m_id;
+        }
+
+        @Override
+        public NodeFactory<? extends NodeModel> getOrCreateFactory() throws InvalidSettingsException {
+            if (m_nodeFactory == null) {
+                m_nodeFactory = m_nodeSetFactoryExtension.createNodeFactory(m_id)
+                        .orElseThrow(() -> new InvalidSettingsException("Unable to load " + m_id));
+            }
+            return m_nodeFactory;
+        }
+
+        static Callable<SingleNode> factory(final NodeSetFactoryExtension ext, final String id) {
+            return () -> new NodeSetExtensionNode(ext, id);
+        }
+
     }
 
 }

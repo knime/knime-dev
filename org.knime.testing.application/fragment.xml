@@ -141,6 +141,7 @@
       <node
             deprecated="false"
             factory-class="org.knime.testing.node.extractor.NodeListExtractorNodeFactory"
+            category-path="/testing"
             hidden="false">
       </node>
    </extension>

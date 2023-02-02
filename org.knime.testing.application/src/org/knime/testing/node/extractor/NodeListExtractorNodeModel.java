@@ -48,6 +48,8 @@
  */
 package org.knime.testing.node.extractor;
 
+import java.io.File;
+import java.io.IOException;
 import java.io.StringWriter;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -64,23 +66,23 @@ import org.knime.core.data.DataColumnSpecCreator;
 import org.knime.core.data.DataTableSpec;
 import org.knime.core.data.DataTableSpecCreator;
 import org.knime.core.data.RowKey;
-import org.knime.core.data.collection.ListCell;
 import org.knime.core.data.def.BooleanCell;
 import org.knime.core.data.def.StringCell;
 import org.knime.core.data.v2.value.ValueInterfaces.BooleanWriteValue;
-import org.knime.core.data.v2.value.ValueInterfaces.StringListWriteValue;
 import org.knime.core.data.v2.value.ValueInterfaces.StringWriteValue;
 import org.knime.core.node.BufferedDataTable;
+import org.knime.core.node.CanceledExecutionException;
 import org.knime.core.node.ExecutionContext;
+import org.knime.core.node.ExecutionMonitor;
 import org.knime.core.node.InvalidSettingsException;
 import org.knime.core.node.NodeFactory;
 import org.knime.core.node.NodeModel;
+import org.knime.core.node.NodeSettingsRO;
+import org.knime.core.node.NodeSettingsWO;
 import org.knime.core.node.extension.InvalidNodeFactoryExtensionException;
 import org.knime.core.node.extension.NodeFactoryExtension;
 import org.knime.core.node.extension.NodeFactoryExtensionManager;
 import org.knime.core.node.extension.NodeSetFactoryExtension;
-import org.knime.core.webui.node.dialog.impl.WebUINodeConfiguration;
-import org.knime.core.webui.node.dialog.impl.WebUINodeModel;
 import org.w3c.dom.Element;
 
 import com.google.common.collect.Streams;
@@ -89,22 +91,21 @@ import com.google.common.collect.Streams;
  *
  * @author wiswedel
  */
-public class NodeListExtractorNodeModel extends WebUINodeModel<NodeListExtractorNodeSettings> {
+final class NodeListExtractorNodeModel extends NodeModel {
 
-    NodeListExtractorNodeModel(final WebUINodeConfiguration configuration) {
-        super(configuration, NodeListExtractorNodeSettings.class);
+    NodeListExtractorNodeModel() {
+        super(0, 1);
     }
 
     @Override
-    protected DataTableSpec[] configure(final DataTableSpec[] inSpecs, final NodeListExtractorNodeSettings s)
+    protected DataTableSpec[] configure(final DataTableSpec[] inSpecs)
         throws InvalidSettingsException {
-        return new DataTableSpec[] {createSpec(s)};
+        return new DataTableSpec[] {createSpec()};
     }
 
     @Override
-    protected BufferedDataTable[] execute(final BufferedDataTable[] inData, final ExecutionContext exec,
-        final NodeListExtractorNodeSettings s) throws Exception {
-        var spec = createSpec(s);
+    protected BufferedDataTable[] execute(final BufferedDataTable[] inData, final ExecutionContext exec) throws Exception {
+        var spec = createSpec();
         try (var tableContainer = exec.createRowContainer(spec);
                 var writeCursor = tableContainer.createCursor()) {
             var i = 0;
@@ -137,42 +138,49 @@ public class NodeListExtractorNodeModel extends WebUINodeModel<NodeListExtractor
                 ((StringWriteValue)rowWrite.getWriteValue(col++)).setStringValue(singleNode.getPlugInSymbolicName());
                 ((BooleanWriteValue)rowWrite.getWriteValue(col++)).setBooleanValue(singleNode.isDeprecated());
                 ((BooleanWriteValue)rowWrite.getWriteValue(col++)).setBooleanValue(singleNode.isHidden());
-                if (s.m_includeNodeFactory) {
-                    ((StringWriteValue)rowWrite.getWriteValue(col++)).setStringValue(singleNode.getFactoryClassname());
-                }
-                if (s.m_includeNodeDescription) {
-                    ((StringWriteValue)rowWrite.getWriteValue(col++)).setStringValue(toDocument(f.getXMLDescription()));
-                }
-                if (s.m_includeKeywords) {
-                    final var keywords = f.getKeywords();
-                    if (keywords.length == 0) {
-                        rowWrite.setMissing(col++);
-                    } else {
-                        ((StringListWriteValue)rowWrite.getWriteValue(col++)).setValue(keywords);
-                    }
-                }
+                ((StringWriteValue)rowWrite.getWriteValue(col++)).setStringValue(singleNode.getFactoryClassname());
+                ((StringWriteValue)rowWrite.getWriteValue(col++)).setStringValue(toDocument(f.getXMLDescription()));
                 rowWrite.setRowKey(RowKey.createRowKey((long)i++));
             }
             return new BufferedDataTable[] {tableContainer.finish()};
         }
     }
 
-    private static DataTableSpec createSpec(final NodeListExtractorNodeSettings settings) {
+    @Override
+    protected void loadInternals(final File nodeInternDir, final ExecutionMonitor exec)
+        throws IOException, CanceledExecutionException {
+    }
+
+    @Override
+    protected void saveInternals(final File nodeInternDir, final ExecutionMonitor exec)
+        throws IOException, CanceledExecutionException {
+    }
+
+    @Override
+    protected void saveSettingsTo(final NodeSettingsWO settings) {
+    }
+
+    @Override
+    protected void validateSettings(final NodeSettingsRO settings) throws InvalidSettingsException {
+    }
+
+    @Override
+    protected void loadValidatedSettingsFrom(final NodeSettingsRO settings) throws InvalidSettingsException {
+    }
+
+    @Override
+    protected void reset() {
+    }
+
+    private static DataTableSpec createSpec() {
         var creator = new DataTableSpecCreator() //
             .addColumns(new DataColumnSpecCreator("Node Name", StringCell.TYPE).createSpec()) //
             .addColumns(new DataColumnSpecCreator("Category", StringCell.TYPE).createSpec()) //
             .addColumns(new DataColumnSpecCreator("Plug-In", StringCell.TYPE).createSpec()) //
             .addColumns(new DataColumnSpecCreator("Deprecated", BooleanCell.TYPE).createSpec()) //
-            .addColumns(new DataColumnSpecCreator("Hidden", BooleanCell.TYPE).createSpec());
-        if (settings.m_includeNodeFactory) {
-            creator.addColumns(new DataColumnSpecCreator("Node Factory", StringCell.TYPE).createSpec());
-        }
-        if (settings.m_includeNodeDescription) {
-            creator.addColumns(new DataColumnSpecCreator("Node Description", StringCell.TYPE).createSpec());
-        }
-        if (settings.m_includeKeywords) {
-            creator.addColumns(new DataColumnSpecCreator("Keywords", ListCell.getCollectionType(StringCell.TYPE)).createSpec());
-        }
+            .addColumns(new DataColumnSpecCreator("Hidden", BooleanCell.TYPE).createSpec()) //
+            .addColumns(new DataColumnSpecCreator("Node Factory", StringCell.TYPE).createSpec()) //
+            .addColumns(new DataColumnSpecCreator("Node Description", StringCell.TYPE).createSpec());
         return creator.createSpec();
     }
 

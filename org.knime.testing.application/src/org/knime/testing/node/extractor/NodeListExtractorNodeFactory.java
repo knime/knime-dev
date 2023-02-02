@@ -48,33 +48,38 @@
  */
 package org.knime.testing.node.extractor;
 
-import org.knime.core.webui.node.dialog.impl.WebUINodeConfiguration;
-import org.knime.core.webui.node.dialog.impl.WebUINodeFactory;
+import org.knime.core.node.NodeDialogPane;
+import org.knime.core.node.NodeFactory;
+import org.knime.core.node.NodeView;
 
 /**
  * Factory for "Node List Extractor" node.
  * @author wiswedel
  */
-public final class NodeListExtractorNodeFactory extends WebUINodeFactory<NodeListExtractorNodeModel> {
-
-    private static final WebUINodeConfiguration CONFIG = WebUINodeConfiguration.builder()//
-            .name("Node List Extractor")//
-            .icon("./knime_16.png")//
-            .shortDescription("Extract the list of installed nodes.")//
-            .fullDescription("Extract the list of installed nodes, incl. additional details.")//
-            .modelSettingsClass(NodeListExtractorNodeSettings.class)//
-            .addOutputTable("Node List", "The list of nodes, incl name, identifier, etc.")//
-            .build();
-
-    /**
-     * @param configuration
-     */
-    public NodeListExtractorNodeFactory() {
-        super(CONFIG);
-    }
+public final class NodeListExtractorNodeFactory extends NodeFactory<NodeListExtractorNodeModel> {
 
     @Override
     public NodeListExtractorNodeModel createNodeModel() {
-        return new NodeListExtractorNodeModel(CONFIG);
+        return new NodeListExtractorNodeModel();
+    }
+
+    @Override
+    protected int getNrNodeViews() {
+        return 0;
+    }
+
+    @Override
+    public NodeView<NodeListExtractorNodeModel> createNodeView(final int viewIndex, final NodeListExtractorNodeModel nodeModel) {
+        throw new IllegalStateException();
+    }
+
+    @Override
+    protected boolean hasDialog() {
+        return false;
+    }
+
+    @Override
+    protected NodeDialogPane createNodeDialogPane() {
+        throw new IllegalStateException();
     }
 }

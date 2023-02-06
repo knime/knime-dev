@@ -49,13 +49,13 @@ package org.knime.testing.core.ng;
 
 import javax.swing.SwingUtilities;
 
-import junit.framework.AssertionFailedError;
-import junit.framework.TestResult;
-
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.knime.core.node.NodeLogger;
 import org.knime.core.node.workflow.NodeContext;
 import org.knime.core.util.Pair;
+
+import junit.framework.AssertionFailedError;
+import junit.framework.TestResult;
 
 /**
  * Testcase that reports any uncaught exceptions. An exception handler is installed during creation of the test. It
@@ -111,10 +111,20 @@ class WorkflowUncaughtExceptionsTest extends WorkflowTest {
             });
             synchronized (m_context.getUncaughtExceptions()) {
                 for (Pair<Thread, Throwable> p : m_context.getUncaughtExceptions()) {
+                    final var t = p.getFirst();
+                    final var threadName = t.getName();
+                    final var exc = p.getSecond();
+                    final var className = exc.getClass().getSimpleName();
+                    final var msg = exc.getMessage();
+                    if (ignoreException(exc)) {
+                        LOGGER.debug(String.format("Ignored uncaught %s of Thread %s: %s", className, threadName, msg));
+                        continue;
+                    }
+
                     AssertionFailedError error =
-                            new AssertionFailedError("Thread " + p.getFirst().getName() + " has thrown an uncaught "
-                                    + p.getSecond().getClass().getSimpleName() + ": " + p.getSecond().getMessage());
-                    error.initCause(p.getSecond());
+                            new AssertionFailedError("Thread " + threadName + " has thrown an uncaught "
+                                    + className + ": " + msg);
+                    error.initCause(exc);
                     result.addError(this, error);
                 }
             }
@@ -124,6 +134,16 @@ class WorkflowUncaughtExceptionsTest extends WorkflowTest {
             result.endTest(this);
             Thread.setDefaultUncaughtExceptionHandler(null);
         }
+    }
+
+    /**
+     * Check if we should ignore <i>harmless</i> uncaught exceptions, see AP-19057.
+     */
+    private static boolean ignoreException(final Throwable exc) {
+        // AP-19057: sporadic exception after Apache SSHD's I/O executor service is closed
+        final boolean isSSHDExecutorShutDownException = IllegalStateException.class.equals(exc.getClass())
+                && "Executor has been shut down".equals(exc.getMessage());
+        return isSSHDExecutorShutDownException;
     }
 
     /**

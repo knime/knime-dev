@@ -118,13 +118,16 @@ class WorkflowNodeMessagesTest extends WorkflowTest {
         final TestflowConfiguration flowConfiguration) {
         NodeMessage nodeMessage = node.getNodeMessage();
 
-        Pattern expectedErrorMessage = flowConfiguration.getNodeErrorMessage(node.getID());
-        if (expectedErrorMessage != null) {
-            if (!expectedErrorMessage.matcher(nodeMessage.getMessage().trim()).matches()) {
+        Pattern expectedErrorMessagePattern = flowConfiguration.getNodeErrorMessage(node.getID());
+        final var actualMessageBuilder = new StringBuilder(nodeMessage.getMessage());
+        nodeMessage.getIssue().ifPresent(issue -> actualMessageBuilder.append("\n").append(issue));
+        final var actualMessage = actualMessageBuilder.toString().trim();
+        if (expectedErrorMessagePattern != null) {
+            if (!expectedErrorMessagePattern.matcher(actualMessage).matches()) {
                 String error =
-                    "Node '" + node.getNameWithID() + "' has unexpected error message: expected '"
-                        + TestflowConfiguration.patternToString(expectedErrorMessage) + "', got '"
-                        + nodeMessage.getMessage() + "'";
+                    "Node '" + node.getNameWithID() + "' has unexpected error message: expected\n"
+                        + TestflowConfiguration.patternToString(expectedErrorMessagePattern) + "\n... but got...\n"
+                        + actualMessage;
                 result.addFailure(this, new AssertionFailedError(error));
             }
         } else if (Type.ERROR.equals(nodeMessage.getMessageType())) {
@@ -133,13 +136,13 @@ class WorkflowNodeMessagesTest extends WorkflowTest {
             result.addFailure(this, new AssertionFailedError(error));
         }
 
-        Pattern expectedWarningMessage = flowConfiguration.getNodeWarningMessage(node.getID());
-        if (expectedWarningMessage != null) {
-            if (!expectedWarningMessage.matcher(nodeMessage.getMessage().trim()).matches()) {
+        Pattern expectedWarningMessagePattern = flowConfiguration.getNodeWarningMessage(node.getID());
+        if (expectedWarningMessagePattern != null) {
+            if (!expectedWarningMessagePattern.matcher(actualMessage).matches()) {
                 String error =
-                    "Node '" + node.getNameWithID() + "' has unexpected warning message: expected '"
-                        + TestflowConfiguration.patternToString(expectedWarningMessage) + "', got '"
-                        + nodeMessage.getMessage() + "'";
+                    "Node '" + node.getNameWithID() + "' has unexpected warning message: expected\n"
+                        + TestflowConfiguration.patternToString(expectedWarningMessagePattern) + "\n... but got...\n"
+                        + actualMessage;
                 result.addFailure(this, new AssertionFailedError(error));
             }
         } else if (Type.WARNING.equals(nodeMessage.getMessageType())) {

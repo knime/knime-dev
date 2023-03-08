@@ -494,6 +494,9 @@ public class TestConfigNodeDialog extends NodeDialogPane {
             NodeMessage msg = cont.getNodeMessage();
             if (msg.getMessageType() == Type.ERROR) {
                 reqError = msg.getMessage();
+                if (msg.getIssue().isPresent()) {
+                    reqError = reqError.concat("\n").concat(msg.getIssue().get());
+                }
                 m_requiredError.setForeground(Color.GRAY);
             }
         } else {
@@ -506,6 +509,9 @@ public class TestConfigNodeDialog extends NodeDialogPane {
             NodeMessage msg = cont.getNodeMessage();
             if (msg.getMessageType() == Type.WARNING) {
                 reqWarning = msg.getMessage();
+                if (msg.getIssue().isPresent()) {
+                    reqWarning= reqWarning.concat("\n").concat(msg.getIssue().get());
+                }
                 m_requiredWarning.setForeground(Color.GRAY);
             }
         } else {

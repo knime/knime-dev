@@ -50,9 +50,6 @@ package org.knime.testing.core.ng;
 import java.util.ArrayList;
 import java.util.List;
 
-import junit.framework.AssertionFailedError;
-import junit.framework.TestResult;
-
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.knime.core.node.AbstractNodeView;
 import org.knime.core.node.Node;
@@ -62,6 +59,9 @@ import org.knime.core.node.util.ViewUtils;
 import org.knime.core.node.workflow.NodeContainer;
 import org.knime.core.node.workflow.SingleNodeContainer;
 import org.knime.core.node.workflow.WorkflowManager;
+
+import junit.framework.AssertionFailedError;
+import junit.framework.TestResult;
 
 /**
  * Testcase that open all views of all nodes in the workflow. Exception during opening a view are reported as failures.
@@ -80,6 +80,13 @@ class WorkflowOpenViewsTest extends WorkflowTest {
      */
     @Override
     public void run(final TestResult result) {
+        if (!m_context.getTestflowConfiguration().executeWithCurrentTableBackend()) {
+            // the test is supposed to test views of executed nodes as well, therefore it shouldn't be run if
+            // no nodes are executed
+            ignoreTest(result);
+            return;
+        }
+
         result.startTest(this);
 
         try {

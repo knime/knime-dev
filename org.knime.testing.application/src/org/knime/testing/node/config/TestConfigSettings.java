@@ -56,6 +56,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.commons.lang3.ArrayUtils;
+import org.knime.core.data.TableBackend;
+import org.knime.core.data.TableBackendRegistry;
 import org.knime.core.node.InvalidSettingsException;
 import org.knime.core.node.NodeSettingsRO;
 import org.knime.core.node.NodeSettingsWO;
@@ -94,6 +97,11 @@ public class TestConfigSettings {
     private int m_maxHiliteRows = 2500;
 
     private boolean m_streamingTest = false;
+
+    private String[] m_supportedTableBackends = TableBackendRegistry.getInstance().getTableBackends().stream()//
+        .map(Object::getClass)//
+        .map(Class::getName)//
+        .toArray(String[]::new);
 
     private boolean m_testNodesInComponents = false;
 
@@ -477,6 +485,9 @@ public class TestConfigSettings {
 
         // since 4.2
         m_testNodesInComponents = settings.getBoolean("testNodesInComponents", true);
+
+        // since 5.1
+        m_supportedTableBackends = settings.getStringArray("supportedTableBackends", m_supportedTableBackends);
     }
 
     /**
@@ -568,7 +579,27 @@ public class TestConfigSettings {
 
         final String requiredLoadVersionName = settings.getString("requiredLoadVersion", null);
         m_requiredLoadVersion = parseLoadVersion(requiredLoadVersionName);
+
+        // since 5.1
+        m_supportedTableBackends = settings.getStringArray("supportedTableBackends", m_supportedTableBackends);
     }
+
+    void setSupportedTableBackends(final String... supportedTableBackendClassNames) {
+        m_supportedTableBackends = supportedTableBackendClassNames;
+    }
+
+    boolean supportsTableBackend(final String tableBackendClassName) {
+        return ArrayUtils.contains(m_supportedTableBackends, tableBackendClassName);
+    }
+
+    /**
+     * @param tableBackend to check for compatibility
+     * @return true if the workflow can be executed with the TableBackend
+     */
+    public boolean supportsTableBackend(final TableBackend tableBackend) {
+        return ArrayUtils.contains(m_supportedTableBackends, tableBackend.getClass().getName());
+    }
+
 
     /**
      * Parse a {@link LoadVersion} from given string. If the argument is <code>null</code> or no matching version is
@@ -629,6 +660,8 @@ public class TestConfigSettings {
         settings.addBoolean("testNodesInComponents", m_testNodesInComponents);
         settings.addString("requiredLoadVersion",
             (m_requiredLoadVersion == null) ? "" : m_requiredLoadVersion.getVersionString());
+
+        settings.addStringArray("supportedTableBackends", m_supportedTableBackends);
     }
 
     /**

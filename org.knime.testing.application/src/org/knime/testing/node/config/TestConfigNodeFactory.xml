@@ -60,6 +60,12 @@
                 to KNIME releases; these version strings are used internally in the framework
                 and are written to the workflow.knime.</p>
 			</option>
+			<option name ="Supported table backends">
+				These checkboxes allow to disable the testflow execution on certain table backends.
+				The default is to support all table backends but there might be certain scenarios in which
+				a testflow doesn't support one of the backends because of slightly different behavior.
+				In such a case it is advised to create a dedicated testflow for each of the backends.
+			</option>
             <option name="Log Errors, Warnings, Infos">
                 These lists contains error, warning, or info messages that must be present
                 in the log file after the workflows has been fully executed. Usually these

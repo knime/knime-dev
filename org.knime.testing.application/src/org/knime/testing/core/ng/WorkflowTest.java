@@ -58,6 +58,8 @@ import org.eclipse.core.runtime.NullProgressMonitor;
 import org.knime.core.internal.KNIMEPath;
 import org.knime.core.node.KNIMEConstants;
 
+import junit.framework.TestResult;
+
 /**
  * Abstract base class for workflow tests.
  *
@@ -107,6 +109,21 @@ public abstract class WorkflowTest implements TestWithName {
      */
     public final String getWorkflowName() {
         return m_workflowName;
+    }
+
+    /**
+     * Marks the test as ignored.
+     *
+     * @param result to report to
+     */
+    protected void ignoreTest(final TestResult result) {
+        result.startTest(this);
+        try {
+            ((WorkflowTestResult)result).testIgnored(this);
+        } catch (Exception e) {
+            result.addError(this, e);
+        }
+        result.endTest(this);
     }
 
     /**

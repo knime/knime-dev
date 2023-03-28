@@ -111,6 +111,11 @@ class WorkflowExecuteTest extends WorkflowTest {
      */
     @Override
     public void run(final TestResult result) {
+        if (!m_context.getTestflowConfiguration().executeWithCurrentTableBackend()) {
+            ignoreTest(result);
+            return;
+        }
+
         boolean resetToDefaultWorkspaceDirRequired = setCustomWorkspaceDirPath(m_testcaseRoot);
 
         result.startTest(this);

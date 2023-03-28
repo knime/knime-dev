@@ -70,6 +70,7 @@ import org.knime.core.node.workflow.NodeContainer;
 import org.knime.core.node.workflow.NodeContext;
 import org.knime.core.node.workflow.NodeID;
 import org.knime.core.node.workflow.WorkflowManager;
+import org.knime.core.node.workflow.WorkflowTableBackendSettings;
 import org.knime.core.util.LoadVersion;
 import org.knime.testing.core.TestrunConfiguration;
 import org.knime.testing.node.config.TestConfigNodeModel;
@@ -120,6 +121,8 @@ class TestflowConfiguration {
     private boolean m_streamingTest = false;
 
     private boolean m_testNodesInComponents = false;
+
+    private boolean m_executeWithCurrentTableBackend = true;
 
     /**
      * Creates a new testflow configuration. The configuration is read from the testflow configuration node inside the
@@ -224,6 +227,10 @@ class TestflowConfiguration {
         m_maxHiliteRows = settings.maxHiliteRows();
         m_streamingTest = settings.streamingTest();
         m_testNodesInComponents = settings.testNodesInComponents();
+        NodeContext.pushContext(configNode);
+        m_executeWithCurrentTableBackend =
+            settings.supportsTableBackend(WorkflowTableBackendSettings.getTableBackendForCurrentContext());
+        NodeContext.removeLastContext();
     }
 
     /**
@@ -553,6 +560,10 @@ class TestflowConfiguration {
      */
     public boolean runStreamingTest() {
         return m_streamingTest;
+    }
+
+    public boolean executeWithCurrentTableBackend() {
+        return m_executeWithCurrentTableBackend;
     }
 
     /**

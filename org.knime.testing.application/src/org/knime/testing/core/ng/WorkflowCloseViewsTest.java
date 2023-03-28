@@ -78,6 +78,13 @@ class WorkflowCloseViewsTest extends WorkflowTest {
      */
     @Override
     public void run(final TestResult result) {
+        if (!m_context.getTestflowConfiguration().executeWithCurrentTableBackend()) {
+            // the open views test isn't run because no nodes are executed, therefore a close views test also makes
+            // no sense
+            ignoreTest(result);
+            return;
+        }
+
         result.startTest(this);
 
         try {

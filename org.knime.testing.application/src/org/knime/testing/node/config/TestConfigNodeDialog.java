@@ -64,6 +64,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import javax.swing.BorderFactory;
 import javax.swing.DefaultListCellRenderer;
@@ -85,6 +86,8 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
 import org.knime.core.data.DataTableSpec;
+import org.knime.core.data.TableBackend;
+import org.knime.core.data.TableBackendRegistry;
 import org.knime.core.node.InvalidSettingsException;
 import org.knime.core.node.NodeDialogPane;
 import org.knime.core.node.NodeSettingsRO;
@@ -136,6 +139,10 @@ public class TestConfigNodeDialog extends NodeDialogPane {
 
     private final JCheckBox m_testSubnodes = new JCheckBox();
 
+    private final JCheckBox[] m_supportedTableBackends = TableBackendRegistry.getInstance().getTableBackends().stream()
+            .map(TestConfigNodeDialog::createTableBackendCheckBox)//
+            .toArray(JCheckBox[]::new);
+
     private final JComboBox<String> m_requiredLoadVersion = new JComboBox<>(Arrays
         .<LoadVersion> asList(LoadVersion.values()).stream().filter((val) -> val != LoadVersion.UNKNOWN).map(val -> {
             if (val == LoadVersion.FUTURE) {
@@ -148,6 +155,12 @@ public class TestConfigNodeDialog extends NodeDialogPane {
     private int m_lastSelectedIndex = -1;
 
     private final Map<String, JCheckBox> m_usedJanitors = new HashMap<>();
+
+    private static JCheckBox createTableBackendCheckBox(final TableBackend backend) {
+        var checkBox = new JCheckBox(backend.getShortName());
+        checkBox.setActionCommand(backend.getClass().getName());
+        return checkBox;
+    }
 
     /**
      * Creates a new dialog.
@@ -273,6 +286,16 @@ public class TestConfigNodeDialog extends NodeDialogPane {
 
         c.gridx = 0;
         c.gridy++;
+        c.fill = GridBagConstraints.NONE;
+        c.weightx = 0;
+        p.add(new JLabel("Supported table backends: "), c);
+        c.gridx = 1;
+        c.fill = GridBagConstraints.HORIZONTAL;
+        c.weightx = 1;
+        p.add(createTableBackendCheckBoxes(), c);
+
+        c.gridx = 0;
+        c.gridy++;
         c.weightx = 1;
         c.weighty = 1;
         c.fill = GridBagConstraints.BOTH;
@@ -286,6 +309,26 @@ public class TestConfigNodeDialog extends NodeDialogPane {
         logLevels.addTab("Log Infos", createLogLevelTab(m_logInfosModel));
         logLevels.addTab("Log Optional", createLogLevelTab(m_optLogMessagesModel));
         return p;
+    }
+
+    private JPanel createTableBackendCheckBoxes() {
+        GridBagConstraints c = new GridBagConstraints();
+
+        c.insets = new Insets(2, 0, 2, 0);
+        c.anchor = GridBagConstraints.WEST;
+        c.gridx = 0;
+        c.gridy = 0;
+        c.fill = GridBagConstraints.NONE;
+        c.weightx = 0;
+        var panel = new JPanel(new GridBagLayout());
+        for (var backendCheckBox : m_supportedTableBackends) {
+            panel.add(backendCheckBox, c);
+            c.gridx++;
+        }
+        c.weightx = 1;
+        c.fill = GridBagConstraints.HORIZONTAL;
+        panel.add(new JPanel(), c);
+        return panel;
     }
 
     private JPanel createLogLevelTab(final DefaultListModel<String> listModel) {
@@ -567,6 +610,13 @@ public class TestConfigNodeDialog extends NodeDialogPane {
         }
         m_settings.usedJanitors(janitorIds);
 
+        m_settings.setSupportedTableBackends(//
+            Stream.of(m_supportedTableBackends)//
+            .filter(JCheckBox::isSelected)//
+            .map(JCheckBox::getActionCommand)//
+            .toArray(String[]::new)//
+            );
+
         m_settings.saveSettings(settings);
     }
 
@@ -613,6 +663,11 @@ public class TestConfigNodeDialog extends NodeDialogPane {
         for (Map.Entry<String, JCheckBox> e : m_usedJanitors.entrySet()) {
             e.getValue().setSelected(janitorIds.contains(e.getKey()));
         }
+
+        for (var tableBackendCheckBox : m_supportedTableBackends) {
+            tableBackendCheckBox.setSelected(m_settings.supportsTableBackend(tableBackendCheckBox.getActionCommand()));
+        }
+
     }
 
 

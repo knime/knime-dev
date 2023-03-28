@@ -94,7 +94,8 @@ class WorkflowExecuteStreamingTest extends WorkflowExecuteTest {
     @Override
     public void run(final TestResult result) {
         try {
-            if (m_context.getTestflowConfiguration().runStreamingTest()) {
+            var testflowConfiguration = m_context.getTestflowConfiguration();
+            if (testflowConfiguration.runStreamingTest() && testflowConfiguration.executeWithCurrentTableBackend()) {
                 LOGGER.info("Loading workflow '" + m_workflowName + "' for streaming test");
                 WorkflowManager wfm =
                     WorkflowLoadTest.loadWorkflow(this, result, m_workflowDir, m_testcaseRoot, m_runConfiguration);
@@ -104,9 +105,7 @@ class WorkflowExecuteStreamingTest extends WorkflowExecuteTest {
 
                 WorkflowCloseTest.closeWorkflow(this, result, m_context);
             } else {
-                result.startTest(this);
-                ((WorkflowTestResult) result).testIgnored(this);
-                result.endTest(this);
+                ignoreTest(result);
             }
         } catch (Throwable t) {
             result.addError(this, t);

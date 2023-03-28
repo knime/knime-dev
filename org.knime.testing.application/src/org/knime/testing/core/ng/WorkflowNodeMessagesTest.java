@@ -75,6 +75,13 @@ class WorkflowNodeMessagesTest extends WorkflowTest {
      */
     @Override
     public void run(final TestResult result) {
+        if (!m_context.getTestflowConfiguration().executeWithCurrentTableBackend()) {
+            // this test also checks messages that are written by execute, therefore it can't be run if
+            // nothing is executed
+            ignoreTest(result);
+            return;
+        }
+
         result.startTest(this);
 
         try {

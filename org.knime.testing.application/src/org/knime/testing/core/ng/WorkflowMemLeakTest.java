@@ -49,11 +49,11 @@ package org.knime.testing.core.ng;
 
 import java.lang.management.MemoryUsage;
 
-import junit.framework.AssertionFailedError;
-import junit.framework.TestResult;
-
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.knime.testing.core.TestrunConfiguration;
+
+import junit.framework.AssertionFailedError;
+import junit.framework.TestResult;
 
 /**
  * Testcase that checks the used heap before and after a testflows is run. If the difference is greater than the
@@ -86,6 +86,12 @@ public class WorkflowMemLeakTest extends WorkflowTest {
      */
     @Override
     public void run(final TestResult result) {
+        if (!m_context.getTestflowConfiguration().executeWithCurrentTableBackend()) {
+            // if no nodes run, then there is also no point in checking for memory leaks
+            ignoreTest(result);
+            return;
+        }
+
         result.startTest(this);
 
         try {

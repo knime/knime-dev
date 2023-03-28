@@ -131,6 +131,13 @@ class WorkflowLogMessagesTest extends WorkflowTest {
      */
     @Override
     public void run(final TestResult result) {
+        if (!m_context.getTestflowConfiguration().executeWithCurrentTableBackend()) {
+            // the test is supposed to test log messages of executed nodes as well, therefore it shouldn't be run if
+            // no nodes are executed
+            ignoreTest(result);
+            return;
+        }
+
         result.startTest(this);
 
         try {

@@ -87,8 +87,8 @@ import org.knime.core.node.extension.InvalidNodeFactoryExtensionException;
 import org.knime.core.node.extension.NodeFactoryExtension;
 import org.knime.core.node.extension.NodeFactoryExtensionManager;
 import org.knime.core.node.extension.NodeSetFactoryExtension;
-import org.knime.core.webui.node.dialog.impl.WebUINodeConfiguration;
-import org.knime.core.webui.node.dialog.impl.WebUINodeModel;
+import org.knime.core.webui.node.impl.WebUINodeConfiguration;
+import org.knime.core.webui.node.impl.WebUINodeModel;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 

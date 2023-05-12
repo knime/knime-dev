@@ -48,8 +48,8 @@
  */
 package org.knime.testing.node.extractor;
 
-import org.knime.core.webui.node.dialog.impl.WebUINodeConfiguration;
-import org.knime.core.webui.node.dialog.impl.WebUINodeFactory;
+import org.knime.core.webui.node.impl.WebUINodeConfiguration;
+import org.knime.core.webui.node.impl.WebUINodeFactory;
 
 /**
  * Factory for "Node List Extractor" node.

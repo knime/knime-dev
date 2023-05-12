@@ -48,9 +48,9 @@
  */
 package org.knime.testing.node.extractor;
 
-import org.knime.core.webui.node.dialog.impl.DefaultNodeSettings;
-import org.knime.core.webui.node.dialog.impl.Schema;
-import org.knime.core.webui.node.dialog.persistence.field.Persist;
+import org.knime.core.webui.node.dialog.defaultdialog.DefaultNodeSettings;
+import org.knime.core.webui.node.dialog.defaultdialog.persistence.field.Persist;
+import org.knime.core.webui.node.dialog.defaultdialog.widget.Widget;
 
 /**
  *
@@ -59,17 +59,17 @@ import org.knime.core.webui.node.dialog.persistence.field.Persist;
 public final class NodeListExtractorNodeSettings implements DefaultNodeSettings {
 
     @Persist(configKey = "includeNodeFactory")
-    @Schema(title = "NodeFactory Class",
+    @Widget(title = "NodeFactory Class",
     description = "The node factory class name (internally used identifier)")
     boolean m_includeNodeFactory;
 
     @Persist(configKey = "includeNodeDescription")
-    @Schema(title = "Node Description",
+    @Widget(title = "Node Description",
     description = "If selected, includes a column containing the full node description")
     boolean m_includeNodeDescription;
 
     @Persist(configKey = "includeKeywords")
-    @Schema(title = "Keywords",
+    @Widget(title = "Keywords",
     description = "If selected, includes a column containing the keywords used during (fuzzy) node search")
     boolean m_includeKeywords;
 

@@ -222,14 +222,17 @@ class WorkflowLogMessagesTest extends WorkflowTest {
 
         for (LoggingEvent logEvent : m_logEvents) {
             final Object o = logEvent.getMessage();
-            if (o instanceof KNIMELogMessage) {
-            	final KNIMELogMessage message = (KNIMELogMessage)o;
+            final String nodeNameWithID;
+            if (o instanceof KNIMELogMessage message) {
                 if (ignoredIDs.contains(message.getNodeID())) {
                     continue;
                 }
+                nodeNameWithID = String.format("%s (%s)", message.getNodeName(), message.getNodeID());
+            } else {
+                nodeNameWithID = null;
             }
 
-            String message = logEvent.getRenderedMessage().trim();
+            final String message = logEvent.getRenderedMessage().trim();
             boolean expected = false;
             List<Pattern> currentList = occurrenceMap.get(logEvent.getLevel());
             if (currentList != null) {
@@ -246,8 +249,11 @@ class WorkflowLogMessagesTest extends WorkflowTest {
             }
 
             if (!expected && logEvent.getLevel().isGreaterOrEqual(Level.ERROR)) {
-                result.addFailure(this, new AssertionFailedError("Unexpected " + logEvent.getLevel() + " logged: "
-                        + logEvent.getRenderedMessage().trim()));
+                result.addFailure(this,
+                    new AssertionFailedError(String.format("Unexpected %s logged%s: %s", //
+                        logEvent.getLevel(), //
+                        nodeNameWithID == null ? "" : String.format(" by node \"%s\"", nodeNameWithID), //
+                        message)));
             }
         }
 

@@ -2,5 +2,6 @@
 **/target/
 */build/
 **/.flattened-pom.xml
+*/.polyglot.*
 */*.jar
 **/CHANGELOG.md

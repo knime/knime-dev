@@ -160,7 +160,7 @@ class WorkflowLogMessagesTest extends WorkflowTest {
         return "log messages";
     }
 
-    private void findSubNodes(final WorkflowManager root, final boolean inComponent, final boolean testSubnodes,
+    private static void findSubNodes(final WorkflowManager root, final boolean inComponent, final boolean testSubnodes,
         final Set<NodeID> ignoredIDs) {
         for (NodeContainer node : root.getNodeContainers()) {
             if (node instanceof SubNodeContainer) {
@@ -178,48 +178,18 @@ class WorkflowLogMessagesTest extends WorkflowTest {
     }
 
     private void checkLogMessages(final TestResult result, final TestflowConfiguration flowConfiguration) {
-        Map<Level, List<Pattern>> occurrenceMap = new HashMap<Level, List<Pattern>>();
-        occurrenceMap.put(Level.ERROR, new ArrayList<Pattern>(flowConfiguration.getRequiredErrors()));
-        occurrenceMap.put(Level.WARN, new ArrayList<Pattern>(flowConfiguration.getRequiredWarnings()));
-        occurrenceMap.put(Level.INFO, new ArrayList<Pattern>(flowConfiguration.getRequiredInfos()));
-        occurrenceMap.put(Level.DEBUG, new ArrayList<Pattern>(flowConfiguration.getRequiredDebugs()));
+        final var occurrenceMap = new HashMap<Level, List<Pattern>>();
+        occurrenceMap.put(Level.ERROR, new ArrayList<>(flowConfiguration.getRequiredErrors()));
+        occurrenceMap.put(Level.WARN, new ArrayList<>(flowConfiguration.getRequiredWarnings()));
+        occurrenceMap.put(Level.INFO, new ArrayList<>(flowConfiguration.getRequiredInfos()));
+        occurrenceMap.put(Level.DEBUG, new ArrayList<>(flowConfiguration.getRequiredDebugs()));
 
         final Set<NodeID> ignoredIDs = new HashSet<>();
         if (!flowConfiguration.testNodesInComponents()) {
             findSubNodes(m_context.getWorkflowManager(), false, flowConfiguration.testNodesInComponents(), ignoredIDs);
         }
 
-        Map<Level, Map<String, Pattern>> leftOverMap = new HashMap<Level, Map<String, Pattern>>();
-        Map<String, Pattern> m = new HashMap<>();
-        for (Pattern p : flowConfiguration.getRequiredErrors()) {
-            if (!p.pattern().startsWith("\\QCODING PROBLEM") || KNIMEConstants.ASSERTIONS_ENABLED
-                || EclipseUtil.isRunFromSDK()) {
-                // don't add expected CODING PROBLEMs if they are not reported
-                m.put(p.toString(), p);
-            }
-        }
-        leftOverMap.put(Level.ERROR, m);
-
-        m = new HashMap<>();
-        for (Pattern p : flowConfiguration.getRequiredWarnings()) {
-            m.put(p.toString(), p);
-        }
-        leftOverMap.put(Level.WARN, m);
-
-        m = new HashMap<>();
-        for (Pattern p : flowConfiguration.getRequiredInfos()) {
-            m.put(p.toString(), p);
-        }
-        leftOverMap.put(Level.INFO, m);
-
-
-        m = new HashMap<>();
-        for (Pattern p : flowConfiguration.getRequiredDebugs()) {
-            m.put(p.toString(), p);
-        }
-        leftOverMap.put(Level.DEBUG, m);
-
-
+        final var leftOverMap = createLeftOverMap(flowConfiguration);
         for (LoggingEvent logEvent : m_logEvents) {
             final Object o = logEvent.getMessage();
             final String nodeNameWithID;
@@ -233,17 +203,16 @@ class WorkflowLogMessagesTest extends WorkflowTest {
             }
 
             final String message = logEvent.getRenderedMessage().trim();
-            boolean expected = false;
+            var expected = false;
             List<Pattern> currentList = occurrenceMap.get(logEvent.getLevel());
             if (currentList != null) {
                 currentList.addAll(flowConfiguration.getOptionalLogMessages());
                 Iterator<Pattern> it = currentList.iterator();
                 while (it.hasNext()) {
-                    Pattern p = it.next();
+                    final var p = it.next();
                     if (p.matcher(message).matches()) {
-                        leftOverMap.get(logEvent.getLevel()).remove(p.toString());
+                        leftOverMap.get(logEvent.getLevel()).get(p.toString()).markAsOccurred();
                         expected = true;
-                        break;
                     }
                 }
             }
@@ -257,11 +226,95 @@ class WorkflowLogMessagesTest extends WorkflowTest {
             }
         }
 
-        for (Map.Entry<Level, Map<String, Pattern>> e : leftOverMap.entrySet()) {
-            for (Map.Entry<String, Pattern> p : e.getValue().entrySet()) {
-                result.addFailure(this, new AssertionFailedError("Expected " + e.getKey() + " log message '"
-                        + TestflowConfiguration.patternToString(p.getValue()) + "' not found"));
+        for (Map.Entry<Level, Map<String, PatternOccurrence>> e : leftOverMap.entrySet()) {
+            for (Map.Entry<String, PatternOccurrence> entry : e.getValue().entrySet()) {
+                if (!entry.getValue().hasOccurred()) {
+                    result.addFailure(this, new AssertionFailedError("Expected " + e.getKey() + " log message '"
+                            + TestflowConfiguration.patternToString(entry.getValue().getPattern()) + "' not found"));
+                }
             }
+        }
+    }
+
+    private static Map<Level, Map<String, PatternOccurrence>> createLeftOverMap(final TestflowConfiguration flowConfiguration) {
+        final var leftOverMap = new HashMap<Level, Map<String, PatternOccurrence>>();
+        var m = new HashMap<String, PatternOccurrence>();
+        for (Pattern p : flowConfiguration.getRequiredErrors()) {
+            if (!p.pattern().startsWith("\\QCODING PROBLEM") || KNIMEConstants.ASSERTIONS_ENABLED
+                || EclipseUtil.isRunFromSDK()) {
+                // don't add expected CODING PROBLEMs if they are not reported
+                m.put(p.toString(), new PatternOccurrence(p));
+            }
+        }
+        leftOverMap.put(Level.ERROR, m);
+
+        m = new HashMap<>();
+        for (Pattern p : flowConfiguration.getRequiredWarnings()) {
+            m.put(p.toString(), new PatternOccurrence(p));
+        }
+        leftOverMap.put(Level.WARN, m);
+
+        m = new HashMap<>();
+        for (Pattern p : flowConfiguration.getRequiredInfos()) {
+            m.put(p.toString(), new PatternOccurrence(p));
+        }
+        leftOverMap.put(Level.INFO, m);
+
+
+        m = new HashMap<>();
+        for (Pattern p : flowConfiguration.getRequiredDebugs()) {
+            m.put(p.toString(), new PatternOccurrence(p));
+        }
+        leftOverMap.put(Level.DEBUG, m);
+
+        return leftOverMap;
+    }
+
+    /**
+     * Registers the occurrence of a string message, matching a {@link Pattern}.
+     * Necessary because log messages can steal occurred patters in the following scenario:
+     * <p>
+     * Pattern p1 matches messages A and B.
+     * Pattern p2 only matches message A.
+     * <p>
+     * If message A now comes in, it matches against p1 and the pattern would be marked
+     * as seen and be removed. If message B comes in, only p2 is left and does not match.
+     * This leads to an {@link AssertionFailedError} because the testflow thinks it that
+     * this log message was not found.
+     *
+     * Using an occurrence flag for each {@link Pattern} solves this issue.
+     *
+     * @author Leon Wenzler, KNIME GmbH, Konstanz, Germany
+     */
+    private static final class PatternOccurrence {
+
+        private final Pattern m_pattern;
+
+        private boolean m_hasOccurred;
+
+        private PatternOccurrence(final Pattern p) {
+            m_pattern = p;
+            m_hasOccurred = false;
+        }
+
+        private Pattern getPattern() {
+            return m_pattern;
+        }
+
+        /**
+         * Whether a log message matching the pattern has occurred before.
+         *
+         * @return has occurred?
+         */
+        private boolean hasOccurred() {
+            return m_hasOccurred;
+        }
+
+        /**
+         * Registers the occurrence of a message matching this pattern.
+         */
+        private void markAsOccurred() {
+            m_hasOccurred = true;
         }
     }
 }

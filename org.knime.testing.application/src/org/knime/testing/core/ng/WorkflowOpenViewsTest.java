@@ -59,6 +59,7 @@ import org.knime.core.node.util.ViewUtils;
 import org.knime.core.node.workflow.NodeContainer;
 import org.knime.core.node.workflow.SingleNodeContainer;
 import org.knime.core.node.workflow.WorkflowManager;
+import org.knime.core.webui.node.view.NodeViewManager;
 
 import junit.framework.AssertionFailedError;
 import junit.framework.TestResult;
@@ -143,6 +144,11 @@ class WorkflowOpenViewsTest extends WorkflowTest {
     }
 
     private void openView(final SingleNodeContainer node, final int index) {
+        if (hasModernNodeView(node)) {
+            // (some) modern node views 'pretend' to have a legacy node view in order to
+            // fix a problem with the node description, see UIEXT-142
+            return;
+        }
         // test NodeViews
         LOGGER.debug("opening view nr. " + index + " for node " + node.getName());
         ViewUtils.invokeAndWaitInEDT(new Runnable() {
@@ -161,6 +167,10 @@ class WorkflowOpenViewsTest extends WorkflowTest {
                 Node.invokeOpenView(view, "View #" + index);
             }
         });
+    }
+
+    private static boolean hasModernNodeView(final SingleNodeContainer nc) {
+        return NodeViewManager.hasNodeView(nc);
     }
 
     private void openInteractiveView(final SingleNodeContainer node) {

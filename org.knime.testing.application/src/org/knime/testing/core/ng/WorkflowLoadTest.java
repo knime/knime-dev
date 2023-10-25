@@ -56,6 +56,7 @@ import org.knime.core.node.ExecutionMonitor;
 import org.knime.core.node.InvalidSettingsException;
 import org.knime.core.node.KNIMEConstants;
 import org.knime.core.node.NodeLogger;
+import org.knime.core.node.workflow.NativeNodeContainer;
 import org.knime.core.node.workflow.UnsupportedWorkflowVersionException;
 import org.knime.core.node.workflow.WorkflowLoadHelper;
 import org.knime.core.node.workflow.WorkflowManager;
@@ -65,6 +66,7 @@ import org.knime.core.node.workflow.contextv2.WorkflowContextV2;
 import org.knime.core.util.LoadVersion;
 import org.knime.core.util.LockFailedException;
 import org.knime.core.util.Version;
+import org.knime.core.webui.node.view.NodeViewManager;
 import org.knime.testing.core.TestrunConfiguration;
 
 import junit.framework.AssertionFailedError;
@@ -181,6 +183,14 @@ public class WorkflowLoadTest extends WorkflowTest {
         }
 
         WorkflowManager wfm = loadRes.getWorkflowManager();
+
+        // Makes sure that the node view settings are loaded without problems, if available
+        for (var nc : wfm.getNodeContainers()) {
+            var nodeViewManager = NodeViewManager.getInstance();
+            if (nc instanceof NativeNodeContainer nnc && NodeViewManager.hasNodeView(nnc)) {
+                nodeViewManager.updateNodeViewSettings(nnc);
+            }
+        }
 
         wfm.addWorkflowVariables(true, runConfig.getFlowVariables());
         return wfm;

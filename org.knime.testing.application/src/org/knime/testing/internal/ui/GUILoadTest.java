@@ -63,6 +63,7 @@ import org.knime.core.node.CanceledExecutionException;
 import org.knime.core.node.ExecutionMonitor;
 import org.knime.core.node.InvalidSettingsException;
 import org.knime.core.node.NodeLogger;
+import org.knime.core.node.workflow.NativeNodeContainer;
 import org.knime.core.node.workflow.UnsupportedWorkflowVersionException;
 import org.knime.core.node.workflow.WorkflowLoadHelper;
 import org.knime.core.node.workflow.WorkflowManager;
@@ -73,6 +74,7 @@ import org.knime.core.ui.node.workflow.WorkflowManagerUI;
 import org.knime.core.ui.wrapper.WorkflowManagerWrapper;
 import org.knime.core.ui.wrapper.Wrapper;
 import org.knime.core.util.LockFailedException;
+import org.knime.core.webui.node.view.NodeViewManager;
 import org.knime.testing.core.TestrunConfiguration;
 import org.knime.testing.core.ng.WorkflowLoadTest;
 import org.knime.testing.core.ng.WorkflowTest;
@@ -170,6 +172,15 @@ class GUILoadTest extends WorkflowTest {
         }
 
         WorkflowManagerUI manager = WorkflowManagerWrapper.wrap(loadRes.getWorkflowManager());
+
+        // Makes sure that the node view settings are loaded without problems, if available
+        var nodeViewManager = NodeViewManager.getInstance();
+        for (var ncWrapper : manager.getNodeContainers()) {
+            var nc = Wrapper.unwrapNC(ncWrapper);
+            if (nc instanceof NativeNodeContainer nnc && NodeViewManager.hasNodeView(nnc)) {
+                nodeViewManager.updateNodeViewSettings(nnc);
+            }
+        }
 
         final IEditorInput editorInput = new WorkflowManagerInput(manager, workflowDir.toURI());
         final IEditorDescriptor editorDescriptor = IDE.getEditorDescriptor(WorkflowPersistor.WORKFLOW_FILE);

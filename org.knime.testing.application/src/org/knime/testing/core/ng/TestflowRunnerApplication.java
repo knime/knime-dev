@@ -508,6 +508,9 @@ public class TestflowRunnerApplication implements IApplication {
             } else if(stringArgs[i].equals("-streaming")) {
                 m_runConfiguration.setEnableStreamingMode(true);
                 i++;
+            } else if (stringArgs[i].equals("-eclipse.password") || stringArgs[i].equals("-eclipse.keyring")) {
+                // proxy arguments, nothing to do for us, skip flag and value
+                i += 2;
             } else {
                 System.err.println("Invalid option: '" + stringArgs[i] + "'\n");
                 return false;

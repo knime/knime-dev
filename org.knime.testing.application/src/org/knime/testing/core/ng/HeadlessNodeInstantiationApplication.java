@@ -302,6 +302,9 @@ public class HeadlessNodeInstantiationApplication implements IApplication {
                     return false;
                 }
                 m_xmlResultFile = stringArgs[i++];
+            } else if (stringArgs[i].equals("-eclipse.password") || stringArgs[i].equals("-eclipse.keyring")) {
+                // proxy arguments, nothing to do for us
+                i += 2;
             } else {
                 System.err.println("Invalid option: '" + stringArgs[i] + "'\n");
                 return false;

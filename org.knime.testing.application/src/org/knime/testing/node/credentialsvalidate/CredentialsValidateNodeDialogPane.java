@@ -78,6 +78,8 @@ final class CredentialsValidateNodeDialogPane extends NodeDialogPane {
     private final JTextField m_usernameField;
     private final JTextField m_passwordField;
     private final JCheckBox m_passwordExpectedToBeSetChecker;
+    private final JTextField m_secondFactorField;
+    private final JCheckBox m_secondFactorExpectedToBeSetChecker;
     private final JCheckBox m_validateCredentialsAtLoadChecker;
 
     CredentialsValidateNodeDialogPane() {
@@ -89,6 +91,11 @@ final class CredentialsValidateNodeDialogPane extends NodeDialogPane {
         m_passwordExpectedToBeSetChecker.addItemListener(
             e -> m_passwordField.setEnabled(m_passwordExpectedToBeSetChecker.isSelected()));
         m_passwordExpectedToBeSetChecker.doClick();
+        m_secondFactorField = new JTextField(cols);
+        m_secondFactorExpectedToBeSetChecker = new JCheckBox("Second factor expected to be set");
+        m_secondFactorExpectedToBeSetChecker.addItemListener(
+            e -> m_secondFactorField.setEnabled(m_secondFactorExpectedToBeSetChecker.isSelected()));
+        m_secondFactorExpectedToBeSetChecker.doClick();
         m_validateCredentialsAtLoadChecker = new JCheckBox("Validate credentials when loading executed node");
 
         addTab("Main", createPanel());
@@ -126,6 +133,18 @@ final class CredentialsValidateNodeDialogPane extends NodeDialogPane {
         gbc.gridx = 0;
         gbc.gridy += 1;
         gbc.gridwidth = 2;
+        p.add(m_secondFactorExpectedToBeSetChecker, gbc);
+        gbc.gridwidth = 1;
+
+        gbc.gridx = 0;
+        gbc.gridy += 1;
+        p.add(new JLabel("Expected Second Factor"), gbc);
+        gbc.gridx += 1;
+        p.add(m_secondFactorField, gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy += 1;
+        gbc.gridwidth = 2;
         p.add(m_validateCredentialsAtLoadChecker, gbc);
         gbc.gridwidth = 1;
 
@@ -141,6 +160,8 @@ final class CredentialsValidateNodeDialogPane extends NodeDialogPane {
         c.setUsername(m_usernameField.getText());
         c.setPassword(m_passwordExpectedToBeSetChecker.isSelected() ? m_passwordField.getText() : null);
         c.setPasswordExpectedToBeSet(m_passwordExpectedToBeSetChecker.isSelected());
+        c.setSecondFactor(m_secondFactorExpectedToBeSetChecker.isSelected() ? m_secondFactorField.getText() : null);
+        c.setSecondFactorExpectedToBeSet(m_secondFactorExpectedToBeSetChecker.isSelected());
         c.setValidateCredentialsAtLoad(m_validateCredentialsAtLoadChecker.isSelected());
 
         c.saveSettings(settings);
@@ -165,6 +186,10 @@ final class CredentialsValidateNodeDialogPane extends NodeDialogPane {
         m_passwordField.setText(configuration.getPassword());
         if (m_passwordExpectedToBeSetChecker.isSelected() != configuration.isPasswordExpectedToBeSet()) {
             m_passwordExpectedToBeSetChecker.doClick(); // triggers event
+        }
+        m_secondFactorField.setText(configuration.getSecondFactor());
+        if (m_secondFactorExpectedToBeSetChecker.isSelected() != configuration.isSecondFactorExpectedToBeSet()) {
+            m_secondFactorExpectedToBeSetChecker.doClick(); // triggers event
         }
         m_validateCredentialsAtLoadChecker.setSelected(configuration.isValidateCredentialsAtLoad());
     }

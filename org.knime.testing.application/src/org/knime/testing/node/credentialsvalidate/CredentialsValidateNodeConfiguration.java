@@ -66,8 +66,10 @@ final class CredentialsValidateNodeConfiguration {
     private String m_credentialsID;
     private String m_username;
     private String m_password;
+    private String m_secondFactor;
 
     private boolean m_passwordExpectedToBeSet;
+    private boolean m_secondFactorExpectedToBeSet;
     private boolean m_validateCredentialsAtLoad;
 
     /**
@@ -113,6 +115,20 @@ final class CredentialsValidateNodeConfiguration {
     }
 
     /**
+     * @return the secondFactor
+     */
+    String getSecondFactor() {
+        return m_secondFactor;
+    }
+
+    /**
+     * @param secondFactor the secondFactor to set
+     */
+    void setSecondFactor(final String secondFactor) {
+        m_secondFactor = secondFactor;
+    }
+
+    /**
      * @return the passwordExpectedToBeSet
      */
     boolean isPasswordExpectedToBeSet() {
@@ -124,6 +140,20 @@ final class CredentialsValidateNodeConfiguration {
      */
     void setPasswordExpectedToBeSet(final boolean passwordExpectedToBeSet) {
         m_passwordExpectedToBeSet = passwordExpectedToBeSet;
+    }
+
+    /**
+     * @return the secondFactorExpectedToBeSet
+     */
+    boolean isSecondFactorExpectedToBeSet() {
+        return m_secondFactorExpectedToBeSet;
+    }
+
+    /**
+     * @param secondFactorExpectedToBeSet the property
+     */
+    void setSecondFactorExpectedToBeSet(final boolean secondFactorExpectedToBeSet) {
+        m_secondFactorExpectedToBeSet = secondFactorExpectedToBeSet;
     }
 
     /**
@@ -154,13 +184,27 @@ final class CredentialsValidateNodeConfiguration {
             CheckUtils.checkSetting(iCredentials.getPassword() == null,
                     "Password expected to be not set (null) but is %s", iCredentials.getPassword());
         }
+        if (isSecondFactorExpectedToBeSet()) {
+            CheckUtils.checkSetting(
+                Objects.equals(iCredentials.getSecondAuthenticationFactor().orElse(null), getSecondFactor()),
+                "Wrong second factor, expected '%s' but got %s", getSecondFactor(),
+                iCredentials.getSecondAuthenticationFactor() != null ? "something different" : "null");
+        } else {
+            CheckUtils.checkSetting(
+                iCredentials.getSecondAuthenticationFactor() == null
+                    || iCredentials.getSecondAuthenticationFactor().isEmpty(),
+                "Second factor expected to be not set (null) but is %s",
+                iCredentials.getSecondAuthenticationFactor().orElse(null));
+        }
     }
 
     void saveSettings(final NodeSettingsWO s) {
         s.addString("credentialsID", m_credentialsID);
         s.addString("username", m_username);
         s.addString("password", m_password);
+        s.addString("secondFactor", m_secondFactor);
         s.addBoolean("passwordExpectedToBeSet", m_passwordExpectedToBeSet);
+        s.addBoolean("secondFactorExpectedToBeSet", m_secondFactorExpectedToBeSet);
         s.addBoolean("validateCredentialsAtLoad", m_validateCredentialsAtLoad);
     }
 
@@ -168,7 +212,9 @@ final class CredentialsValidateNodeConfiguration {
         m_credentialsID = s.getString("credentialsID");
         m_username = s.getString("username");
         m_password = s.getString("password");
+        m_secondFactor = s.getString("secondFactor", null);
         m_passwordExpectedToBeSet = s.getBoolean("passwordExpectedToBeSet");
+        m_secondFactorExpectedToBeSet = s.getBoolean("secondFactorExpectedToBeSet", false);
         m_validateCredentialsAtLoad = s.getBoolean("validateCredentialsAtLoad", true);
         return this;
     }
@@ -177,7 +223,9 @@ final class CredentialsValidateNodeConfiguration {
         m_credentialsID = s.getString("credentialsID", "credentials-id");
         m_username = s.getString("username", "some-user-name");
         m_password = s.getString("password", "some-password");
+        m_secondFactor = s.getString("secondFactor", "some-second-factor");
         m_passwordExpectedToBeSet = s.getBoolean("passwordExpectedToBeSet", false);
+        m_secondFactorExpectedToBeSet = s.getBoolean("secondFactorExpectedToBeSet", false);
         m_validateCredentialsAtLoad = s.getBoolean("validateCredentialsAtLoad", true);
     }
 }

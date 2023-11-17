@@ -50,10 +50,13 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -68,28 +71,43 @@ import org.eclipse.equinox.app.IApplicationContext;
 import org.knime.core.node.Node;
 import org.knime.core.node.NodeFactory;
 import org.knime.core.node.NodeModel;
+import org.knime.core.node.NodeSetFactory;
 
 import junit.framework.AssertionFailedError;
 import junit.framework.TestResult;
 
 /**
- * This application instantiate all nodes of a list of plug-in in headless mode (<tt>java.awt.headless=true</tt>).
- * The result is written into an XML file identical to the one produced by ANT's &lt;junit> task. It can then be
- * analyzed further.
+ * This application instantiate all nodes of a list of plug-ins in headless mode (<tt>java.awt.headless=true</tt>). The
+ * result is written into an XML file identical to the one produced by ANT's &lt;junit> task. It can then be analyzed
+ * further.
  *
  * @author Thorsten Meinl, KNIME AG, Zurich, Switzerland
  */
 @SuppressWarnings({"squid:S106"})
 public class HeadlessNodeInstantiationApplication implements IApplication {
+
+    private static final String FACTORY = "factory-class";
+
     private Set<String> m_includedPlugins;
 
     private String m_xmlResultFile;
 
-    private static class SingleNodeInstantiationTest implements TestWithName {
-        private final IConfigurationElement m_nodeExtension;
+    /**
+     * Test that tries to instantiate a node via the NodeFactory supplied to it.
+     */
+    private static class NodeInstantiationTest implements TestWithName {
 
-        SingleNodeInstantiationTest(final IConfigurationElement nodeExtension) {
-            m_nodeExtension = nodeExtension;
+        private final String m_factoryID;
+
+        private final Callable<NodeFactory<NodeModel>> m_nodeFactorySupplier;
+
+        /**
+         * @param factoryID the factory id (used to set the name of the test)
+         * @param nodeFactorySupplier Callable that returns the nodefactoy that should be instantiated
+         */
+        NodeInstantiationTest(final String factoryID, final Callable<NodeFactory<NodeModel>> nodeFactorySupplier) {
+            m_factoryID = factoryID;
+            m_nodeFactorySupplier = nodeFactorySupplier;
         }
 
         @Override
@@ -101,16 +119,13 @@ public class HeadlessNodeInstantiationApplication implements IApplication {
         public void run(final TestResult result) {
             result.startTest(this);
             try {
-                @SuppressWarnings("unchecked")
-                NodeFactory<NodeModel> factory =
-                    (NodeFactory<NodeModel>)m_nodeExtension.createExecutableExtension("factory-class");
-                new Node(factory).getNodeModel();
+                // try to instantiate node
+                new Node(m_nodeFactorySupplier.call()).getNodeModel();
             } catch (Exception ex) {
-                AssertionFailedError err = new AssertionFailedError("Could not instantiate "
-                        + m_nodeExtension.getAttribute("factory-class") + ": " + ex.getMessage());
+                var err = new AssertionFailedError("Could not instantiate " + m_factoryID + ": " + ex.getMessage());
                 err.initCause(ex);
                 result.addFailure(this, err);
-            } catch (Throwable t) {  // NOSONAR
+            } catch (Throwable t) { // NOSONAR
                 result.addError(this, t);
             } finally {
                 result.endTest(this);
@@ -119,12 +134,12 @@ public class HeadlessNodeInstantiationApplication implements IApplication {
 
         @Override
         public String getName() {
-            return "instantiate";
+            return m_factoryID;
         }
 
         @Override
         public String getSuiteName() {
-            return m_nodeExtension.getAttribute("factory-class");
+            return "instantiate";
         }
 
         @Override
@@ -133,19 +148,98 @@ public class HeadlessNodeInstantiationApplication implements IApplication {
         }
     }
 
-    private static class PluginInstantiationTest implements TestWithName {
-        private final String m_name;
+    /**
+     * Node instantiation test for a {@link NodeSetFactory}. It creates a {@link NodeInstantiationTest} for each node
+     * factory covered by the {@link NodeSetFactory} under test.
+     */
+    private static class NodeSetInstantiationTest implements TestWithName {
 
-        private final List<IConfigurationElement> m_nodes;
+        private Collection<String> m_nodeIds;
 
-        PluginInstantiationTest(final String name, final List<IConfigurationElement> nodes) {
-            m_name = name;
-            m_nodes = nodes;
+        private String m_id;
+
+        private NodeSetFactory m_nodeSetFactory;
+
+        /**
+         * Initializer function that needs to be called after creating an instance of this Test.
+         *
+         * @param nodeSetFactoryExtension the configuration element representing the {@link NodeSetFactory}
+         * @throws CoreException if the instantiation of the {@link NodeSetFactory} was not successful.
+         */
+        public void init(final IConfigurationElement nodeSetFactoryExtension) throws CoreException {
+            m_nodeSetFactory = (NodeSetFactory)nodeSetFactoryExtension.createExecutableExtension(FACTORY);
+            m_nodeIds = m_nodeSetFactory.getNodeFactoryIds();
+            m_id = nodeSetFactoryExtension.getAttribute(FACTORY);
         }
 
         @Override
         public int countTestCases() {
-            return m_nodes.size();
+            return m_nodeIds.size();
+        }
+
+        @SuppressWarnings({"unchecked", "deprecation"})
+        @Override
+        public void run(final TestResult result) {
+            result.startTest(this);
+            try {
+                m_nodeIds.forEach(n -> new NodeInstantiationTest(n, () -> {
+                    var instance = (NodeFactory<NodeModel>)m_nodeSetFactory.getNodeFactory(n).newInstance();
+                    instance.loadAdditionalFactorySettings(m_nodeSetFactory.getAdditionalSettings(n));
+                    return instance;
+                }).run(result));
+            } catch (Exception ex) {
+                var err = new AssertionFailedError("Could not instantiate " + m_id + ": " + ex.getMessage());
+                err.initCause(ex);
+                result.addFailure(this, err);
+            } catch (Throwable t) { // NOSONAR
+                result.addError(this, t);
+            } finally {
+                result.endTest(this);
+            }
+        }
+
+        @Override
+        public String getName() {
+            return " Headless Instantiation of: " + m_id;
+        }
+
+        @Override
+        public String getSuiteName() {
+            return m_id;
+        }
+
+        @Override
+        public String toString() {
+            return getName();
+        }
+    }
+
+    /**
+     * Headless instantiation test for a plug-in. Creates {@link NodeInstantiationTest} for each defined Node extension,
+     * and {@link NodeSetInstantiationTest} for each defined Nodeset extension.
+     */
+    private static class PluginInstantiationTest implements TestWithName {
+        /**
+         * Output format: align left, width 7, newline at the end.
+         */
+        private static final String FORMAT = "%-7s%n";
+
+        private final String m_name;
+
+        private final List<IConfigurationElement> m_nodes;
+
+        private final List<IConfigurationElement> m_nodeSetFactories;
+
+        PluginInstantiationTest(final String name, final List<IConfigurationElement> nodes,
+            final List<IConfigurationElement> nodeSetFactories) {
+            m_name = name;
+            m_nodes = nodes;
+            m_nodeSetFactories = nodeSetFactories;
+        }
+
+        @Override
+        public int countTestCases() {
+            return m_nodes.size() + m_nodeSetFactories.size();
         }
 
         @Override
@@ -155,27 +249,49 @@ public class HeadlessNodeInstantiationApplication implements IApplication {
             System.out.printf("[%1$tH:%1$tM:%1$tS.%1$tL] => Instantiating nodes from %2$s%n", LocalDateTime.now(),
                 getName());
 
-            int maxNameLength = m_nodes.stream()
-                .mapToInt(e -> e.getAttribute("factory-class").length()).max().orElse(0);
+            int maxNameLength = m_nodes.stream().mapToInt(e -> e.getAttribute(FACTORY).length()).max().orElse(0);
 
             for (IConfigurationElement e : m_nodes) {
                 int ec = result.errorCount();
                 int fc = result.failureCount();
                 System.out.printf("[%1$tH:%1$tM:%1$tS.%1$tL] => Instantiating %2$-" + maxNameLength + "s...",
-                    LocalDateTime.now(), e.getAttribute("factory-class"));
+                    LocalDateTime.now(), e.getAttribute(FACTORY));
 
-                SingleNodeInstantiationTest test = new SingleNodeInstantiationTest(e);
+                @SuppressWarnings("unchecked")
+                var test = new NodeInstantiationTest(e.getAttribute(FACTORY),
+                    () -> (NodeFactory<NodeModel>)e.createExecutableExtension(FACTORY));
                 test.run(result);
 
                 if (result.errorCount() > ec) {
-                    System.out.printf("%-7s%n", "ERROR");
+                    System.out.printf(FORMAT, "ERROR");
                 } else if (result.failureCount() > fc) {
-                    System.out.printf("%-7s%n", "FAILURE");
+                    System.out.printf(FORMAT, "FAILURE");
                 } else {
-                    System.out.printf("%-7s%n", "OK");
+                    System.out.printf(FORMAT, "OK");
                 }
             }
 
+            // Test NodeSetFactories
+            for (IConfigurationElement e : m_nodeSetFactories) {
+                int ec = result.errorCount();
+                int fc = result.failureCount();
+
+                var test = new NodeSetInstantiationTest();
+                try {
+                    test.init(e);
+                    test.run(result);
+                } catch (CoreException e1) {
+                    result.addError(test, e1);
+                }
+
+                if (result.errorCount() > ec) {
+                    System.out.printf(FORMAT, "ERROR");
+                } else if (result.failureCount() > fc) {
+                    System.out.printf(FORMAT, "FAILURE");
+                } else {
+                    System.out.printf(FORMAT, "OK");
+                }
+            }
             result.endTest(this);
         }
 
@@ -209,7 +325,7 @@ public class HeadlessNodeInstantiationApplication implements IApplication {
             return EXIT_OK;
         }
 
-        File xmlResultFile = new File(m_xmlResultFile);
+        var xmlResultFile = new File(m_xmlResultFile);
         if (!xmlResultFile.getParentFile().exists() && !xmlResultFile.getParentFile().mkdirs()) {
             throw new IOException("Can not create directory for results file " + m_xmlResultFile);
         }
@@ -217,34 +333,49 @@ public class HeadlessNodeInstantiationApplication implements IApplication {
         context.applicationRunning();
 
         IExtensionRegistry registry = Platform.getExtensionRegistry();
-        IExtensionPoint point = registry.getExtensionPoint("org.knime.workbench.repository.nodes");
-        if (point == null) {
+
+        // create a list of all nodesets
+        IExtensionPoint nodesPoint = registry.getExtensionPoint("org.knime.workbench.repository.nodes");
+        if (nodesPoint == null) {
             throw new IllegalStateException("Invalid extension point : org.knime.workbench.repository.nodes");
         }
 
-
         Map<String, List<IConfigurationElement>> allNodes = new HashMap<>();
-        for (IExtension ext : point.getExtensions()) {
+        for (IExtension ext : nodesPoint.getExtensions()) {
             if (m_includedPlugins.contains(ext.getContributor().getName())) {
                 allNodes.computeIfAbsent(ext.getContributor().getName(), k -> new ArrayList<>())
                     .addAll(Arrays.asList(ext.getConfigurationElements()));
             }
         }
 
+        // create a list of all nodesets
+        IExtensionPoint nodeSetsPoint = registry.getExtensionPoint("org.knime.workbench.repository.nodesets");
+        if (nodeSetsPoint == null) {
+            throw new IllegalStateException("Invalid extension point : org.knime.workbench.repository.nodesets");
+        }
+        Map<String, List<IConfigurationElement>> allNodeSets = new HashMap<>();
+        for (IExtension ext : nodeSetsPoint.getExtensions()) {
+            if (m_includedPlugins.contains(ext.getContributor().getName())) {
+                allNodeSets.computeIfAbsent(ext.getContributor().getName(), k -> new ArrayList<>())
+                    .addAll(Arrays.asList(ext.getConfigurationElements()));
+            }
+        }
+
         AbstractXMLResultWriter resultWriter = new XMLResultFileWriter(xmlResultFile);
         resultWriter.startSuites();
-        for (Map.Entry<String, List<IConfigurationElement>> e : allNodes.entrySet()) {
-            PluginInstantiationTest test = new PluginInstantiationTest(e.getKey(), e.getValue());
-            WorkflowTestResult result = new WorkflowTestResult(test);
+        for (var plugin : m_includedPlugins) {
+            var test = new PluginInstantiationTest(plugin, allNodes.getOrDefault(plugin, Collections.emptyList()),
+                allNodeSets.getOrDefault(plugin, Collections.emptyList()));
+            var result = new WorkflowTestResult(test);
             result.addListener(resultWriter);
             test.run(result);
             resultWriter.addResult(result);
         }
+
         resultWriter.endSuites();
 
         return EXIT_OK;
     }
-
 
     /**
      * Extracts from the passed object the arguments. Returns <code>true</code> if everything went smooth,
@@ -261,19 +392,19 @@ public class HeadlessNodeInstantiationApplication implements IApplication {
         if (args instanceof String[]) {
             stringArgs = (String[])args;
             if ((stringArgs.length > 0) && stringArgs[0].equals("-pdelaunch")) {
-                String[] copy = new String[stringArgs.length - 1];
+                var copy = new String[stringArgs.length - 1];
                 System.arraycopy(stringArgs, 1, copy, 0, copy.length);
                 stringArgs = copy;
             }
         } else if (args != null) {
             System.err.println("Unable to read application's arguments. Was expecting a String array, but got a "
-                    + args.getClass().getName() + ". toString() returns '" + args.toString() + "'");
+                + args.getClass().getName() + ". toString() returns '" + args.toString() + "'");
             return false;
         } else {
             stringArgs = new String[0];
         }
 
-        int i = 0;
+        var i = 0;
         while (i < stringArgs.length) {
             if (stringArgs[i] == null) {
                 i++;
@@ -318,11 +449,10 @@ public class HeadlessNodeInstantiationApplication implements IApplication {
         System.err.println("Valid arguments:");
 
         System.err.println("    -include <list>: comma-separeted list of plug-in names; only nodes from these "
-                + "plug-ins will be instantiated.");
-        System.err.println("    -xmlResult <file_name>: specifies a single XML file where the test results are"
-                + " written to.");
+            + "plug-ins will be instantiated.");
+        System.err
+            .println("    -xmlResult <file_name>: specifies a single XML file where the test results are written to.");
     }
-
 
     @Override
     public void stop() {

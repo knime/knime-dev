@@ -47,33 +47,116 @@
  */
 package org.knime.testing.core.ng;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.regex.Pattern;
 
-import junit.framework.AssertionFailedError;
-import junit.framework.TestResult;
-
+import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IConfigurationElement;
 import org.eclipse.core.runtime.IExtension;
 import org.eclipse.core.runtime.IExtensionPoint;
 import org.eclipse.core.runtime.IExtensionRegistry;
 import org.eclipse.core.runtime.Platform;
 import org.knime.core.node.KNIMEConstants;
+import org.knime.core.node.NodeSetFactory;
+
+import junit.framework.AssertionFailedError;
+import junit.framework.TestResult;
 
 /**
- * Testcase that records all nodes in the loaded test workflows and compares them with the list
- * of all available nodes (by querying the extension point).
+ * Testcase that records all nodes in the loaded test workflows and compares them with the list of all available nodes
+ * (by querying the extension point).
  *
  * @author Thorsten Meinl, KNIME AG, Zurich, Switzerland
  */
 class UntestedNodesTest implements TestWithName {
-    private final Set<String> m_testedNodes = new HashSet<String>();
 
-    private final Pattern m_includePattern;
+    private final Set<String> m_testedNodes = new HashSet<>();
 
-    UntestedNodesTest(final Pattern pattern) {
-        m_includePattern = pattern;
+    private Set<String> m_includedPlugins;
+
+    private final Set<String> m_nodesToTest;
+
+    /**
+     * Testcase for a single missing node
+     */
+    private class UntestedNodeTest implements TestWithName {
+
+        private final String m_nodefactoryID;
+
+        UntestedNodeTest(final String nodefactoryID) {
+            m_nodefactoryID = nodefactoryID;
+        }
+
+        @Override
+        public int countTestCases() {
+            return 1;
+        }
+
+        @Override
+        public void run(final TestResult result) {
+            result.startTest(this);
+            if (!m_testedNodes.contains(m_nodefactoryID)) {
+                result.addFailure(this, new AssertionFailedError("No testflow with " + m_nodefactoryID + " found"));
+            }
+            result.endTest(this);
+        }
+
+        @Override
+        public String getName() {
+            return m_nodefactoryID;
+        }
+
+        @Override
+        public String getSuiteName() {
+            return "";
+        }
+
+    }
+
+    UntestedNodesTest(final Set<String> includedPlugins) {
+        m_includedPlugins = includedPlugins;
+
+        IExtensionRegistry registry = Platform.getExtensionRegistry();
+
+        // get nodes
+        IExtensionPoint nodeExtensionPoint = registry.getExtensionPoint("org.knime.workbench.repository.nodes");
+        if (nodeExtensionPoint == null) {
+            throw new IllegalStateException("Invalid extension point : org.knime.workbench.repository.nodes");
+        }
+
+        Set<String> allAvailableNodes = new HashSet<>();
+        for (IExtension ext : nodeExtensionPoint.getExtensions()) {
+            for (IConfigurationElement e : ext.getConfigurationElements()) {
+                if (m_includedPlugins.contains(e.getContributor().getName())) {
+                    allAvailableNodes.add(e.getAttribute("factory-class"));
+                }
+            }
+        }
+
+        // get nodes from NodeSetFactories
+        IExtensionPoint nodeSetPoint = registry.getExtensionPoint("org.knime.workbench.repository.nodesets");
+        if (nodeSetPoint == null) {
+            throw new IllegalStateException("Invalid extension point : org.knime.workbench.repository.nodesets");
+        }
+
+        for (IExtension ext : nodeSetPoint.getExtensions()) {
+            for (IConfigurationElement e : ext.getConfigurationElements()) {
+                if (m_includedPlugins.contains(ext.getContributor().getName())) {
+                    try {
+                        NodeSetFactory factory = (NodeSetFactory)e.createExecutableExtension("factory-class");
+                        allAvailableNodes.addAll(factory.getNodeFactoryIds());
+                    } catch (CoreException ex) {
+                        throw new IllegalStateException(
+                            "Invalid extension point : org.knime.workbench.repository.nodesets", ex);
+                    }
+                }
+            }
+        }
+
+        m_nodesToTest = allAvailableNodes;
     }
 
     /**
@@ -81,7 +164,7 @@ class UntestedNodesTest implements TestWithName {
      */
     @Override
     public int countTestCases() {
-        return 1;
+        return m_nodesToTest.size();
     }
 
     /**
@@ -90,37 +173,43 @@ class UntestedNodesTest implements TestWithName {
     @Override
     public void run(final TestResult result) {
         result.startTest(this);
-
         try {
-            checkTestedNodes(result);
-        } catch (Throwable t) {
+            m_nodesToTest.forEach(id -> new UntestedNodeTest(id).run(result));
+        } catch (RuntimeException t) {
             result.addError(this, t);
         } finally {
             result.endTest(this);
         }
     }
 
-    private void checkTestedNodes(final TestResult result) {
-        IExtensionRegistry registry = Platform.getExtensionRegistry();
-        IExtensionPoint point = registry.getExtensionPoint("org.knime.workbench.repository.nodes");
-        if (point == null) {
-            throw new IllegalStateException("Invalid extension point : org.knime.workbench.repository.nodes");
+    /**
+     * Writes a CSV reports to the given directory, listing tested and untested nodes.
+     *
+     * @param outputDir directory to write the reports to
+     * @throws IOException
+     */
+    public void createCSVReport(final Path outputDir) throws IOException {
+        // create target directory if it does not exist yet
+        Files.createDirectories(outputDir);
 
-        }
+        Path tested = outputDir.resolve("nodes_tested.csv");
+        Path untested = outputDir.resolve("nodes_untested.csv");
 
-        Set<String> allAvailableNodes = new HashSet<String>();
-        for (IExtension ext : point.getExtensions()) {
-            for (IConfigurationElement e : ext.getConfigurationElements()) {
-                allAvailableNodes.add(e.getAttribute("factory-class"));
+        // get untested nodes
+        var untestedNodes = new HashSet<String>();
+        var testedNodes = new HashSet<String>();
+
+        for (String n : m_nodesToTest) {
+            if (m_testedNodes.contains(n)) {
+                // m_testedNodes contains all nodes, not just the ones we are looking for
+                testedNodes.add(n);
+            } else {
+                untestedNodes.add(n);
             }
         }
 
-        allAvailableNodes.removeAll(m_testedNodes);
-        for (String factoryClassName : allAvailableNodes) {
-            if (m_includePattern.matcher(factoryClassName).matches()) {
-                result.addFailure(this, new AssertionFailedError("No testflow with " + factoryClassName + " found"));
-            }
-        }
+        Files.write(tested, testedNodes);
+        Files.write(untested, untestedNodes);
     }
 
     /**

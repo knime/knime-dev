@@ -49,6 +49,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.net.URISyntaxException;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -56,7 +57,8 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.xml.transform.TransformerException;
 
@@ -95,7 +97,7 @@ public class TestflowRunnerApplication implements IApplication {
 
     private String m_workflowPathPattern;
 
-    private final Collection<File> m_rootDirs = new ArrayList<File>();
+    private final Collection<File> m_rootDirs = new ArrayList<>();
 
     private String m_serverUri;
 
@@ -114,6 +116,8 @@ public class TestflowRunnerApplication implements IApplication {
     private volatile boolean m_leftDispatchLoop = false;
 
     private UntestedNodesTest m_untestedNodesTest;
+
+    private String m_untestedNodesReportDir;
 
     /**
      * {@inheritDoc}
@@ -281,16 +285,20 @@ public class TestflowRunnerApplication implements IApplication {
             resultWriter.addResult(result);
 
             if (m_untestedNodesTest != null) {
-                m_untestedNodesTest.addNodesUnderTest(testFlow.m_context.getNodesUnderTest());
+                m_untestedNodesTest.addNodesUnderTest(testFlow.getNodesUnderTest());
             }
         }
 
         if (m_untestedNodesTest != null) {
-            // check for untested nodes
-            WorkflowTestResult result = new WorkflowTestResult(m_untestedNodesTest);
-            result.addListener(resultWriter);
-            m_untestedNodesTest.run(result);
-            resultWriter.addResult(result);
+            if (m_untestedNodesReportDir != null) {
+                m_untestedNodesTest.createCSVReport(Paths.get(m_untestedNodesReportDir));
+            } else {
+                // check for untested nodes
+                WorkflowTestResult result = new WorkflowTestResult(m_untestedNodesTest);
+                result.addListener(resultWriter);
+                m_untestedNodesTest.run(result);
+                resultWriter.addResult(result);
+            }
         }
 
         resultWriter.endSuites();
@@ -447,10 +455,18 @@ public class TestflowRunnerApplication implements IApplication {
                 i++;
                 // requires another argument
                 if ((i >= stringArgs.length) || (stringArgs[i] == null) || (stringArgs[i].length() == 0)) {
-                    System.err.println("Missing <regex> for option -untestedNodes.");
+                    System.err.println("Missing list for included plug-ins.");
                     return false;
                 }
-                m_untestedNodesTest = new UntestedNodesTest(Pattern.compile(stringArgs[i++]));
+                var includedPlugins = Stream.of(stringArgs[i++].split(",")).collect(Collectors.toSet());
+                m_untestedNodesTest = new UntestedNodesTest(includedPlugins);
+            } else if (stringArgs[i].equals("-untestedNodesReportDir")) {
+                i++;
+                if ((i >= stringArgs.length) || (stringArgs[i] == null) || (stringArgs[i].length() == 0)) {
+                    System.err.println("Missing <directory_name> for option -untestedNodesReportDir.");
+                    return false;
+                }
+                m_untestedNodesReportDir = stringArgs[i++];
             } else if (stringArgs[i].equals("-memLeaks")) {
                 i++;
                 // requires another argument
@@ -547,8 +563,10 @@ public class TestflowRunnerApplication implements IApplication {
         System.err.println("    -dialogs: optional, additional tests all node dialogs.");
         System.err.println("    -logMessages: optional, checks for required or unexpected log messages.");
         System.err.println("    -ignoreNodeMessages: optional, ignores any warning messages on nodes.");
-        System.err.println("    -untestedNodes <regex>: optional, checks for untested nodes, only node factories "
-                + "matching the regular expression are reported");
+        System.err.println("    -untestedNodes <comma seperated list of plugin ids>: optional, "
+            + "checks for untested nodes, only nodes from the provided list of plugins are considered");
+        System.err.println("    -untestedNodesReportDir <directory_path>: optional, write untested nodes "
+            + "report as csv to the given directoy, instead of reporting via junit, requires -untestedNodes.");
         System.err.println("    -save <directory_name>: optional, specifies the directory "
                 + " into which each testflow is saved after execution. If not specified the workflows are not saved.");
         System.err.println("    -timeout <seconds>: optional, specifies the timeout for each individual workflow.");

@@ -56,8 +56,10 @@ import java.lang.management.OperatingSystemMXBean;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Formatter;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
@@ -85,6 +87,7 @@ public class WorkflowTestSuite extends WorkflowTest {
     private final NodeLogger m_logger = NodeLogger.getLogger(getClass());
 
     private final List<WorkflowTest> m_allTests = new ArrayList<WorkflowTest>(8);
+    private Set<String> m_nodesUnderTest;
 
     /**
      * Creates a new suite of workflow tests. Which tests are actually executed is determined by the given run
@@ -260,6 +263,7 @@ public class WorkflowTestSuite extends WorkflowTest {
         } catch (Throwable ex) {
             result.addError(this, ex);
         } finally {
+            m_nodesUnderTest = new HashSet<>(m_context.getNodesUnderTest()); // store a copy before clearing
             m_context.clear();
             Thread.setDefaultUncaughtExceptionHandler(null);
             result.endTest(this);
@@ -413,5 +417,15 @@ public class WorkflowTestSuite extends WorkflowTest {
                                                   final TestrunConfiguration runConfig) {
         return new WorkflowLoadSaveLoadTest(workflowDir, testcaseRoot, m_workflowName, m_progressMonitor, runConfig,
                 m_context);
+    }
+
+    /**
+     * Returns a set of nodes that have been executed in this testflow run. Nodes that are present in the workflow but
+     * are not executed are not tracked.
+     *
+     * @return nodes that where executed in this test
+     */
+    protected Set<String> getNodesUnderTest() {
+        return m_nodesUnderTest;
     }
 }

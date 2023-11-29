@@ -75,6 +75,7 @@ import org.knime.core.util.auth.Authenticator;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 
 /**
  *
@@ -95,6 +96,7 @@ public class TestWorkflowContextNodeModel extends NodeModel {
     static {
         MAPPER.addMixIn(HubSpaceLocationInfo.class, IgnoreAuthenticator.class);
         MAPPER.addMixIn(ServerLocationInfo.class, IgnoreAuthenticator.class);
+        MAPPER.registerModule(new Jdk8Module()); // See AP-21578
     }
 
     private static final DataColumnSpec LOCATION_INFO =

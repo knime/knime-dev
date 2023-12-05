@@ -72,6 +72,7 @@ import org.knime.core.node.Node;
 import org.knime.core.node.NodeFactory;
 import org.knime.core.node.NodeModel;
 import org.knime.core.node.NodeSetFactory;
+import org.knime.core.node.workflow.virtual.VirtualNodeSetFactory;
 
 import junit.framework.AssertionFailedError;
 import junit.framework.TestResult;
@@ -87,6 +88,8 @@ import junit.framework.TestResult;
 public class HeadlessNodeInstantiationApplication implements IApplication {
 
     private static final String FACTORY = "factory-class";
+
+    private static final Set<String> SKIPPED_NODESET_FACTORIES = Set.of(VirtualNodeSetFactory.class.getCanonicalName());
 
     private Set<String> m_includedPlugins;
 
@@ -357,7 +360,8 @@ public class HeadlessNodeInstantiationApplication implements IApplication {
         for (IExtension ext : nodeSetsPoint.getExtensions()) {
             if (m_includedPlugins.contains(ext.getContributor().getName())) {
                 allNodeSets.computeIfAbsent(ext.getContributor().getName(), k -> new ArrayList<>())
-                    .addAll(Arrays.asList(ext.getConfigurationElements()));
+                    .addAll(Arrays.stream(ext.getConfigurationElements())
+                        .filter(s -> !SKIPPED_NODESET_FACTORIES.contains(s.getAttribute(FACTORY))).toList());
             }
         }
 

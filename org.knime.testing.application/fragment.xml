@@ -65,6 +65,12 @@
       <node
             after="org.knime.testing.node.filestore.create.FileStoreCreateNodeFactory"
             category-path="/testing/filestore"
+            factory-class="org.knime.testing.node.filestore.create.port.FileStorePortCreateNodeFactory"
+            >
+      </node>
+      <node
+            after="org.knime.testing.node.filestore.create.port.FileStorePortCreateNodeFactory"
+            category-path="/testing/filestore"
             factory-class="org.knime.testing.node.filestore.check.FileStoreTestNodeFactory"
             >
       </node>

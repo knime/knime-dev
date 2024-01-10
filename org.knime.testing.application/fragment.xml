@@ -44,6 +44,11 @@
       </node>
       <node
             category-path="/testing"
+            factory-class="org.knime.testing.node.xmldiffer.XmlDifferNodeFactory"
+            >
+      </node>
+      <node
+            category-path="/testing"
             factory-class="org.knime.testing.internal.nodes.image.ImageDifferNodeFactory"
             >
       </node>

@@ -22,6 +22,7 @@
 	</properties>
 
 	<modules>
+		<module>org.knime.testing.application/lib/fetch_jars</module>
 		<module>org.knime.features.testing.application</module>
 		<module>org.knime.features.wizard</module>
 		<module>org.knime.testing.application</module>

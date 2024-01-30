@@ -89,7 +89,7 @@ final class XmlDifferCellFactory extends AbstractCellFactory {
     enum Columns {
             // e.g., TEXT_VALUE
             COMPARISON_TYPE(c -> c.getComparison().getType(), "Comparison type"),
-            // similar or diffent
+            // similar or different
             SIMILARITY(c -> c.getResult(), "Similarity"),
             // expected value, e.g., zebra
             CONTROL_VALUE(c -> c.getComparison().getControlDetails().getValue(), "Control value"),
@@ -169,6 +169,10 @@ final class XmlDifferCellFactory extends AbstractCellFactory {
                 continue;
             }
 
+            if(settings.m_failExecution) {
+                throw new IllegalStateException(difference.getComparison().toString());
+            }
+
             for (var i = 0; i < Columns.values().length; i++) {
                 final var value = Columns.values()[i].extractor.apply(difference);
                 columnResults.get(i).add(value != null ? value.toString() : null);
@@ -201,8 +205,9 @@ final class XmlDifferCellFactory extends AbstractCellFactory {
     }
 
     private static DataCell[] createEmptyCells() {
-        final var missingCell = DataType.getMissingCell();
-        return new DataCell[]{missingCell, missingCell};
+        final var result = new DataCell[Columns.values().length];
+        Arrays.fill(result, DataType.getMissingCell());
+        return result;
     }
 
 }

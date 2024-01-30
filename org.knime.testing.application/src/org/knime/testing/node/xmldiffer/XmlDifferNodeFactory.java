@@ -77,7 +77,7 @@ public final class XmlDifferNodeFactory extends WebUINodeFactory<XmlDifferNodeMo
         .modelSettingsClass(XmlDifferNodeSettings.class) //
         .addInputTable("Data table", "Should have two XML columns.") //
         .addOutputTable("Output",
-            "One row per input row with collection cells that summarize " + " the type and location of differences.") //
+            "One row per input row with collection cells that summarize the type and location of differences.") //
         .nodeType(NodeType.Manipulator) //
         .keywords("testing") //
         .sinceVersion(5, 3, 0) //

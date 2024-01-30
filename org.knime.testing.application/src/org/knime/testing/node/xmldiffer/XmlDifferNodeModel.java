@@ -57,7 +57,6 @@ import org.knime.core.webui.node.impl.WebUINodeConfiguration;
 import org.knime.core.webui.node.impl.WebUINodeModel;
 import org.w3c.dom.Document;
 import org.xmlunit.builder.DiffBuilder;
-import org.xmlunit.diff.ComparisonControllers;
 import org.xmlunit.diff.DefaultNodeMatcher;
 import org.xmlunit.diff.ElementSelectors;
 
@@ -108,10 +107,6 @@ final class XmlDifferNodeModel extends WebUINodeModel<XmlDifferNodeSettings> {
         final BiFunction<Document, Document, DiffBuilder> builder = (control, test) -> {
             final var b = DiffBuilder.compare(control).withTest(test);
 
-            if (settings.m_stopAfterFirstDifference) {
-                b.withComparisonController(ComparisonControllers.StopWhenDifferent);
-            }
-
             if (settings.m_ignoreElementOrder) {
                 // an element is allowed to match another with the same name and text node (if any),
                 // irrespective of order
@@ -120,6 +115,9 @@ final class XmlDifferNodeModel extends WebUINodeModel<XmlDifferNodeSettings> {
 
             if (settings.m_ignoreComments) {
                 b.ignoreComments();
+            }
+            if (settings.m_normalizeWhitespace) {
+                b.normalizeWhitespace();
             }
             if (settings.m_ignoreWhiteSpace) {
                 b.ignoreWhitespace();

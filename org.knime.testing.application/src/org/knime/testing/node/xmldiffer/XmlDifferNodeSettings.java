@@ -44,12 +44,19 @@
  */
 package org.knime.testing.node.xmldiffer;
 
+import org.knime.core.data.DataColumnSpec;
 import org.knime.core.data.xml.XMLValue;
 import org.knime.core.webui.node.dialog.defaultdialog.DefaultNodeSettings;
 import org.knime.core.webui.node.dialog.defaultdialog.layout.After;
 import org.knime.core.webui.node.dialog.defaultdialog.layout.Layout;
 import org.knime.core.webui.node.dialog.defaultdialog.layout.Section;
+import org.knime.core.webui.node.dialog.defaultdialog.persistence.field.Persist;
+import org.knime.core.webui.node.dialog.defaultdialog.rule.Effect;
+import org.knime.core.webui.node.dialog.defaultdialog.rule.Effect.EffectType;
+import org.knime.core.webui.node.dialog.defaultdialog.rule.Signal;
+import org.knime.core.webui.node.dialog.defaultdialog.rule.TrueCondition;
 import org.knime.core.webui.node.dialog.defaultdialog.widget.ChoicesWidget;
+import org.knime.core.webui.node.dialog.defaultdialog.widget.ColumnChoicesProvider;
 import org.knime.core.webui.node.dialog.defaultdialog.widget.Widget;
 import org.knime.core.webui.node.dialog.defaultdialog.widget.choices.ColumnChoicesProviderUtil.CompatibleColumnChoicesProvider;
 
@@ -75,7 +82,6 @@ final class XmlDifferNodeSettings implements DefaultNodeSettings {
         @After(Controls.class)
         interface Output {
         }
-
     }
 
     // INPUT
@@ -91,9 +97,18 @@ final class XmlDifferNodeSettings implements DefaultNodeSettings {
     @Layout(Sections.Input.class)
     String m_controlColumn;
 
+//    @Widget(title = "Control document column", description = "Provides the expected values to compare against.")
+//    @ChoicesWidget(choices = SecondTableXmlColumnChoicesProvider.class)
+//    @Layout(Sections.Input.class)
+//    String m_externalControlColumn;
+
+
     // CONTROLS
 
-    @Widget(title = "Ignore element order", description = "If checked, the order of elements is ignored.")
+    @Widget(title = "Tolerate element reordering", description = """
+            If checked, a reordering of elements is output as different of type SIMILAR instead of type DIFFERENT.
+            Use
+            """)
     @Layout(Sections.Controls.class)
     boolean m_ignoreElementOrder = false;
 
@@ -103,17 +118,32 @@ final class XmlDifferNodeSettings implements DefaultNodeSettings {
     boolean m_ignoreComments = false;
 
     @Widget(title = "Ignore whitespace",
-        description = "Remove all empty text nodes and trim the non-empty ones from the test and control document before comparing.")
+        description = """
+                      Ignore whitespace by removing all empty text nodes and trimming the non-empty ones.
+                      If you only want to remove text nodes consisting solely of whitespace
+                      (AKA element content whitespace) but leave all other text nodes alone you should
+                      use ignore element content whitespace instead.
+                      """)
     @Layout(Sections.Controls.class)
     boolean m_ignoreWhiteSpace;
 
     @Widget(title = "Ignore element content whitespace",
-        description = "Remove all text nodes that consist of only whitespace from the test and control document before comparing.")
+        description = "Ignore element content whitespace by removing all text nodes solely consisting of whitespace.")
     @Layout(Sections.Controls.class)
-    boolean m_ignoreElementContentWhitespace;
+    boolean m_ignoreElementContentWhitespace = false;
 
-    @Widget(title = "Ignore small differences", description = """
-            Omits the following differences from the output:
+    @Widget(title = "Normalize whitespace", description = """
+            Remove all empty text nodes and normalize the non-empty ones.
+            Normalization replaces all whitespace characters by space characters
+            and collapses consecutive whitespace characters.
+            """)
+    @Persist(optional = true)
+    @Layout(Sections.Controls.class)
+    boolean m_normalizeWhitespace = false;
+
+    @Widget(title = "Ignore differences of type SIMILAR", description = """
+            Filters out differences of type SIMILAR. Includes element reordering if selected above.
+            The following differences are by default considered as differences of type SIMILAR:
                 <ul>
                 <li>CDATA and Text nodes with the same content</li>
                 <li>DOCTYPE differences</li>
@@ -129,18 +159,44 @@ final class XmlDifferNodeSettings implements DefaultNodeSettings {
 
     // OUTPUT
 
+    interface IsFailInExecution {
+    }
+
+    @Widget(title = "Node fails if diff is non-empty",
+        description = "Node throws an error as soon as the first difference is found.")
+    @Layout(Sections.Output.class)
+    @Signal(id = IsFailInExecution.class, condition = TrueCondition.class)
+    boolean m_failExecution = false;
+
     @Widget(title = "Remove source columns", description = "Removes the test and control column from the output.")
     @Layout(Sections.Output.class)
+    @Effect(signals = IsFailInExecution.class, type = EffectType.HIDE)
     boolean m_removeSourceColumns = false;
 
-    @Widget(title = "Stop after first difference",
-        description = "If checked, at most one difference will be reported per row, i.e., pair of XML documents.")
-    @Layout(Sections.Output.class)
-    boolean m_stopAfterFirstDifference = false;
+    // UTIL
 
     private static final class XmlColumnChoicesProvider extends CompatibleColumnChoicesProvider {
         XmlColumnChoicesProvider() {
             super(XMLValue.class);
+        }
+    }
+
+
+
+    private static final class SecondTableXmlColumnChoicesProvider implements ColumnChoicesProvider {
+        SecondTableXmlColumnChoicesProvider() {
+        }
+
+        @Override
+        public DataColumnSpec[] columnChoices(final DefaultNodeSettingsContext context) {
+            final var spec = context.getDataTableSpec(1);
+            if (spec.isEmpty()) {
+                return new DataColumnSpec[0];
+            } else {
+                return spec.get().stream().map(DataColumnSpec::getType) //
+                    .filter(t -> t.isCompatible(XMLValue.class)) //
+                    .toArray(DataColumnSpec[]::new);
+            }
         }
     }
 

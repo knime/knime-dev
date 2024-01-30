@@ -89,7 +89,8 @@ public abstract class WorkflowTest implements TestWithName {
      * @param monitor progress monitor, may be <code>null</code>
      * @param context the test context, must not be <code>null</code>
      */
-    protected WorkflowTest(final String workflowName, final IProgressMonitor monitor, final WorkflowTestContext context) {
+    protected WorkflowTest(final String workflowName, final IProgressMonitor monitor,
+        final WorkflowTestContext context) {
         m_workflowName = workflowName;
         if (monitor == null) {
             m_progressMonitor = new NullProgressMonitor();

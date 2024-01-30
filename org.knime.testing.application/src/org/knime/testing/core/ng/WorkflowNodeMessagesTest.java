@@ -47,6 +47,7 @@
  */
 package org.knime.testing.core.ng;
 
+import java.util.Optional;
 import java.util.regex.Pattern;
 
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -55,6 +56,7 @@ import org.knime.core.node.workflow.NodeMessage;
 import org.knime.core.node.workflow.NodeMessage.Type;
 import org.knime.core.node.workflow.SubNodeContainer;
 import org.knime.core.node.workflow.WorkflowManager;
+import org.knime.testing.core.compare.LineDiffer;
 
 import junit.framework.AssertionFailedError;
 import junit.framework.TestResult;
@@ -103,16 +105,16 @@ class WorkflowNodeMessagesTest extends WorkflowTest {
 
     private void checkNodeMessages(final TestResult result, final WorkflowManager wfm,
         final TestflowConfiguration flowConfiguration) {
-        for (NodeContainer node : wfm.getNodeContainers()) {
+        for (final NodeContainer node : wfm.getNodeContainers()) {
             if (!m_context.isPreExecutedNode(node)) {
-                if (node instanceof SubNodeContainer) {
+                if (node instanceof SubNodeContainer snc) {
                     if (flowConfiguration.testNodesInComponents()) {
-                        checkNodeMessages(result, ((SubNodeContainer)node).getWorkflowManager(), flowConfiguration);
+                        checkNodeMessages(result, snc.getWorkflowManager(), flowConfiguration);
                     } else {
                         checkSingleNode(result, node, flowConfiguration);
                     }
-                } else if (node instanceof WorkflowManager) {
-                    checkNodeMessages(result, (WorkflowManager)node, flowConfiguration);
+                } else if (node instanceof WorkflowManager wfmNode) {
+                    checkNodeMessages(result, wfmNode, flowConfiguration);
                     checkSingleNode(result, node, flowConfiguration);
                 } else {
                     checkSingleNode(result, node, flowConfiguration);
@@ -123,39 +125,79 @@ class WorkflowNodeMessagesTest extends WorkflowTest {
 
     private void checkSingleNode(final TestResult result, final NodeContainer node,
         final TestflowConfiguration flowConfiguration) {
-        NodeMessage nodeMessage = node.getNodeMessage();
+        final var nodeMessage = node.getNodeMessage();
 
-        Pattern expectedErrorMessagePattern = flowConfiguration.getNodeErrorMessage(node.getID());
+        final var expectedErrorMessagePattern = flowConfiguration.getNodeErrorMessage(node.getID());
         final var actualMessageBuilder = new StringBuilder(nodeMessage.getMessage());
         nodeMessage.getIssue().ifPresent(issue -> actualMessageBuilder.append("\n").append(issue));
         final var actualMessage = actualMessageBuilder.toString().trim();
+
         if (expectedErrorMessagePattern != null) {
             if (!expectedErrorMessagePattern.matcher(actualMessage).matches()) {
-                String error =
-                    "Node '" + node.getNameWithID() + "' has unexpected error message: expected\n"
-                        + TestflowConfiguration.patternToString(expectedErrorMessagePattern) + "\n... but got...\n"
-                        + actualMessage;
-                result.addFailure(this, new AssertionFailedError(error));
+                result.addFailure(this,
+                    mismatch(node, nodeMessage, NodeMessage.Type.ERROR, expectedErrorMessagePattern));
             }
-        } else if (Type.ERROR.equals(nodeMessage.getMessageType())) {
-            String error =
-                "Node '" + node.getNameWithID() + "' has unexpected error message: " + nodeMessage.getMessage();
-            result.addFailure(this, new AssertionFailedError(error));
+        } else if (Type.ERROR == nodeMessage.getMessageType()) {
+            result.addFailure(this, unexpected(node, nodeMessage));
         }
 
-        Pattern expectedWarningMessagePattern = flowConfiguration.getNodeWarningMessage(node.getID());
+        final var expectedWarningMessagePattern = flowConfiguration.getNodeWarningMessage(node.getID());
         if (expectedWarningMessagePattern != null) {
             if (!expectedWarningMessagePattern.matcher(actualMessage).matches()) {
-                String error =
-                    "Node '" + node.getNameWithID() + "' has unexpected warning message: expected\n"
-                        + TestflowConfiguration.patternToString(expectedWarningMessagePattern) + "\n... but got...\n"
-                        + actualMessage;
-                result.addFailure(this, new AssertionFailedError(error));
+                result.addFailure(this,
+                    mismatch(node, nodeMessage, NodeMessage.Type.WARNING, expectedWarningMessagePattern));
             }
-        } else if (Type.WARNING.equals(nodeMessage.getMessageType())) {
-            String error =
-                "Node '" + node.getNameWithID() + "' has unexpected warning message: " + nodeMessage.getMessage();
-            result.addFailure(this, new AssertionFailedError(error));
+        } else if (Type.WARNING == nodeMessage.getMessageType()) {
+            result.addFailure(this, unexpected(node, nodeMessage));
         }
+    }
+
+    /**
+     * @param node that has the message
+     * @param nodeMessage that was raised
+     * @return error that explains that no node message was expected
+     */
+    private static AssertionFailedError unexpected(final NodeContainer node, final NodeMessage nodeMessage) {
+        final var message = String.format("Node \"%s\" has unexpected node message: %s", node.getNameWithID(),
+            messageToDetailedString(nodeMessage));
+        return new AssertionFailedError(message);
+    }
+
+    /**
+     * @param node that has the message
+     * @param nodeMessage that was raised
+     * @param expectedType of the expected node message
+     * @param expectedMessagePattern acceptable node messages
+     * @return error that explains that the node message did not match the expected messages
+     */
+    private static AssertionFailedError mismatch(final NodeContainer node, final NodeMessage nodeMessage,
+        final Type expectedType, final Pattern expectedMessagePattern) {
+        final var lineComparisonPart =
+            "%nLine Comparison:%n%s".formatted(lineComparison(expectedMessagePattern, nodeMessage));
+        final var message = String.format("Node \"%s\" has unexpected node message: expected%n%s%n...but got...%n%s%s",
+            node.getNameWithID(), //
+            expectedMessageString(expectedType, expectedMessagePattern), //
+            messageToDetailedString(nodeMessage), //
+            expectedMessagePattern.toString().split("\n").length > 1 ? lineComparisonPart : "");
+        return new AssertionFailedError(message);
+    }
+
+    private static String lineComparison(final Pattern expectedMessagePattern, final NodeMessage nodeMessage) {
+        return LineDiffer.summary(TestflowConfiguration.patternToString(expectedMessagePattern),
+            nodeMessage.getMessage() + nodeMessage.getIssue().map("%n%s"::formatted).orElse(""));
+    }
+
+    static String expectedMessageString(final Type expectedType, final Pattern pattern) {
+        return "[type = %s%s]".formatted( //
+            expectedType.toString(), //
+            Optional.ofNullable(pattern).map(TestflowConfiguration::patternToString)
+                .map(", pattern = \"%s\""::formatted).orElse(""));
+    }
+
+    static String messageToDetailedString(final NodeMessage message) {
+        return "[type = %s, message = \"%s%s\"]".formatted( //
+            message.getMessageType(), //
+            message.getMessage(), //
+            message.getIssue().map("%n%s"::formatted).orElse(""));
     }
 }

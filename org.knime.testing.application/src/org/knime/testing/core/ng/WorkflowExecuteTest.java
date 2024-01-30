@@ -50,6 +50,7 @@ package org.knime.testing.core.ng;
 import java.io.File;
 import java.lang.management.MemoryUsage;
 import java.util.Formatter;
+import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.regex.Pattern;
@@ -60,7 +61,6 @@ import org.knime.core.node.KNIMEConstants;
 import org.knime.core.node.NodeLogger;
 import org.knime.core.node.workflow.NativeNodeContainer;
 import org.knime.core.node.workflow.NodeContainer;
-import org.knime.core.node.workflow.NodeContainerState;
 import org.knime.core.node.workflow.NodeMessage;
 import org.knime.core.node.workflow.SingleNodeContainer;
 import org.knime.core.node.workflow.SubNodeContainer;
@@ -79,6 +79,69 @@ import junit.framework.TestResult;
  * @author Thorsten Meinl, KNIME AG, Zurich, Switzerland
  */
 class WorkflowExecuteTest extends WorkflowTest {
+
+    private final class WatchDog extends TimerTask {
+        private final TestflowConfiguration m_flowConfiguration;
+
+        private final TestResult m_result;
+
+        private final long m_timeout;
+
+        private final long m_startTime = System.currentTimeMillis();
+
+        /**
+         * @param flowConfiguration
+         * @param result
+         */
+        private WatchDog(final TestflowConfiguration flowConfiguration, final TestResult result) {
+            m_flowConfiguration = flowConfiguration;
+            m_result = result;
+            m_timeout = 1000L * ((m_flowConfiguration.getTimeout() > 0) ? m_flowConfiguration.getTimeout()
+                : m_runConfiguration.getTimeout());
+        }
+
+        @Override
+        public void run() {
+            try {
+                internalRun();
+            } catch (Exception ex) {
+                m_result.addError(WorkflowExecuteTest.this, ex);
+            }
+        }
+
+        private void internalRun() {
+            if (m_progressMonitor.isCanceled()) {
+                m_result.addError(WorkflowExecuteTest.this, new InterruptedException("Testflow canceled by user"));
+                m_context.getWorkflowManager().getParent().cancelExecution(m_context.getWorkflowManager());
+                this.cancel();
+            } else if (System.currentTimeMillis() > m_startTime + m_timeout) {
+                String status =
+                    m_context.getWorkflowManager().printNodeSummary(m_context.getWorkflowManager().getID(), 0);
+                String message =
+                    "Worklow running longer than " + (m_timeout / 1000.0) + " seconds.\n" + "Node status:\n" + status;
+                if (m_runConfiguration.isStacktraceOnTimeout()) {
+                    MemoryUsage usage = getHeapUsage();
+
+                    try (final var formatter = new Formatter()) {
+                        formatter.format("Memory usage: %1$,.3f MB max, %2$,.3f MB used, %3$,.3f MB free",
+                            usage.getMax() / 1024.0 / 1024.0, usage.getUsed() / 1024.0 / 1024.0,
+                            (usage.getMax() - usage.getUsed()) / 1024.0 / 1024.0);
+                        message += "\n" + formatter.out().toString();
+                        message += "\nThread status:\n" + ThreadUtils.getJVMStacktraces();
+                    }
+                }
+                NodeLogger.getLogger(WorkflowExecuteTest.class).info(message);
+                NodeLogger.getLogger(WorkflowExecuteTest.class).infoWithFormat(
+                    "KNIME Global ThreadPool Stats:" + "%d running tasks of %d maximum",
+                    KNIMEConstants.GLOBAL_THREAD_POOL.getRunningThreads(),
+                    KNIMEConstants.GLOBAL_THREAD_POOL.getMaxThreads());
+                m_result.addFailure(WorkflowExecuteTest.this, new AssertionFailedError(message));
+                m_context.getWorkflowManager().getParent().cancelExecution(m_context.getWorkflowManager());
+                this.cancel();
+            }
+        }
+    }
+
     private static final Timer TIMEOUT_TIMER = new Timer("Workflow watchdog", true);
 
     /**
@@ -128,57 +191,9 @@ class WorkflowExecuteTest extends WorkflowTest {
             //this prevents that temporary changes to the node's settings (e.g. JobManager) are reverted
             configureWorkflowManager(m_context.getWorkflowManager());
 
-            final TestflowConfiguration flowConfiguration = m_context.getTestflowConfiguration();
+            final var flowConfiguration = m_context.getTestflowConfiguration();
 
-            watchdog = new TimerTask() {
-                private final long timeout = ((flowConfiguration.getTimeout() > 0) ? flowConfiguration.getTimeout()
-                        : m_runConfiguration.getTimeout()) * 1000;
-
-                private final long startTime = System.currentTimeMillis();
-
-                @Override
-                public void run() {
-                    try {
-                        internalRun();
-                    } catch (Exception ex) {
-                        result.addError(WorkflowExecuteTest.this, ex);
-                    }
-                }
-
-                private void internalRun() {
-                    if (m_progressMonitor.isCanceled()) {
-                        result.addError(WorkflowExecuteTest.this, new InterruptedException("Testflow canceled by user"));
-                        m_context.getWorkflowManager().getParent().cancelExecution(m_context.getWorkflowManager());
-                        this.cancel();
-                    } else if (System.currentTimeMillis() > startTime + timeout) {
-                        String status =
-                                m_context.getWorkflowManager().printNodeSummary(m_context.getWorkflowManager().getID(),
-                                                                                0);
-                        String message =
-                                "Worklow running longer than " + (timeout / 1000.0) + " seconds.\n" + "Node status:\n"
-                                        + status;
-                        if (m_runConfiguration.isStacktraceOnTimeout()) {
-                            MemoryUsage usage = getHeapUsage();
-
-                            try (Formatter formatter = new Formatter()) {
-                                formatter.format("Memory usage: %1$,.3f MB max, %2$,.3f MB used, %3$,.3f MB free",
-                                    usage.getMax() / 1024.0 / 1024.0, usage.getUsed() / 1024.0 / 1024.0,
-                                    (usage.getMax() - usage.getUsed()) / 1024.0 / 1024.0);
-                                message += "\n" + formatter.out().toString();
-                                message += "\nThread status:\n" + ThreadUtils.getJVMStacktraces();
-                            }
-                        }
-                        NodeLogger.getLogger(WorkflowExecuteTest.class).info(message);
-                        NodeLogger.getLogger(WorkflowExecuteTest.class).infoWithFormat(
-                            "KNIME Global ThreadPool Stats:" + "%d running tasks of %d maximum",
-                            KNIMEConstants.GLOBAL_THREAD_POOL.getRunningThreads(),
-                            KNIMEConstants.GLOBAL_THREAD_POOL.getMaxThreads());
-                        result.addFailure(WorkflowExecuteTest.this, new AssertionFailedError(message));
-                        m_context.getWorkflowManager().getParent().cancelExecution(m_context.getWorkflowManager());
-                        this.cancel();
-                    }
-                }
-            };
+            watchdog = new WatchDog(flowConfiguration, result);
 
             TIMEOUT_TIMER.schedule(watchdog, 500, 500);
             m_context.getWorkflowManager().executeAllAndWaitUntilDone();
@@ -200,16 +215,14 @@ class WorkflowExecuteTest extends WorkflowTest {
     }
 
     private void resetTestflowConfigNode() {
-        WorkflowManager wfm = m_context.getWorkflowManager();
+        final var wfm = m_context.getWorkflowManager();
 
         for (NodeContainer cont : wfm.getNodeContainers()) {
-            if ((cont instanceof NativeNodeContainer)
-                    && (((NativeNodeContainer)cont).getNodeModel() instanceof TestConfigNodeModel)) {
+            if (cont instanceof NativeNodeContainer nnc && nnc.getNodeModel() instanceof TestConfigNodeModel) {
                 wfm.resetAndConfigureNode(cont.getID());
             }
         }
     }
-
 
     /**
      * {@inheritDoc}
@@ -223,14 +236,14 @@ class WorkflowExecuteTest extends WorkflowTest {
         final TestflowConfiguration flowConfiguration) {
 
         for (NodeContainer node : wfm.getNodeContainers()) {
-            if (node instanceof SubNodeContainer) {
+            if (node instanceof SubNodeContainer snc) {
                 if (flowConfiguration.testNodesInComponents()) {
-                    checkExecutionStatus(result, ((SubNodeContainer)node).getWorkflowManager(), flowConfiguration);
+                    checkExecutionStatus(result, snc.getWorkflowManager(), flowConfiguration);
                 } else {
-                	checkNodeExecutionStatus(node, result, flowConfiguration);
+                    checkNodeExecutionStatus(node, result, flowConfiguration);
                 }
-            } else if (node instanceof WorkflowManager) {
-                checkExecutionStatus(result, (WorkflowManager)node, flowConfiguration);
+            } else if (node instanceof WorkflowManager wfmNode) {
+                checkExecutionStatus(result, wfmNode, flowConfiguration);
             } else if (node instanceof SingleNodeContainer) {
                 checkNodeExecutionStatus(node, result, flowConfiguration);
             } else {
@@ -241,19 +254,49 @@ class WorkflowExecuteTest extends WorkflowTest {
 
     private void checkNodeExecutionStatus(final NodeContainer node, final TestResult result,
         final TestflowConfiguration flowConfiguration) {
-        NodeContainerState status = node.getNodeContainerState();
+        final var status = node.getNodeContainerState();
         if (!status.isExecuted() && !flowConfiguration.nodeMustFail(node.getID())) {
-            NodeMessage nodeMessage = node.getNodeMessage();
-            String error =
-                "Node '" + node.getNameWithID() + "' is not executed. Error message is: " + nodeMessage.getMessage();
-            result.addFailure(this, new AssertionFailedError(error));
+            final var nodeMessage = node.getNodeMessage();
+            result.addFailure(this, executionFailure(node, nodeMessage));
 
-            Pattern p = Pattern.compile(Pattern.quote(nodeMessage.getMessage()));
-            flowConfiguration.addNodeErrorMessage(node.getID(), p);
-            flowConfiguration.addRequiredError(p);
+            final var pattern = Pattern.compile(Pattern.quote(nodeMessage.getMessage()));
+            flowConfiguration.addNodeErrorMessage(node.getID(), pattern);
+            flowConfiguration.addRequiredError(pattern);
         } else if (status.isExecuted() && flowConfiguration.nodeMustFail(node.getID())) {
-            String error = "Node '" + node.getNameWithID() + "' is executed although it should have failed.";
-            result.addFailure(this, new AssertionFailedError(error));
+            result.addFailure(this, expectedErrorNotThrown(node, flowConfiguration.getNodeErrorMessage(node.getID())));
         }
     }
+
+    /**
+     * @param node that did not fail
+     * @param pattern of expected error messages
+     * @return an error that explains that the node was executed
+     */
+    private static AssertionFailedError expectedErrorNotThrown(final NodeContainer node, final Pattern pattern) {
+        final var message = String.format( //
+            "Node \"%s\" is executed although it should be failed with node message %s", //
+            node.getNameWithID(), //
+            WorkflowNodeMessagesTest.expectedMessageString(NodeMessage.Type.ERROR, pattern));
+        return new AssertionFailedError(message);
+    }
+
+    /**
+     * @param node that failed
+     * @param nodeMessage that states the failure
+     * @return error that explains that the node should have been executed
+     */
+    private static AssertionFailedError executionFailure(final NodeContainer node, final NodeMessage nodeMessage) {
+        final var explain = Map.of( //
+            NodeMessage.Type.ERROR, "is failed", //
+            NodeMessage.Type.RESET, "is reset", //
+            NodeMessage.Type.WARNING, "has warning" //
+        );
+
+        final var message = "Node \"%s\" %s although it should be executed. Node message is: %s".formatted( //
+            node.getNameWithID(), //
+            explain.get(nodeMessage.getMessageType()), //
+            WorkflowNodeMessagesTest.messageToDetailedString(nodeMessage));
+        return new AssertionFailedError(message);
+    }
+
 }

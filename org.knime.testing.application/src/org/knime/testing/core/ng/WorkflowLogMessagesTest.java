@@ -48,12 +48,15 @@
 package org.knime.testing.core.ng;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
 import org.apache.log4j.AppenderSkeleton;
@@ -82,13 +85,14 @@ import junit.framework.TestResult;
  * @author Thorsten Meinl, KNIME AG, Zurich, Switzerland
  */
 class WorkflowLogMessagesTest extends WorkflowTest {
-    private final List<LoggingEvent> m_logEvents = new ArrayList<LoggingEvent>();
+    private final List<LoggingEvent> m_logEvents = new ArrayList<>();
 
-    private static final Pattern X_RANDR_PATTERN = Pattern.compile("^Xlib:\\s+extension \"RANDR\" missing on display.+");
+    private static final Pattern X_RANDR_PATTERN =
+        Pattern.compile("^Xlib:\\s+extension \"RANDR\" missing on display.+");
 
-    private final AppenderSkeleton m_logAppender = new AppenderSkeleton() {
+    private final AppenderSkeleton m_logAppender = new AppenderSkeleton() { //NOSONAR that's not a long class
         {
-            LevelRangeFilter filter = new LevelRangeFilter();
+            final var filter = new LevelRangeFilter();
             filter.setLevelMin(Level.DEBUG);
             filter.setLevelMax(Level.FATAL);
             addFilter(filter);
@@ -113,7 +117,8 @@ class WorkflowLogMessagesTest extends WorkflowTest {
         }
     };
 
-    WorkflowLogMessagesTest(final String workflowName, final IProgressMonitor monitor, final WorkflowTestContext context) {
+    WorkflowLogMessagesTest(final String workflowName, final IProgressMonitor monitor,
+        final WorkflowTestContext context) {
         super(workflowName, monitor, context);
     }
 
@@ -160,14 +165,14 @@ class WorkflowLogMessagesTest extends WorkflowTest {
         return "log messages";
     }
 
-    private void findSubNodes(final WorkflowManager root, final boolean inComponent, final boolean testSubnodes,
+    private static void findSubNodes(final WorkflowManager root, final boolean inComponent, final boolean testSubnodes,
         final Set<NodeID> ignoredIDs) {
         for (NodeContainer node : root.getNodeContainers()) {
-            if (node instanceof SubNodeContainer) {
-                findSubNodes(((SubNodeContainer)node).getWorkflowManager(), true, testSubnodes, ignoredIDs);
+            if (node instanceof SubNodeContainer snc) {
+                findSubNodes(snc.getWorkflowManager(), true, testSubnodes, ignoredIDs);
             } else {
-                if (node instanceof WorkflowManager) {
-                    findSubNodes((WorkflowManager)node, inComponent, testSubnodes, ignoredIDs);
+                if (node instanceof WorkflowManager wfm) {
+                    findSubNodes(wfm, inComponent, testSubnodes, ignoredIDs);
                 }
                 if (inComponent && !testSubnodes) {
                     // subnodes log error messages, which, depending in the testSubnodes setting, we should ignore
@@ -178,47 +183,18 @@ class WorkflowLogMessagesTest extends WorkflowTest {
     }
 
     private void checkLogMessages(final TestResult result, final TestflowConfiguration flowConfiguration) {
-        Map<Level, List<Pattern>> occurrenceMap = new HashMap<Level, List<Pattern>>();
-        occurrenceMap.put(Level.ERROR, new ArrayList<Pattern>(flowConfiguration.getRequiredErrors()));
-        occurrenceMap.put(Level.WARN, new ArrayList<Pattern>(flowConfiguration.getRequiredWarnings()));
-        occurrenceMap.put(Level.INFO, new ArrayList<Pattern>(flowConfiguration.getRequiredInfos()));
-        occurrenceMap.put(Level.DEBUG, new ArrayList<Pattern>(flowConfiguration.getRequiredDebugs()));
+        Map<Level, List<Pattern>> occurrenceMap = new HashMap<>();
+        occurrenceMap.put(Level.ERROR, new ArrayList<>(flowConfiguration.getRequiredErrors()));
+        occurrenceMap.put(Level.WARN, new ArrayList<>(flowConfiguration.getRequiredWarnings()));
+        occurrenceMap.put(Level.INFO, new ArrayList<>(flowConfiguration.getRequiredInfos()));
+        occurrenceMap.put(Level.DEBUG, new ArrayList<>(flowConfiguration.getRequiredDebugs()));
 
         final Set<NodeID> ignoredIDs = new HashSet<>();
         if (!flowConfiguration.testNodesInComponents()) {
             findSubNodes(m_context.getWorkflowManager(), false, flowConfiguration.testNodesInComponents(), ignoredIDs);
         }
 
-        Map<Level, Map<String, Pattern>> leftOverMap = new HashMap<Level, Map<String, Pattern>>();
-        Map<String, Pattern> m = new HashMap<>();
-        for (Pattern p : flowConfiguration.getRequiredErrors()) {
-            if (!p.pattern().startsWith("\\QCODING PROBLEM") || KNIMEConstants.ASSERTIONS_ENABLED
-                || EclipseUtil.isRunFromSDK()) {
-                // don't add expected CODING PROBLEMs if they are not reported
-                m.put(p.toString(), p);
-            }
-        }
-        leftOverMap.put(Level.ERROR, m);
-
-        m = new HashMap<>();
-        for (Pattern p : flowConfiguration.getRequiredWarnings()) {
-            m.put(p.toString(), p);
-        }
-        leftOverMap.put(Level.WARN, m);
-
-        m = new HashMap<>();
-        for (Pattern p : flowConfiguration.getRequiredInfos()) {
-            m.put(p.toString(), p);
-        }
-        leftOverMap.put(Level.INFO, m);
-
-
-        m = new HashMap<>();
-        for (Pattern p : flowConfiguration.getRequiredDebugs()) {
-            m.put(p.toString(), p);
-        }
-        leftOverMap.put(Level.DEBUG, m);
-
+        final Map<Level, Map<String, Pattern>> leftOverMap = leftOverMap(flowConfiguration);
 
         for (LoggingEvent logEvent : m_logEvents) {
             final Object o = logEvent.getMessage();
@@ -227,13 +203,13 @@ class WorkflowLogMessagesTest extends WorkflowTest {
                 if (ignoredIDs.contains(message.getNodeID())) {
                     continue;
                 }
-                nodeNameWithID = String.format("%s (%s)", message.getNodeName(), message.getNodeID());
+                nodeNameWithID = "%s (%s)".formatted(message.getNodeName(), message.getNodeID());
             } else {
                 nodeNameWithID = null;
             }
 
             final String message = logEvent.getRenderedMessage().trim();
-            boolean expected = false;
+            var expected = false;
             List<Pattern> currentList = occurrenceMap.get(logEvent.getLevel());
             if (currentList != null) {
                 currentList.addAll(flowConfiguration.getOptionalLogMessages());
@@ -249,19 +225,65 @@ class WorkflowLogMessagesTest extends WorkflowTest {
             }
 
             if (!expected && logEvent.getLevel().isGreaterOrEqual(Level.ERROR)) {
-                result.addFailure(this,
-                    new AssertionFailedError(String.format("Unexpected %s logged%s: %s", //
-                        logEvent.getLevel(), //
-                        nodeNameWithID == null ? "" : String.format(" by node \"%s\"", nodeNameWithID), //
-                        message)));
+                result.addFailure(this, unexpectedLogMessage(logEvent, nodeNameWithID));
             }
         }
 
         for (Map.Entry<Level, Map<String, Pattern>> e : leftOverMap.entrySet()) {
             for (Map.Entry<String, Pattern> p : e.getValue().entrySet()) {
-                result.addFailure(this, new AssertionFailedError("Expected " + e.getKey() + " log message '"
-                        + TestflowConfiguration.patternToString(p.getValue()) + "' not found"));
+                result.addFailure(this, expectedLogMessageNotFound(e.getKey(), p.getValue()));
             }
         }
+    }
+
+    private static Map<Level, Map<String, Pattern>> leftOverMap(final TestflowConfiguration flowConfiguration) {
+        Map<Level, Map<String, Pattern>> leftOverMap = new HashMap<>();
+        Map<String, Pattern> m = new HashMap<>();
+        for (Pattern p : flowConfiguration.getRequiredErrors()) {
+            if (!p.pattern().startsWith("\\QCODING PROBLEM") || KNIMEConstants.ASSERTIONS_ENABLED
+                || EclipseUtil.isRunFromSDK()) {
+                // don't add expected CODING PROBLEMs if they are not reported
+                m.put(p.toString(), p);
+            }
+        }
+        leftOverMap.put(Level.ERROR, m);
+
+        final Map<Level, Supplier<Collection<Pattern>>> requireds =
+            Map.of(Level.WARN, flowConfiguration::getRequiredWarnings, //
+                Level.INFO, flowConfiguration::getRequiredInfos, //
+                Level.DEBUG, flowConfiguration::getRequiredDebugs);
+
+        for (final var required : requireds.entrySet()) {
+            m = new HashMap<>();
+            for (Pattern p : required.getValue().get()) {
+                m.put(p.toString(), p);
+            }
+            leftOverMap.put(required.getKey(), m);
+        }
+        return leftOverMap;
+    }
+
+    /**
+     * @param logEvent that was not expected
+     * @param nodeNameWithID of the owner node
+     */
+    private static AssertionFailedError unexpectedLogMessage(final LoggingEvent logEvent, final String nodeNameWithID) {
+        final var m = "Unexpected message logged%s: [level = %s, message = \"%s\"]".formatted( //
+            Optional.ofNullable(nodeNameWithID).map(" by node \"%s\""::formatted).orElse(""), //
+            logEvent.getLevel(), //
+            logEvent.getRenderedMessage().trim());
+        return new AssertionFailedError(m);
+    }
+
+    /**
+     * @param level of the expected message
+     * @param pattern of expected messages
+     * @return error that explains that the expected message was not logged
+     */
+    private static AssertionFailedError expectedLogMessageNotFound(final Level level, final Pattern pattern) {
+        final var message = "Expected log message not found [level = %s, pattern = \"%s\"]".formatted( //
+            level, //
+            TestflowConfiguration.patternToString(pattern));
+        return new AssertionFailedError(message);
     }
 }

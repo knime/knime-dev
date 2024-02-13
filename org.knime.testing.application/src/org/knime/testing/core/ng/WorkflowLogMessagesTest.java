@@ -66,7 +66,7 @@ import org.apache.log4j.spi.LoggingEvent;
 import org.apache.log4j.varia.LevelRangeFilter;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.knime.core.node.KNIMEConstants;
-import org.knime.core.node.NodeLogger.KNIMELogMessage;
+import org.knime.core.node.NodeLogger;
 import org.knime.core.node.workflow.NodeContainer;
 import org.knime.core.node.workflow.NodeID;
 import org.knime.core.node.workflow.SubNodeContainer;
@@ -199,11 +199,13 @@ class WorkflowLogMessagesTest extends WorkflowTest {
         for (LoggingEvent logEvent : m_logEvents) {
             final Object o = logEvent.getMessage();
             final String nodeNameWithID;
-            if (o instanceof KNIMELogMessage message) {
-                if (ignoredIDs.contains(message.getNodeID())) {
+            final var nodeContextOpt = NodeLogger.getNodeContext(o);
+            if (nodeContextOpt.isPresent()) {
+                final var nodeContext = nodeContextOpt.get();
+                if (ignoredIDs.contains(nodeContext.nodeID())) {
                     continue;
                 }
-                nodeNameWithID = "%s (%s)".formatted(message.getNodeName(), message.getNodeID());
+                nodeNameWithID = "%s (%s)".formatted(nodeContext.nodeName(), nodeContext.nodeID());
             } else {
                 nodeNameWithID = null;
             }

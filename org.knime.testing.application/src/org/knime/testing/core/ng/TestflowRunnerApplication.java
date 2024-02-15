@@ -75,7 +75,6 @@ import org.knime.core.node.util.ViewUtils;
 import org.knime.core.node.workflow.BatchExecutor;
 import org.knime.core.node.workflow.FlowVariable;
 import org.knime.core.util.FileUtil;
-import org.knime.core.util.IEarlyStartup;
 import org.knime.product.profiles.ProfileManager;
 import org.knime.testing.core.TestrunConfiguration;
 import org.knime.workbench.core.util.ImageRepository;
@@ -130,7 +129,6 @@ public class TestflowRunnerApplication implements IApplication {
         // we need a display, initialized as early as possible, otherwise closing JFrames may result
         // in X errors (BadWindow) under Linux
         PlatformUI.createDisplay();
-        IEarlyStartup.executeEarlyStartup(true);
 
         ViewUtils.setLookAndFeel();
 

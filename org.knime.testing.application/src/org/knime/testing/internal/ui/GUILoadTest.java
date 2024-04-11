@@ -65,7 +65,6 @@ import org.knime.core.node.InvalidSettingsException;
 import org.knime.core.node.NodeLogger;
 import org.knime.core.node.workflow.NativeNodeContainer;
 import org.knime.core.node.workflow.UnsupportedWorkflowVersionException;
-import org.knime.core.node.workflow.WorkflowLoadHelper;
 import org.knime.core.node.workflow.WorkflowManager;
 import org.knime.core.node.workflow.WorkflowPersistor;
 import org.knime.core.node.workflow.WorkflowPersistor.LoadResultEntry.LoadResultEntryType;
@@ -79,6 +78,7 @@ import org.knime.testing.core.TestrunConfiguration;
 import org.knime.testing.core.ng.WorkflowLoadTest;
 import org.knime.testing.core.ng.WorkflowTest;
 import org.knime.testing.core.ng.WorkflowTestContext;
+import org.knime.testing.util.TryAlwaysWorkflowLoadHelper;
 import org.knime.workbench.editor2.WorkflowManagerInput;
 import org.knime.workbench.ui.navigator.ProjectWorkflowMap;
 
@@ -161,7 +161,7 @@ class GUILoadTest extends WorkflowTest {
                 .build();
 
         final var loadRes = WorkflowManager.loadProject(workflowDir, new ExecutionMonitor(),
-            new WorkflowLoadHelper(ctx));
+            new TryAlwaysWorkflowLoadHelper(ctx));
         if ((loadRes.getType() == LoadResultEntryType.Error)
             || ((loadRes.getType() == LoadResultEntryType.DataLoadError) && loadRes.getGUIMustReportDataLoadErrors())) {
             result.addFailure(test, new AssertionFailedError(loadRes.getFilteredError("", LoadResultEntryType.Error)));

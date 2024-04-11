@@ -68,6 +68,7 @@ import org.knime.core.util.LockFailedException;
 import org.knime.core.util.Version;
 import org.knime.core.webui.node.view.NodeViewManager;
 import org.knime.testing.core.TestrunConfiguration;
+import org.knime.testing.util.TryAlwaysWorkflowLoadHelper;
 
 import junit.framework.AssertionFailedError;
 import junit.framework.TestResult;
@@ -80,8 +81,6 @@ import junit.framework.TestResult;
 public class WorkflowLoadTest extends WorkflowTest {
 
     private static final NodeLogger LOGGER = NodeLogger.getLogger(WorkflowLoadTest.class);
-
-    private static final Version CURRENT_VERSION = new Version(KNIMEConstants.VERSION);
 
     private final File m_workflowDir;
 
@@ -149,28 +148,7 @@ public class WorkflowLoadTest extends WorkflowTest {
                 .withLocalLocation()
                 .build();
 
-        WorkflowLoadHelper loadHelper = new WorkflowLoadHelper(ctx) {
-            @Override
-            public UnknownKNIMEVersionLoadPolicy getUnknownKNIMEVersionLoadPolicy(
-                final LoadVersion workflowKNIMEVersion, final Version createdByKNIMEVersion,
-                final boolean isNightlyBuild) {
-
-                if (createdByKNIMEVersion == null) {
-                    // unknown version, (likely very old)
-                    return UnknownKNIMEVersionLoadPolicy.Try;
-                } else if (CURRENT_VERSION.isSameOrNewer(createdByKNIMEVersion)) {
-                    // workflow created by an older AP version than the current one
-                    return UnknownKNIMEVersionLoadPolicy.Try;
-                } else if ((createdByKNIMEVersion.getMajor() == CURRENT_VERSION.getMajor()) &&
-                        (createdByKNIMEVersion.getMinor() == CURRENT_VERSION.getMinor())) {
-                    // workflow created by same minor release line (e.g. 4.4.1 vs. 4.4.0)
-                    return UnknownKNIMEVersionLoadPolicy.Try;
-                }
-
-                // workflow created by newer minor (or major) version
-                return UnknownKNIMEVersionLoadPolicy.Abort;
-            }
-        };
+        WorkflowLoadHelper loadHelper = new TryAlwaysWorkflowLoadHelper(ctx);
 
         WorkflowLoadResult loadRes = WorkflowManager.loadProject(workflowDir, new ExecutionMonitor(), loadHelper);
         if ((loadRes.getType() == LoadResultEntryType.Error)

@@ -182,7 +182,7 @@ final class CredentialsValidateNodeConfiguration {
                 getPassword(), iCredentials.getPassword() != null ? "something different" : "null");
         } else {
             CheckUtils.checkSetting(iCredentials.getPassword() == null,
-                    "Password expected to be not set (null) but is %s", iCredentials.getPassword());
+                    "Password expected to be not set (null) but is not null");
         }
         if (isSecondFactorExpectedToBeSet()) {
             CheckUtils.checkSetting(

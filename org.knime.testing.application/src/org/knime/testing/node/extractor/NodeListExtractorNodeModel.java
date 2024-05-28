@@ -147,8 +147,8 @@ public class NodeListExtractorNodeModel extends WebUINodeModel<NodeListExtractor
                 ((StringWriteValue)rowWrite.getWriteValue(col++)).setStringValue(singleNode.getPlugInSymbolicName());
                 ((BooleanWriteValue)rowWrite.getWriteValue(col++)).setBooleanValue(singleNode.isDeprecated());
                 ((BooleanWriteValue)rowWrite.getWriteValue(col++)).setBooleanValue(singleNode.isHidden());
-                if (s.m_includeNodeFactory) {
-                    ((StringWriteValue)rowWrite.getWriteValue(col++)).setStringValue(singleNode.getFactoryClassname());
+                if (s.m_includeNodeFactoryID) {
+                    ((StringWriteValue)rowWrite.getWriteValue(col++)).setStringValue(singleNode.getFactoryId());
                 }
                 if (s.m_includeNodeDescription) {
                     DataCell cell;
@@ -156,7 +156,7 @@ public class NodeListExtractorNodeModel extends WebUINodeModel<NodeListExtractor
                         cell = toDocument(f.getXMLDescription());
                     } catch (Exception e) {
                         final var msg = String.format("Unable to extract node description for %s: %s",
-                            singleNode.getFactoryClassname(), e.getMessage());
+                            singleNode.getFactoryId(), e.getMessage());
                         messageBuilder.addTextIssue(msg);
                         getLogger().debug(msg, e);
                         cell = null;
@@ -196,8 +196,8 @@ public class NodeListExtractorNodeModel extends WebUINodeModel<NodeListExtractor
             .addColumns(new DataColumnSpecCreator("Plug-In", StringCell.TYPE).createSpec()) //
             .addColumns(new DataColumnSpecCreator("Deprecated", BooleanCell.TYPE).createSpec()) //
             .addColumns(new DataColumnSpecCreator("Hidden", BooleanCell.TYPE).createSpec());
-        if (settings.m_includeNodeFactory) {
-            creator.addColumns(new DataColumnSpecCreator("Node Factory", StringCell.TYPE).createSpec());
+        if (settings.m_includeNodeFactoryID) {
+            creator.addColumns(new DataColumnSpecCreator("Node Factory ID", StringCell.TYPE).createSpec());
         }
         if (settings.m_includeNodeDescription) {
             creator.addColumns(new DataColumnSpecCreator("Node Description", XMLCell.TYPE).createSpec());
@@ -229,7 +229,7 @@ public class NodeListExtractorNodeModel extends WebUINodeModel<NodeListExtractor
         String getPlugInSymbolicName();
         boolean isDeprecated();
         boolean isHidden();
-        String getFactoryClassname();
+        String getFactoryId();
 
         NodeFactory<? extends NodeModel> getOrCreateFactory()
             throws InvalidNodeFactoryExtensionException, InvalidSettingsException;
@@ -275,8 +275,8 @@ public class NodeListExtractorNodeModel extends WebUINodeModel<NodeListExtractor
         }
 
         @Override
-        public String getFactoryClassname() {
-            return m_nodeFactoryExtension.getFactoryClassName();
+        public String getFactoryId() {
+            return m_nodeFactory.getFactoryId();
         }
 
         @Override
@@ -335,8 +335,8 @@ public class NodeListExtractorNodeModel extends WebUINodeModel<NodeListExtractor
         }
 
         @Override
-        public String getFactoryClassname() {
-            return m_nodeFactory.getClass().getName() + "#" + m_id;
+        public String getFactoryId() {
+            return m_nodeFactory.getFactoryId();
         }
 
         @Override

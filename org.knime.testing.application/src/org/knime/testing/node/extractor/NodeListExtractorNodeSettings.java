@@ -58,10 +58,10 @@ import org.knime.core.webui.node.dialog.defaultdialog.widget.Widget;
  */
 public final class NodeListExtractorNodeSettings implements DefaultNodeSettings {
 
-    @Persist(configKey = "includeNodeFactory")
-    @Widget(title = "NodeFactory Class",
-    description = "The node factory class name (internally used identifier)")
-    boolean m_includeNodeFactory;
+    @Persist(configKey = "includeNodeFactoryID")
+    @Widget(title = "NodeFactory ID",
+    description = "The node factory ID")
+    boolean m_includeNodeFactoryID;
 
     @Persist(configKey = "includeNodeDescription")
     @Widget(title = "Node Description",

@@ -82,7 +82,6 @@ import org.knime.workbench.core.util.ImageRepository.SharedImages;
 import org.knime.workbench.repository.RepositoryManager;
 import org.osgi.framework.FrameworkUtil;
 
-import com.knime.enterprise.client.filesystem.util.WorkflowDownloadApplication;
 import com.knime.enterprise.server.rest.api.DownloadApplication;
 import com.knime.enterprise.utility.PermissionException;
 
@@ -170,12 +169,7 @@ public class TestflowRunnerApplication implements IApplication {
         }
 
         if (m_serverUri != null) {
-
-            if(m_serverPath ==null) {
-                m_rootDirs.add(downloadWorkflowsLegacy());
-            } else {
-                m_rootDirs.add(downloadWorkflows());
-            }
+            m_rootDirs.add(downloadWorkflows());
         }
 
         // this is to load the repository plug-in
@@ -587,19 +581,6 @@ public class TestflowRunnerApplication implements IApplication {
     @Override
     public void stop() {
         m_stopped = true;
-    }
-
-    private File downloadWorkflowsLegacy() throws IOException, CoreException, URISyntaxException {
-        File tempDir = FileUtil.createTempDir("KNIME Testflow");
-        try {
-            WorkflowDownloadApplication.downloadWorkflows(m_serverUri, tempDir);
-            return tempDir;
-        } catch (NoClassDefFoundError err) {
-            Status status =
-                new Status(IStatus.ERROR, FrameworkUtil.getBundle(getClass()).getSymbolicName(),
-                    "Workflow download from server not available, it seems no server client is installed", err);
-            throw new CoreException(status);
-        }
     }
 
     private File downloadWorkflows() throws IOException, CoreException, URISyntaxException, PermissionException,

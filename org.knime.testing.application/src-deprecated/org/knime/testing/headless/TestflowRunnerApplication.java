@@ -82,7 +82,6 @@ import org.knime.testing.core.SimpleWorkflowTest;
 import org.knime.testing.core.WorkflowTest;
 import org.knime.workbench.repository.RepositoryManager;
 
-import com.knime.enterprise.client.filesystem.util.WorkflowDownloadApplication;
 
 /**
  * This application executes the testflows and writes the results into an XML
@@ -166,10 +165,6 @@ public class TestflowRunnerApplication implements IApplication {
             }
         }
 
-
-        if (m_serverUri != null) {
-            m_rootDirs.add(downloadWorkflows());
-        }
 
         KnimeTestRegistry registry = new KnimeTestRegistry(m_testNamePattern, m_rootDirs, null, m_testDialogs,
                 m_testViews, m_timeout);
@@ -574,10 +569,4 @@ public class TestflowRunnerApplication implements IApplication {
         return runner.getRetCode();
     }
 
-
-    private File downloadWorkflows() throws IOException, CoreException, URISyntaxException {
-        File tempDir = FileUtil.createTempDir("KNIME Testflow");
-        WorkflowDownloadApplication.downloadWorkflows(m_serverUri, tempDir);
-        return tempDir;
-    }
 }

@@ -122,7 +122,7 @@ public class ReportToTableNodeModel extends NodeModel {
     }
 
     private static DataCell toXMLCell(final String string) {
-        final var document = new W3CDom().fromJsoup(Jsoup.parse(string));
+        final var document = new W3CDom().namespaceAware(false).fromJsoup(Jsoup.parse(string));
         /**
          * Necessary to be able to test xpath occurrences within TableView Reports. Without this, any xPath leads to the
          * error "TransformerException: The context can not be null when the operation is context-dependent."

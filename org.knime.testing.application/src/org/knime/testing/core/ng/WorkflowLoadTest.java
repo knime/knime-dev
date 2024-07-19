@@ -49,12 +49,14 @@ package org.knime.testing.core.ng;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.knime.core.node.CanceledExecutionException;
 import org.knime.core.node.ExecutionMonitor;
 import org.knime.core.node.InvalidSettingsException;
-import org.knime.core.node.KNIMEConstants;
 import org.knime.core.node.NodeLogger;
 import org.knime.core.node.workflow.NativeNodeContainer;
 import org.knime.core.node.workflow.UnsupportedWorkflowVersionException;
@@ -62,10 +64,10 @@ import org.knime.core.node.workflow.WorkflowLoadHelper;
 import org.knime.core.node.workflow.WorkflowManager;
 import org.knime.core.node.workflow.WorkflowPersistor.LoadResultEntry.LoadResultEntryType;
 import org.knime.core.node.workflow.WorkflowPersistor.WorkflowLoadResult;
+import org.knime.core.node.workflow.contextv2.AnalyticsPlatformExecutorInfo;
 import org.knime.core.node.workflow.contextv2.WorkflowContextV2;
 import org.knime.core.util.LoadVersion;
 import org.knime.core.util.LockFailedException;
-import org.knime.core.util.Version;
 import org.knime.core.webui.node.view.NodeViewManager;
 import org.knime.testing.core.TestrunConfiguration;
 import org.knime.testing.util.TryAlwaysWorkflowLoadHelper;
@@ -99,7 +101,8 @@ public class WorkflowLoadTest extends WorkflowTest {
      * @param context the test context, must not be <code>null</code>
      */
     WorkflowLoadTest(final File workflowDir, final File testcaseRoot, final String workflowName,
-        final IProgressMonitor monitor, final TestrunConfiguration runConfiguration, final WorkflowTestContext context) {
+        final IProgressMonitor monitor, final TestrunConfiguration runConfiguration,
+        final WorkflowTestContext context) {
         super(workflowName, monitor, context);
         m_workflowDir = workflowDir;
         m_testcaseRoot = testcaseRoot;
@@ -113,7 +116,7 @@ public class WorkflowLoadTest extends WorkflowTest {
         try {
             m_context.setWorkflowManager(loadWorkflow(this, result, m_workflowDir, m_testcaseRoot, m_runConfiguration));
             checkLoadVersion(this, result);
-        } catch (Throwable t) {
+        } catch (Throwable t) { // NOSONAR
             result.addError(this, t);
         } finally {
             result.endTest(this);
@@ -129,24 +132,11 @@ public class WorkflowLoadTest extends WorkflowTest {
     }
 
     static WorkflowManager loadWorkflow(final WorkflowTest test, final TestResult result, final File workflowDir,
-        final File testcaseRoot, final TestrunConfiguration runConfig) throws IOException, InvalidSettingsException,
-        CanceledExecutionException, UnsupportedWorkflowVersionException, LockFailedException {
-        final var ctx = WorkflowContextV2.builder()
-                .withAnalyticsPlatformExecutor(exec -> {
-                    final var exec2 = exec
-                            .withCurrentUserAsUserId()
-                            .withLocalWorkflowPath(workflowDir.getAbsoluteFile().toPath());
-                    try {
-                        // the mountpoint URI is optional in the wf context, so we are OK if an exception occurs here
-                        exec2.withMountpoint("LOCAL", testcaseRoot.getAbsoluteFile().toPath());
-                    } catch (IllegalArgumentException e) { // NOSONAR
-                        LOGGER.warn(String.format("Could not set mountpoint '%s' for workflow located at '%s'.",
-                            testcaseRoot, workflowDir), e);
-                    }
-                    return exec2;
-                })
-                .withLocalLocation()
-                .build();
+            final File testcaseRoot, final TestrunConfiguration runConfig) throws IOException, InvalidSettingsException,
+            CanceledExecutionException, UnsupportedWorkflowVersionException, LockFailedException {
+
+        final var ctx = createWorkflowContext(testcaseRoot.getAbsoluteFile().toPath(),
+            workflowDir.getAbsoluteFile().toPath(), test.getWorkflowName());
 
         WorkflowLoadHelper loadHelper = new TryAlwaysWorkflowLoadHelper(ctx);
 
@@ -172,6 +162,35 @@ public class WorkflowLoadTest extends WorkflowTest {
 
         wfm.addWorkflowVariables(true, runConfig.getFlowVariables());
         return wfm;
+    }
+
+    private static WorkflowContextV2 createWorkflowContext(final Path rootPath, final Path wfPath,
+            final String workflowName) {
+        final var execBuilder = AnalyticsPlatformExecutorInfo.builder() //
+                .withCurrentUserAsUserId() //
+                .withLocalWorkflowPath(wfPath);
+        try {
+            if (wfPath.startsWith(rootPath)) {
+                // regular workspace
+                execBuilder.withMountpoint("LOCAL", rootPath);
+            } else {
+                // When running testflows from ZIPs, the workflow is extracted into a temporary
+                // directory different from `testcaseRoot`, each ZIP defines a workspace
+                final var pathInRoot = Path.of(workflowName);
+                if (wfPath.endsWith(pathInRoot)) {
+                    // `Path#subpath(...)` removes the drive letter on Windows, no idea why
+                    final var zipRootPath = wfPath.resolve(IntStream.range(0, pathInRoot.getNameCount()) //
+                        .mapToObj(i -> "..") //
+                        .collect(Collectors.joining("/"))).normalize();
+                    execBuilder.withMountpoint("LOCAL", zipRootPath);
+                }
+            }
+        } catch (IllegalArgumentException e) { // NOSONAR
+            LOGGER.warn(String.format("Could not set mountpoint '%s' for workflow located at '%s'.",
+                rootPath, wfPath), e);
+        }
+
+        return WorkflowContextV2.builder().withExecutor(execBuilder.build()).withLocalLocation().build();
     }
 
     /**

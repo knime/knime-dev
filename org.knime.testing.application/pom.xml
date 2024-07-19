@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd"
+  xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.knime</groupId>
+    <artifactId>knime-dev</artifactId>
+    <version>${revision}${changelist}</version>
+    <relativePath>../pom.xml</relativePath>
+  </parent>
+
+  <artifactId>org.knime.testing.application</artifactId>
+  <packaging>eclipse-plugin</packaging>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.eclipse.tycho</groupId>
+        <artifactId>tycho-surefire-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>execute-integration-tests</id>
+            <goals>
+              <goal>plugin-test</goal>
+              <goal>verify</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <argLine>
+            ${failsafeArgLine}
+            --add-opens=java.base/sun.net.www.protocol.http=ALL-UNNAMED
+            --add-opens=java.base/java.util.regex=ALL-UNNAMED
+            --add-opens=java.base/java.lang=ALL-UNNAMED
+            --add-opens=java.base/java.lang.invoke=ALL-UNNAMED
+            -Djakarta.ws.rs.ext.RuntimeDelegate=org.apache.cxf.jaxrs.impl.RuntimeDelegateImpl
+            -Djakarta.ws.rs.client.ClientBuilder=org.apache.cxf.jaxrs.client.spec.ClientBuilderImpl
+            -Dorg.apache.cxf.bus.factory=org.knime.cxf.core.fragment.KNIMECXFBusFactory
+            -Dorg.apache.cxf.transport.http.forceURLConnection=true
+          </argLine>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.eclipse.tycho</groupId>
+        <artifactId>target-platform-configuration</artifactId>
+        <configuration>
+          <dependency-resolution>
+            <extraRequirements>
+              <requirement>
+                <!-- needed for the tests in `org.knime.testing.application` -->
+                <type>eclipse-feature</type>
+                <id>org.knime.features.buildworkflows</id>
+                <versionRange>0.0.0</versionRange>
+              </requirement>
+            </extraRequirements>
+          </dependency-resolution>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>

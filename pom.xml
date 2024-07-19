@@ -40,11 +40,11 @@
 			<layout>p2</layout>
 			<url>${knime.base.p2}</url>
 		</repository>
-        <repository>
-            <id>p2-knime-filehandling-core</id>
-            <layout>p2</layout>
-            <url>${knime.filehandling.core.p2}</url>
-        </repository>
+		<repository>
+			<id>p2-knime-filehandling-core</id>
+			<layout>p2</layout>
+			<url>${knime.filehandling.core.p2}</url>
+		</repository>
 		<repository>
 			<id>p2-knime-product</id>
 			<layout>p2</layout>
@@ -99,6 +99,41 @@
 			<id>p2-knime-gateway</id>
 			<layout>p2</layout>
 			<url>${knime.gateway.p2}</url>
+		</repository>
+		<repository>
+			<id>p2-knime-buildworkflows</id>
+			<layout>p2</layout>
+			<url>${knime.buildworkflows.p2}</url>
+		</repository>
+		<repository>
+			<id>p2-knime-filehandling</id>
+			<layout>p2</layout>
+			<url>${knime.filehandling.p2}</url>
+		</repository>
+		<repository>
+			<id>p2-knime-kerberos</id>
+			<layout>p2</layout>
+			<url>${knime.kerberos.p2}</url>
+		</repository>
+		<repository>
+			<id>p2-knime-js-base</id>
+			<layout>p2</layout>
+			<url>${knime.js.base.p2}</url>
+		</repository>
+		<repository>
+			<id>p2-knime-cef</id>
+			<layout>p2</layout>
+			<url>${knime.cef.p2}</url>
+		</repository>
+		<repository>
+			<id>p2-knime-productivity-oss</id>
+			<layout>p2</layout>
+			<url>${knime.productivity.oss.p2}</url>
+		</repository>
+		<repository>
+			<id>p2-knime-reporting</id>
+			<layout>p2</layout>
+			<url>${knime.reporting.p2}</url>
 		</repository>
 	</repositories>
 </project>

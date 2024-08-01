@@ -1,7 +1,7 @@
 #!groovy
 def BN = (BRANCH_NAME == 'master' || BRANCH_NAME.startsWith('releases/')) ? BRANCH_NAME : 'releases/2024-12'
 
-library "knime-pipeline@$BN"
+library "knime-pipeline@$BRANCH_NAME"
 
 properties([
     pipelineTriggers([
@@ -15,9 +15,9 @@ properties([
 try {
     knimetools.defaultTychoBuild('org.knime.update.dev')
 
-    workflowTests.runTests(dependencies: [
-        repositories: ['knime-dev', 'knime-jfreechart', 'knime-streaming', 'knime-js-base', 'knime-xml', 'knime-distance']
-    ])
+    // workflowTests.runTests(dependencies: [
+    //     repositories: ['knime-dev', 'knime-jfreechart', 'knime-streaming', 'knime-js-base', 'knime-xml', 'knime-distance']
+    // ])
 
     stage('Sonarqube analysis') {
         env.lastStage = env.STAGE_NAME

@@ -50,7 +50,6 @@ package org.knime.testing.node.xmldiffer;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -62,7 +61,6 @@ import org.knime.core.data.DataCell;
 import org.knime.core.data.DataColumnSpec;
 import org.knime.core.data.DataColumnSpecCreator;
 import org.knime.core.data.DataRow;
-import org.knime.core.data.DataTableSpec;
 import org.knime.core.data.DataType;
 import org.knime.core.data.collection.CollectionCellFactory;
 import org.knime.core.data.collection.ListCell;
@@ -72,12 +70,11 @@ import org.knime.core.data.v2.RowCursor;
 import org.knime.core.data.xml.XMLCell;
 import org.knime.core.data.xml.XMLValue;
 import org.knime.core.node.KNIMEException;
-import org.knime.core.node.message.Message;
 import org.knime.core.node.message.MessageBuilder;
+import org.knime.testing.node.xmldiffer.XmlDifferNodeSettings.ColumnPadding;
 import org.w3c.dom.Document;
 import org.xmlunit.builder.DiffBuilder;
 import org.xmlunit.diff.ComparisonResult;
-import org.xmlunit.diff.Diff;
 import org.xmlunit.diff.Difference;
 
 /**
@@ -157,33 +154,44 @@ final class XmlDifferCellFactory extends AbstractCellFactory {
 
     private final int m_controlColumnIndex;
 
+    private final DiffColumn[] m_selectedDiffColumns;
+
+    private final boolean m_ignoreSmallDifferences;
+
+    private final boolean m_failFast;
+
+    private final boolean m_addSourceColumns;
+
+    private final ColumnPadding m_columnPadding;
+
     private final BiFunction<Document, Document, DiffBuilder> m_diffBuilder;
 
-    private final XmlDifferNodeSettings m_settings;
+    private final MessageBuilder m_messageBuilder;
 
     /** Cursor over input table that contains the baseline XML documents to compare against. */
-    private RowCursor m_controlData;
+    private final RowCursor m_controlData;
 
     /** The previous document used as a baseline or {@code null}. */
     private DataCell m_lastControlDocument;
 
-    private MessageBuilder m_messageBuilder;
-
-    private long m_rowIndex = 0L;
-
-    XmlDifferCellFactory(final XmlDifferNodeSettings settings, final DataTableSpec[] tableSpecs,
-        final RowCursor controlData, final BiFunction<Document, Document, DiffBuilder> diffBuilder,
-        final MessageBuilder messageBuilder) throws IllegalArgumentException {
+    XmlDifferCellFactory(final XmlDifferNodeSettings settings,
+        final int testColumnIndex,
+        final RowCursor controlData, final int controlColumnIndex,
+        final BiFunction<Document, Document, DiffBuilder> diffBuilder, final MessageBuilder messageBuilder)
+        throws IllegalArgumentException {
         super(newColumns(settings));
 
         m_controlData = controlData;
-        m_testColumnIndex =
-            tableSpecs[XmlDifferNodeSettings.TEST_TABLE_PORT_INDEX].findColumnIndex(settings.m_testColumn);
-        m_controlColumnIndex =
-            tableSpecs[XmlDifferNodeSettings.CONTROL_TABLE_PORT_INDEX].findColumnIndex(settings.m_controlColumn);
+        m_testColumnIndex = testColumnIndex;
+        m_controlColumnIndex = controlColumnIndex;
         m_diffBuilder = diffBuilder;
-        m_settings = settings;
         m_messageBuilder = messageBuilder;
+
+        m_selectedDiffColumns = DiffColumn.filteredWith(settings);
+        m_ignoreSmallDifferences = settings.m_ignoreSmallDifferences;
+        m_failFast = settings.m_failExecution;
+        m_addSourceColumns = settings.m_addSourceColumns;
+        m_columnPadding = settings.m_columnPadding;
     }
 
     private static DataColumnSpec[] newColumns(final XmlDifferNodeSettings settings) {
@@ -197,104 +205,106 @@ final class XmlDifferCellFactory extends AbstractCellFactory {
     }
 
     /**
-     * Compute a single diff between two documents.
+     * Compute a complete diff between two documents.
      *
      * @param settings that specify what counts as difference
      * @param test document to compare
      * @param control baseline document
-     * @return
+     * @return list of difference results between test and control documents
      */
-    private List<List<String>> diff(final XmlDifferNodeSettings settings, final Document test, final Document control) {
-        final var selectedDiffColumns = DiffColumn.filteredWith(settings);
-        final var diffColumnResults = IntStream.range(0, selectedDiffColumns.length) //
+    private List<List<String>> diff(final long rowIndex, final Document test, final Document control) {
+        final var diffColumnResults = IntStream.range(0, m_selectedDiffColumns.length) //
             .mapToObj(i -> (List<String>)new ArrayList<String>()) //
             .toList();
 
-        Diff myDiff = m_diffBuilder.apply(test, control).build();
-        Iterator<Difference> diffIter = myDiff.getDifferences().iterator();
         // each difference contributes to all selected output columns
-        while (diffIter.hasNext()) {
-            Difference difference = diffIter.next();
+        for (final var difference : m_diffBuilder.apply(test, control).build().getDifferences()) {
 
-            if (settings.m_ignoreSmallDifferences && difference.getResult() == ComparisonResult.SIMILAR) {
+            if (m_ignoreSmallDifferences && difference.getResult() == ComparisonResult.SIMILAR) {
                 continue;
             }
 
-            if (settings.m_failExecution) {
+            if (m_failFast) {
                 final var message = m_messageBuilder//
                     .withSummary("Test document does not match control document.")
-                    .addRowIssue(XmlDifferNodeSettings.TEST_TABLE_PORT_INDEX, m_testColumnIndex, m_rowIndex,
+                    .addRowIssue(XmlDifferNodeSettings.TEST_TABLE_PORT_INDEX, m_testColumnIndex, rowIndex,
                         difference.toString())
                     .addResolutions("Change node settings to not fail on detected differences.").build().orElseThrow();
                 throw KNIMEException.of(message).toUnchecked();
             }
 
-            for (var i = 0; i < selectedDiffColumns.length; i++) {
-                final var value = selectedDiffColumns[i].m_extractor.apply(difference);
+            for (var i = 0; i < m_selectedDiffColumns.length; i++) {
+                final var value = m_selectedDiffColumns[i].m_extractor.apply(difference);
                 diffColumnResults.get(i).add(value != null ? value.toString() : null);
             }
         }
         return diffColumnResults;
     }
 
-    private DataCell nextControlDocumentCell() {
+    private DataCell nextControlDocumentCell(final long rowIndex) {
         if (m_controlData.canForward()) {
-            final var next = m_controlData.forward().getAsDataCell(m_controlColumnIndex);
-            m_lastControlDocument = next;
-            return next;
-        } else {
-            return switch (m_settings.m_columnPadding) {
-                case FAIL -> failWithExhaustedControlColumn();
-                case MISSING -> DataType.getMissingCell();
-                case REPEAT_LAST -> m_lastControlDocument;
-            };
+            return (m_lastControlDocument = m_controlData.forward().getAsDataCell(m_controlColumnIndex));
         }
+        return switch (m_columnPadding) {
+            case FAIL -> failWithExhaustedControlColumn(rowIndex);
+            case MISSING -> DataType.getMissingCell();
+            case REPEAT_LAST -> m_lastControlDocument;
+        };
     }
 
     @Override
     public DataCell[] getCells(final DataRow row, final long rowIndex) {
         final var testCell = row.getCell(m_testColumnIndex);
-        final var controlCell = nextControlDocumentCell();
+        final var controlCell = nextControlDocumentCell(rowIndex);
 
         if (testCell == null || testCell.isMissing() || controlCell == null || controlCell.isMissing()) {
-            return createEmptyCells(m_settings);
-        } else if (testCell instanceof XMLValue test && controlCell instanceof XMLValue control) {
-            try (var testDoc = test.getDocumentSupplier(); var controlDoc = control.getDocumentSupplier()) {
-                final var differences = diff(m_settings, (Document)testDoc.get(), (Document)controlDoc.get());
-                m_rowIndex++;
-                final var sourceCells =
-                    m_settings.m_addSourceColumns ? Stream.of(testCell, controlCell) : Stream.empty();
-                final var diffCells = differences.stream() //
-                    .map(XmlDifferCellFactory::stringsToStringCells) //
-                    .map(CollectionCellFactory::createListCell);
-                return Stream.concat(sourceCells, diffCells).toArray(DataCell[]::new);
-            }
+            return createEmptyCells();
         }
-        throw KNIMEException.of(Message.fromRowIssue("Found a non-xml cell, aborting.", 0, rowIndex, m_testColumnIndex,
-            "This is most likely an implementation error.")).toUnchecked();
+        final var implErrorResolution = "This is most likely an implementation error. To avoid this error, "
+                + "make sure the selected column contains only XML documents.";
+        if (!(testCell instanceof XMLValue test)) {
+            throw m_messageBuilder //
+                .withSummary("Test document column contains non-XML cell, aborting.") //
+                .addRowIssue(m_testColumnIndex, rowIndex, "The cell is not an XML document cell.") //
+                .addResolutions(implErrorResolution).build().orElseThrow() //
+                .toKNIMEException().toUnchecked();
+        }
+        if (!(controlCell instanceof XMLValue control)) {
+            throw m_messageBuilder //
+                .withSummary("Control document column contains non-XML cell, aborting.") //
+                .addRowIssue(m_testColumnIndex, rowIndex, "The cell is not an XML document cell.") //
+                .addResolutions(implErrorResolution).build().orElseThrow() //
+                .toKNIMEException().toUnchecked();
+        }
+        // at this point we are sure there are two non-missing XML cells
+        try (var testDoc = test.getDocumentSupplier(); var controlDoc = control.getDocumentSupplier()) {
+            final var differences = diff(rowIndex, (Document)testDoc.get(), (Document)controlDoc.get());
+            final var sourceCells = m_addSourceColumns ? Stream.of(testCell, controlCell) : Stream.empty();
+            final var diffCells = differences.stream() //
+                .map(XmlDifferCellFactory::stringsToStringCells) //
+                .map(CollectionCellFactory::createListCell);
+            return Stream.concat(sourceCells, diffCells).toArray(DataCell[]::new);
+        }
+    }
+
+    private DataCell[] createEmptyCells() {
+        final var numColumns = (m_addSourceColumns ? 2 : 0 ) + m_selectedDiffColumns.length;
+        final var result = new DataCell[numColumns];
+        Arrays.fill(result, DataType.getMissingCell());
+        return result;
     }
 
     private static List<StringCell> stringsToStringCells(final List<String> values) {
         return values.stream().map(s -> s == null ? "<NULL>" : s).map(StringCell::new).toList();
     }
 
-    private static DataCell[] createEmptyCells(final XmlDifferNodeSettings settings) {
-        final var result = new DataCell[numCells(settings)];
-        Arrays.fill(result, DataType.getMissingCell());
-        return result;
-    }
-
-    /** @return number of cells produced by {@link #getCells(DataRow)} */
-    private static int numCells(final XmlDifferNodeSettings settings) {
-        final var numDiffCells = DiffColumn.filteredWith(settings).length;
-        return settings.m_addSourceColumns ? numDiffCells + 2 : numDiffCells;
-    }
-
-    /** Use message builder to create a message and throw it as an unchecked exception. */
-    private DataCell failWithExhaustedControlColumn() {
+    /** Use message builder to create a message and throw it as an unchecked exception.
+     * @param rowIndex used to indicate row producing the error
+     * */
+    private DataCell failWithExhaustedControlColumn(final long rowIndex) {
         final var message = m_messageBuilder//
             .withSummary("Not enough control documents.")
-            .addRowIssue(XmlDifferNodeSettings.TEST_TABLE_PORT_INDEX, m_testColumnIndex, m_rowIndex,
+            .addRowIssue(XmlDifferNodeSettings.TEST_TABLE_PORT_INDEX, m_testColumnIndex, rowIndex,
                 "Cannot compute diff, no more control documents available.")
             .addResolutions("Change the settings to use missing values or repeat the last value.")//
             .addResolutions("Make sure that the table with the control documents has at "

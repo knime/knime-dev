@@ -67,7 +67,7 @@ import org.xmlunit.diff.ElementSelectors;
 /**
  * @author Carl Witt, KNIME AG, Zurich, Switzerland
  */
-@SuppressWarnings("restriction")
+@SuppressWarnings("restriction") // webui
 final class XmlDifferNodeModel extends WebUINodeModel<XmlDifferNodeSettings> {
 
     XmlDifferNodeModel(final WebUINodeConfiguration cfg) {
@@ -77,11 +77,25 @@ final class XmlDifferNodeModel extends WebUINodeModel<XmlDifferNodeSettings> {
     @Override
     protected DataTableSpec[] configure(final DataTableSpec[] inSpecs, final XmlDifferNodeSettings settings)
         throws InvalidSettingsException {
+        validateSettings(settings);
+
+        final var controlColumnIndex =
+            inSpecs[XmlDifferNodeSettings.CONTROL_TABLE_PORT_INDEX].findColumnIndex(settings.m_controlColumn);
+        CheckUtils.checkSetting(controlColumnIndex >= 0, "Unknown control column \"%s\"", settings.m_controlColumn);
+
+        final var testSpec = inSpecs[XmlDifferNodeSettings.TEST_TABLE_PORT_INDEX];
+        final var testColumnIndex = testSpec.findColumnIndex(settings.m_testColumn);
+        CheckUtils.checkSetting(testColumnIndex >= 0, "Unknown test column \"%s\"", settings.m_testColumn);
+
+        final var outputSpec =
+            createColumnRearranger(testSpec, testColumnIndex, null, controlColumnIndex, settings).createSpec();
+        return new DataTableSpec[]{outputSpec};
+    }
+
+    @Override
+    protected void validateSettings(final XmlDifferNodeSettings settings) throws InvalidSettingsException {
         CheckUtils.checkSettingNotNull(settings.m_controlColumn, "Control XML document column must be set");
         CheckUtils.checkSettingNotNull(settings.m_testColumn, "Test XML document column must be set");
-
-        final var outputSpec = createColumnRearranger(inSpecs, null, settings).createSpec();
-        return new DataTableSpec[]{outputSpec};
     }
 
     @Override
@@ -89,45 +103,30 @@ final class XmlDifferNodeModel extends WebUINodeModel<XmlDifferNodeSettings> {
         final XmlDifferNodeSettings settings) throws Exception {
         final var testTable = inData[XmlDifferNodeSettings.TEST_TABLE_PORT_INDEX];
         final var controlTable = inData[XmlDifferNodeSettings.CONTROL_TABLE_PORT_INDEX];
-        final var inSpecs =
-            Arrays.stream(inData).map(BufferedDataTable::getDataTableSpec).toArray(DataTableSpec[]::new);
-        final var onlyControlDocumentColumn =
-            TableFilter.materializeCols(controlTable.getDataTableSpec(), settings.m_controlColumn);
-        try (final var cursor = controlTable.cursor(onlyControlDocumentColumn)) {
-            final var columnRearranger = createColumnRearranger(inSpecs, cursor, settings);
+
+        final var testColumnIndex = testTable.getSpec().findColumnIndex(settings.m_testColumn);
+        final var controlColumnIndex = controlTable.getSpec().findColumnIndex(settings.m_controlColumn);
+        try (final var cursor = controlTable.cursor(TableFilter.materializeCols(controlColumnIndex))) {
+            final var columnRearranger =
+                createColumnRearranger(testTable.getSpec(), testColumnIndex, cursor, controlColumnIndex, settings);
             final BufferedDataTable table = exec.createColumnRearrangeTable(testTable, columnRearranger, exec);
             return new BufferedDataTable[]{table};
         }
     }
 
-    @Override
-    protected void validateSettings(final XmlDifferNodeSettings settings) throws InvalidSettingsException {
-        if (settings.m_controlColumn == null) {
-            throw new InvalidSettingsException("Control column must be set");
-        }
-        if (settings.m_testColumn == null) {
-            throw new InvalidSettingsException("Test column must be set");
-        }
-    }
+    private ColumnRearranger createColumnRearranger(final DataTableSpec testTableSpec, final int testColumnIndex,
+        final RowCursor controlData, final int controlColumnIndex, final XmlDifferNodeSettings settings)
+                throws InvalidSettingsException {
 
+        final var rearranger = new ColumnRearranger(testTableSpec);
+        rearranger.remove(testColumnIndex);
 
-    private ColumnRearranger createColumnRearranger(final DataTableSpec[] inputTableSpecs, final RowCursor controlData,
-        final XmlDifferNodeSettings settings) throws InvalidSettingsException {
-
-        final BiFunction<Document, Document, DiffBuilder> diffBuilder = createDiffBuilder(settings);
-        final var cellFactory = new XmlDifferCellFactory(settings, inputTableSpecs, controlData, diffBuilder,
-            createMessageBuilder());
-
-        final var rearranger = new ColumnRearranger(inputTableSpecs[XmlDifferNodeSettings.TEST_TABLE_PORT_INDEX]);
-        rearranger.remove(settings.m_testColumn);
+        final var cellFactory = new XmlDifferCellFactory(settings, testColumnIndex, controlData, controlColumnIndex,
+            createDiffBuilder(settings), createMessageBuilder());
         rearranger.append(cellFactory);
         return rearranger;
     }
 
-    /**
-     * @param settings
-     * @return
-     */
     private static BiFunction<Document, Document, DiffBuilder> createDiffBuilder(final XmlDifferNodeSettings settings) {
         final BiFunction<Document, Document, DiffBuilder> diffBuilder = (control, test) -> {
             // if not swapping test and control documents, the diff is inverted, e.g,. expected and actual in summary

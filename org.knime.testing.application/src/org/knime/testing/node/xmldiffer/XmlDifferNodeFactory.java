@@ -52,36 +52,46 @@ import org.knime.core.webui.node.impl.WebUINodeFactory;
  *
  * @author Carl Witt, KNIME AG, Zurich, Switzerland
  */
+@SuppressWarnings("restriction") // webui
 public final class XmlDifferNodeFactory extends WebUINodeFactory<XmlDifferNodeModel> {
 
     private static final WebUINodeConfiguration CONFIG = WebUINodeConfiguration.builder()//
-        .name("XML Diff") //
+        .name("XML Difference Finder") //
         .icon("./icon.png") //
         .shortDescription("Computes differences between two XML columns.") //
         .fullDescription("""
                 This node computes differences between XML documents.
-                One document acts as a control to which the test document is compared to.
+                One document acts as a control to which the test document is compared.
 
-                The %s column classifies the severity of the difference. The default is <code>DIFFERENT</code>
-                but <code>SIMILAR</code> will be returned for
+                The "%s" column classifies the severity of the difference. In general differences will be classified
+                as <code>DIFFERENT</code>, but <code>SIMILAR</code> will be returned for
                 <ul>
-                <li>CDATA and Text nodes with the same content</li>
-                <li>DOCTYPE differences</li>
-                <li>different xsi:schemaLocation and xsi:noNamspaceSchemaLocation</li>
-                <li>different XML namespaces prefixes</li>
+                <li><code>CDATA</code> and Text nodes with the same content</li>
+                <li><code>DOCTYPE</code> differences</li>
+                <li>different <code>xsi:schemaLocation</code> and <code>xsi:noNamspaceSchemaLocation</code></li>
+                <li>different XML namespace prefixes</li>
                 <li>explicit/implicit status of attributes</li>
                 <li>a different order of child nodes</li>
                 <li>XML encoding</li>
                 </ul>
-                """.formatted(XmlDifferCellFactory.DiffColumn.SUMMARY.getName()))
+                """.formatted(XmlDifferCellFactory.DiffColumn.SIMILARITY.getName()))
         .modelSettingsClass(XmlDifferNodeSettings.class) //
         .addInputTable("Test table",
-            "Should contain an XML column that contains the documents to be checked for differences.") //
+            "Table with an XML column that contains the documents to be checked for differences.") //
         .addInputTable("Control table",
-            "Should contain an XML column that contains the documents that provide the baseline.") //
-        .addOutputTable("Output",
-            "The test table with an appended column containing "
-                + "collection cells that summarize the type and location of differences.") //
+            "Table with an XML column that contains the documents that provide the baseline.") //
+        .addOutputTable("Output", """
+            The test table with appended collection-type columns indicating the differences:
+            <dl>
+                <dt>Comparison type</dt><dd>type of comparison for test and control value</dd>
+                <dt>Test value</dt><dd>Value used for test</dd>
+                <dt>Control value</dt><dd>Value used for control</dd>
+                <dt>XPath of test value</dt><dd>XPath expression to retrieve the test value</dd>
+                <dt>XPath of control value</dt><dd>XPath expression to retrieve the control value</dd>
+            </dl>
+            In addition, all configured output columns are appended.
+            """
+            ) //
         .nodeType(NodeType.Manipulator) //
         .keywords("testing", "xml", "compare", "comparison", "difference", "checker") //
         .sinceVersion(5, 4, 0) //

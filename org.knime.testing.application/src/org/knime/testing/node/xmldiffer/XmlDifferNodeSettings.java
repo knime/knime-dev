@@ -62,11 +62,11 @@ import org.knime.core.webui.node.dialog.defaultdialog.widget.Widget;
 import org.knime.core.webui.node.dialog.defaultdialog.widget.choices.ColumnChoicesProviderUtil.CompatibleColumnChoicesProvider;
 
 /**
- * Settings class for the XmlDiffer node.
+ * Settings class for the <i>XML Difference Finder</i> node.
  *
  * @author Carl Witt, KNIME AG, Zurich, Switzerland
  */
-@SuppressWarnings("restriction")
+@SuppressWarnings("restriction") // webui
 final class XmlDifferNodeSettings implements DefaultNodeSettings {
 
     final static int TEST_TABLE_PORT_INDEX = 0;
@@ -78,7 +78,7 @@ final class XmlDifferNodeSettings implements DefaultNodeSettings {
         interface Input {
         }
 
-        @Section(title = "Difference definitions")
+        @Section(title = "Difference handling")
         @After(Input.class)
         interface Controls {
         }
@@ -127,7 +127,8 @@ final class XmlDifferNodeSettings implements DefaultNodeSettings {
 
     // Controls section
     @Widget(title = "Tolerate element reordering", description = """
-            If checked, a reordering of elements is output as difference of type SIMILAR instead of type DIFFERENT.
+            If checked, a reordering of elements is output as difference of type <code>SIMILAR</code> instead of type
+            <code>DIFFERENT</code>.
             However, this only applies for instance if the XML nodes have different names, e.g.,
             <code>&lt;xml&gt;&lt;node id=&quot;1&quot;/&gt;&lt;node id=&quot;2&quot;/&gt;&lt;/xml&gt;</code> and
              <code>&lt;xml&gt;&lt;node id=&quot;2&quot;/&gt;&lt;node id=&quot;1&quot;/&gt;&lt;/xml&gt;</code>
@@ -163,18 +164,19 @@ final class XmlDifferNodeSettings implements DefaultNodeSettings {
     @Layout(Sections.Controls.class)
     boolean m_normalizeWhitespace = false;
 
-    @Widget(title = "Ignore differences of type SIMILAR", description = """
-            Filters out differences of type SIMILAR. Includes element reordering if selected above.
-            The following differences are by default considered as differences of type SIMILAR:
-                <ul>
-                <li>CDATA and Text nodes with the same content</li>
-                <li>DOCTYPE differences</li>
-                <li>different xsi:schemaLocation and xsi:noNamspaceSchemaLocation</li>
-                <li>different XML namespaces prefixes</li>
+    @Widget(title = "Ignore small differences", description = """
+            Filters out small differences classified as <code>SIMILAR</code>.
+            Includes element reordering if selected above.
+            The following differences are by default considered as differences of type <code>SIMILAR</code>:
+            <ul>
+                <li><code>CDATA</code> and Text nodes with the same content</li>
+                <li><code>DOCTYPE</code> differences</li>
+                <li>different <code>xsi:schemaLocation</code> and <code>xsi:noNamspaceSchemaLocation</code></li>
+                <li>different XML namespace prefixes</li>
                 <li>explicit/implicit status of attributes</li>
                 <li>a different order of child nodes</li>
                 <li>XML encoding</li>
-                </ul>
+            </ul>
             """)
     @Layout(Sections.Controls.class)
     boolean m_ignoreSmallDifferences = false;
@@ -183,23 +185,25 @@ final class XmlDifferNodeSettings implements DefaultNodeSettings {
     interface IsFailInExecution {
     }
 
-    @Widget(title = "Node fails if diff is non-empty",
-        description = "Node throws an error as soon as the first difference is found.")
+    @Widget(title = "Fail on first difference",
+        description = "The node fails as soon as the first difference is found.")
     @Layout(Sections.Output.class)
     boolean m_failExecution = false;
 
-    @Widget(title = "Source documents",
+    @Widget(title = "Output test and control documents as columns",
         description = "Output the compared documents as test and control document columns.")
     @Layout(Sections.Output.class)
     boolean m_addSourceColumns = true;
 
-    @Widget(title = "Output parent XPaths columns", description = "Include the XPath of control and test element.")
+    @Widget(title = "Output parent XPath columns",
+        description = "Include the XPath of parents of the control and test elements.")
     @Layout(Sections.Output.class)
     boolean m_outputParentXPaths = true;
 
     @Widget(title = "Output similarity column",
         description = """
-                Output category column. Differences are categorized into regular <code>DIFFERENT</code> and
+                Output the difference classification as a column.
+                Differences are categorized into regular <code>DIFFERENT</code> and
                 small differences <code>SIMILAR</code>.""")
     @Layout(Sections.Output.class)
     boolean m_outputSimilarity = true;

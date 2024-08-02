@@ -62,6 +62,7 @@ import org.w3c.dom.Document;
 import org.xmlunit.builder.DiffBuilder;
 import org.xmlunit.diff.ComparisonControllers;
 import org.xmlunit.diff.DefaultNodeMatcher;
+import org.xmlunit.diff.Diff;
 import org.xmlunit.diff.ElementSelectors;
 
 /**
@@ -76,7 +77,7 @@ final class XmlDifferNodeModel extends WebUINodeModel<XmlDifferNodeSettings> {
 
     @Override
     protected DataTableSpec[] configure(final DataTableSpec[] inSpecs, final XmlDifferNodeSettings settings)
-        throws InvalidSettingsException {
+            throws InvalidSettingsException {
         validateSettings(settings);
 
         final var controlColumnIndex =
@@ -115,29 +116,36 @@ final class XmlDifferNodeModel extends WebUINodeModel<XmlDifferNodeSettings> {
     }
 
     private ColumnRearranger createColumnRearranger(final DataTableSpec testTableSpec, final int testColumnIndex,
-        final RowCursor controlData, final int controlColumnIndex, final XmlDifferNodeSettings settings)
-                throws InvalidSettingsException {
+        final RowCursor controlData, final int controlColumnIndex, final XmlDifferNodeSettings settings) {
 
         final var rearranger = new ColumnRearranger(testTableSpec);
         rearranger.remove(testColumnIndex);
 
+        final var differ = createDiffer(settings);
         final var cellFactory = new XmlDifferCellFactory(settings, testColumnIndex, controlData, controlColumnIndex,
-            createDiffBuilder(settings), createMessageBuilder());
+            differ, createMessageBuilder());
         rearranger.append(cellFactory);
         return rearranger;
     }
 
-    private static BiFunction<Document, Document, DiffBuilder> createDiffBuilder(final XmlDifferNodeSettings settings) {
-        final BiFunction<Document, Document, DiffBuilder> diffBuilder = (control, test) -> {
+    private static BiFunction<Document, Document, Diff> createDiffer(final XmlDifferNodeSettings settings) {
+        final var nodeNames = Arrays.stream(settings.m_filterNodeNames).collect(Collectors.toSet());
+
+        // an element is allowed to match another with the same name and text node (if any),
+        // irrespective of order
+        final var nodeMatcher =
+            settings.m_ignoreElementOrder ? new DefaultNodeMatcher(ElementSelectors.byNameAndText) : null;
+
+        return (control, test) -> {
             // if not swapping test and control documents, the diff is inverted, e.g,. expected and actual in summary
-            final var b = DiffBuilder.compare(test).withTest(control);
-
-            if (settings.m_ignoreElementOrder) {
-                // an element is allowed to match another with the same name and text node (if any),
-                // irrespective of order
-                b.withNodeMatcher(new DefaultNodeMatcher(ElementSelectors.byNameAndText));
-            }
-
+            final var b = DiffBuilder //
+                .compare(test) //
+                .withTest(control) //
+                .withNodeMatcher(nodeMatcher)
+                .withNodeFilter(nodeNames.isEmpty() ? null : n -> !nodeNames.contains(n.getNodeName())) //
+                // no need to compute all results if we are failing on the first difference
+                .withComparisonController( //
+                    settings.m_failExecution ? ComparisonControllers.StopWhenDifferent : ComparisonControllers.Default);
             if (settings.m_ignoreComments) {
                 b.ignoreComments();
             }
@@ -148,22 +156,10 @@ final class XmlDifferNodeModel extends WebUINodeModel<XmlDifferNodeSettings> {
                 b.ignoreWhitespace();
             }
             if (settings.m_ignoreElementContentWhitespace) {
-                return b.ignoreElementContentWhitespace();
+                b.ignoreElementContentWhitespace();
             }
-
-            final var nodeNames = Arrays.stream(settings.m_filterNodeNames).collect(Collectors.toSet());
-            if (!nodeNames.isEmpty()) {
-                b.withNodeFilter(n -> !nodeNames.contains(n.getNodeName()));
-            }
-
-            // no need to compute all results if we are failing on the first difference
-            if (settings.m_failExecution) {
-                b.withComparisonController(ComparisonControllers.StopWhenDifferent);
-            }
-
-            return b;
+            return b.build();
         };
-        return diffBuilder;
     }
 
 }

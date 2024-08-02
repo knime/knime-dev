@@ -73,8 +73,8 @@ import org.knime.core.node.KNIMEException;
 import org.knime.core.node.message.MessageBuilder;
 import org.knime.testing.node.xmldiffer.XmlDifferNodeSettings.ColumnPadding;
 import org.w3c.dom.Document;
-import org.xmlunit.builder.DiffBuilder;
 import org.xmlunit.diff.ComparisonResult;
+import org.xmlunit.diff.Diff;
 import org.xmlunit.diff.Difference;
 
 /**
@@ -120,7 +120,7 @@ final class XmlDifferCellFactory extends AbstractCellFactory {
              * at /root[1]/element[1]/text()[1] to <element ...>zebra</element>
              * at /root[1]/element[1]/text()[1] (DIFFERENT)}</code>
              */
-            SUMMARY(c -> c.toString(), "Summary", XmlDifferNodeSettings::isSummaryIncluded);
+            SUMMARY(Object::toString, "Summary", XmlDifferNodeSettings::isSummaryIncluded);
 
         private final Function<Difference, Object> m_extractor;
 
@@ -128,7 +128,8 @@ final class XmlDifferCellFactory extends AbstractCellFactory {
 
         private final Predicate<XmlDifferNodeSettings> m_include;
 
-        DiffColumn(final Function<Difference, Object> fun, final String columnName, final Predicate<XmlDifferNodeSettings> filter) {
+        DiffColumn(final Function<Difference, Object> fun, final String columnName,
+                final Predicate<XmlDifferNodeSettings> filter) {
             m_extractor = fun;
             m_include = filter;
             m_spec = new DataColumnSpecCreator(columnName, ListCell.getCollectionType(StringCell.TYPE)).createSpec();
@@ -164,7 +165,7 @@ final class XmlDifferCellFactory extends AbstractCellFactory {
 
     private final ColumnPadding m_columnPadding;
 
-    private final BiFunction<Document, Document, DiffBuilder> m_diffBuilder;
+    private final BiFunction<Document, Document, Diff> m_differ;
 
     private final MessageBuilder m_messageBuilder;
 
@@ -177,14 +178,14 @@ final class XmlDifferCellFactory extends AbstractCellFactory {
     XmlDifferCellFactory(final XmlDifferNodeSettings settings,
         final int testColumnIndex,
         final RowCursor controlData, final int controlColumnIndex,
-        final BiFunction<Document, Document, DiffBuilder> diffBuilder, final MessageBuilder messageBuilder)
+        final BiFunction<Document, Document, Diff> documentDiffer, final MessageBuilder messageBuilder)
         throws IllegalArgumentException {
         super(newColumns(settings));
 
         m_controlData = controlData;
         m_testColumnIndex = testColumnIndex;
         m_controlColumnIndex = controlColumnIndex;
-        m_diffBuilder = diffBuilder;
+        m_differ = documentDiffer;
         m_messageBuilder = messageBuilder;
 
         m_selectedDiffColumns = DiffColumn.filteredWith(settings);
@@ -214,11 +215,11 @@ final class XmlDifferCellFactory extends AbstractCellFactory {
      */
     private List<List<String>> diff(final long rowIndex, final Document test, final Document control) {
         final var diffColumnResults = IntStream.range(0, m_selectedDiffColumns.length) //
-            .mapToObj(i -> (List<String>)new ArrayList<String>()) //
+            .mapToObj(i -> (List<String>)new ArrayList<String>()) // NOSONAR diamond does not work here
             .toList();
 
         // each difference contributes to all selected output columns
-        for (final var difference : m_diffBuilder.apply(test, control).build().getDifferences()) {
+        for (final var difference : m_differ.apply(test, control).getDifferences()) {
 
             if (m_ignoreSmallDifferences && difference.getResult() == ComparisonResult.SIMILAR) {
                 continue;
@@ -312,5 +313,4 @@ final class XmlDifferCellFactory extends AbstractCellFactory {
             .build().orElseThrow();
         throw KNIMEException.of(message).toUnchecked();
     }
-
 }

@@ -2,13 +2,14 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>org.knime.testing.application.tests</groupId>
+	<groupId>org.knime.testing.application</groupId>
 	<artifactId>testing-fetch-jars</artifactId>
-	<version>5.3.0</version>
+	<version>5.4.0</version>
 	<packaging>pom</packaging>
 
-	<name>Jar fetcher for test nodes tests</name>
-	<description>Running the maven goal &quot;package&quot; on this maven project will fetch all jars required for FTP connector tests and put them into the libs/ directory.</description>
+	<name>Jar fetcher for test nodes</name>
+	<description>Running the maven goal &quot;package&quot; on this maven project will fetch all jars required for 
+	XML Differ and put them into the libs/ directory.</description>
 	
 	
 	<!-- NOTE ABOUT DEALING WITH DEPENDENCIES:
@@ -83,6 +84,19 @@
 							<goal>copy-dependencies</goal>
 						</goals>
 					</execution>
+                    <execution>
+                        <id>copy-sources</id>
+                        <configuration>
+                            <classifier>sources</classifier>
+                            <includeScope>runtime</includeScope>
+                            <outputDirectory>../</outputDirectory>
+                            <excludeArtifactIds>${excludeArtifacts}</excludeArtifactIds>
+                        </configuration>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>copy-dependencies</goal>
+                        </goals>
+                    </execution>
 				</executions>
 			</plugin>
 		</plugins>

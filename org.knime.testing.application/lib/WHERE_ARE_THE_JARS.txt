@@ -1,4 +1,4 @@
-The jars for FTP Connector tests need to be fetched from maven. This can be done
+The jars for XML Differ need to be fetched from maven. This can be done
 with:
 
 cd fetch_jars

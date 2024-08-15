@@ -70,11 +70,13 @@ import org.eclipse.equinox.app.IApplicationContext;
 import org.eclipse.swt.SWTException;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.PlatformUI;
+import org.knime.core.internal.CorePlugin;
 import org.knime.core.node.KNIMEConstants;
 import org.knime.core.node.util.ViewUtils;
 import org.knime.core.node.workflow.BatchExecutor;
 import org.knime.core.node.workflow.FlowVariable;
 import org.knime.core.util.FileUtil;
+import org.knime.core.util.IEarlyStartup;
 import org.knime.product.profiles.ProfileManager;
 import org.knime.testing.core.TestrunConfiguration;
 import org.knime.workbench.core.util.ImageRepository;
@@ -123,6 +125,11 @@ public class TestflowRunnerApplication implements IApplication {
      */
     @Override
     public Object start(final IApplicationContext context) throws Exception {
+        // Starting the Core plugin initializes `IEarlyStartup` and runs the `EARLIEST` stage
+        // (if not done so already because Eclipse activates the bundle otherwise)
+        // some extensions need to be run before the UI is initialized
+        CorePlugin.getInstance();
+
         final long globalStartTime = System.currentTimeMillis();
 
         // we need a display, initialized as early as possible, otherwise closing JFrames may result
@@ -135,6 +142,8 @@ public class TestflowRunnerApplication implements IApplication {
         System.setProperty(KNIMEConstants.PROPERTY_MAX_LOGFILESIZE, "-1");
 
         ProfileManager.getInstance().applyProfiles();
+        // this application is "profile aware" and special-cased in IEarlyStartup, so follow the contract
+        IEarlyStartup.runAfterProfilesLoaded();
 
         Object args = context.getArguments().get(IApplicationContext.APPLICATION_ARGS);
 

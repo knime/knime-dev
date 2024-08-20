@@ -68,6 +68,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.knime.core.data.container.Buffer;
 import org.knime.core.data.util.memory.MemoryAlert;
 import org.knime.core.data.util.memory.MemoryAlertListener;
 import org.knime.core.data.util.memory.MemoryAlertSystem;
@@ -257,6 +258,7 @@ public class WorkflowTestSuite extends WorkflowTest {
                     break;
                 }
             }
+            Buffer.waitForAsyncWrites();
             waitForUIEvents();
             m_logger.info("Programmatically sending memory alert after test cases finished...");
             waitForMemoryAlertToPropagate();

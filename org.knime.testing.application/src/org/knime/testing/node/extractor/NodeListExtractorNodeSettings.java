@@ -49,6 +49,7 @@
 package org.knime.testing.node.extractor;
 
 import org.knime.core.webui.node.dialog.defaultdialog.DefaultNodeSettings;
+import org.knime.core.webui.node.dialog.defaultdialog.persistence.field.DefaultProvider;
 import org.knime.core.webui.node.dialog.defaultdialog.persistence.field.Persist;
 import org.knime.core.webui.node.dialog.defaultdialog.widget.Widget;
 
@@ -56,22 +57,29 @@ import org.knime.core.webui.node.dialog.defaultdialog.widget.Widget;
  *
  * @author wiswedel
  */
+@SuppressWarnings("restriction")
 public final class NodeListExtractorNodeSettings implements DefaultNodeSettings {
 
-    @Persist(configKey = "includeNodeFactory")
+    @Persist(configKey = "includeNodeFactory", defaultProvider = TrueProvider.class)
     @Widget(title = "NodeFactory Class",
     description = "The node factory class name (internally used identifier)")
     boolean m_includeNodeFactory;
 
-    @Persist(configKey = "includeNodeDescription")
+    @Persist(configKey = "includeNodeDescription", defaultProvider = TrueProvider.class)
     @Widget(title = "Node Description",
     description = "If selected, includes a column containing the full node description")
     boolean m_includeNodeDescription;
 
-    @Persist(configKey = "includeKeywords")
+    @Persist(configKey = "includeKeywords", optional = true)
     @Widget(title = "Keywords",
     description = "If selected, includes a column containing the keywords used during (fuzzy) node search")
     boolean m_includeKeywords;
 
+    private static final class TrueProvider implements DefaultProvider<Boolean> {
+        @Override
+        public Boolean getDefault() {
+            return true;
+        }
 
+    }
 }

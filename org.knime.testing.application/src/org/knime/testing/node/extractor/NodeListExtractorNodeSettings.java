@@ -48,12 +48,7 @@
  */
 package org.knime.testing.node.extractor;
 
-import org.knime.core.node.InvalidSettingsException;
-import org.knime.core.node.NodeSettingsRO;
-import org.knime.core.node.NodeSettingsWO;
 import org.knime.core.webui.node.dialog.defaultdialog.DefaultNodeSettings;
-import org.knime.core.webui.node.dialog.defaultdialog.persistence.field.DefaultProvider;
-import org.knime.core.webui.node.dialog.defaultdialog.persistence.field.FieldNodeSettingsPersistor;
 import org.knime.core.webui.node.dialog.defaultdialog.persistence.field.Persist;
 import org.knime.core.webui.node.dialog.defaultdialog.widget.Widget;
 
@@ -61,52 +56,22 @@ import org.knime.core.webui.node.dialog.defaultdialog.widget.Widget;
  *
  * @author wiswedel
  */
-@SuppressWarnings("restriction")
 public final class NodeListExtractorNodeSettings implements DefaultNodeSettings {
 
-    @Persist(customPersistor = IncludeNodeFactoryIDPersistor.class)
+    @Persist(configKey = "includeNodeFactoryID")
     @Widget(title = "NodeFactory ID",
     description = "The node factory ID")
     boolean m_includeNodeFactoryID;
 
-    @Persist(configKey = "includeNodeDescription", defaultProvider = TrueProvider.class)
+    @Persist(configKey = "includeNodeDescription")
     @Widget(title = "Node Description",
     description = "If selected, includes a column containing the full node description")
     boolean m_includeNodeDescription;
 
-    @Persist(configKey = "includeKeywords", optional = true)
+    @Persist(configKey = "includeKeywords")
     @Widget(title = "Keywords",
     description = "If selected, includes a column containing the keywords used during (fuzzy) node search")
     boolean m_includeKeywords;
 
-    private static final class IncludeNodeFactoryIDPersistor implements FieldNodeSettingsPersistor<Boolean> {
-        private static final String INCL_ID = "includeNodeFactoryID"; // >= 5.3
-        private static final String INCL = "includeNodeFactory"; // 5.0 until 5.2
 
-        @Override
-        public Boolean load(final NodeSettingsRO settings) throws InvalidSettingsException {
-            if (settings.containsKey(INCL)) {
-                return settings.getBoolean(INCL);
-            }
-            return settings.getBoolean(INCL_ID, true);
-        }
-
-        @Override
-        public void save(final Boolean obj, final NodeSettingsWO settings) {
-            settings.addBoolean(INCL_ID, obj);
-        }
-
-        @Override
-        public String[] getConfigKeys() {
-            return new String[] {INCL_ID};
-        }
-    }
-
-    private static final class TrueProvider implements DefaultProvider<Boolean> {
-        @Override
-        public Boolean getDefault() {
-            return true;
-        }
-
-    }
 }

@@ -72,6 +72,7 @@ import org.knime.core.data.RowKey;
 import org.knime.core.data.collection.ListCell;
 import org.knime.core.data.def.BooleanCell;
 import org.knime.core.data.def.StringCell;
+import org.knime.core.data.v2.RowBuffer;
 import org.knime.core.data.v2.WriteValue;
 import org.knime.core.data.v2.value.ValueInterfaces.BooleanWriteValue;
 import org.knime.core.data.v2.value.ValueInterfaces.StringListWriteValue;
@@ -117,6 +118,7 @@ public class NodeListExtractorNodeModel extends WebUINodeModel<NodeListExtractor
         var spec = createSpec(s);
         try (var tableContainer = exec.createRowContainer(spec);
                 var writeCursor = tableContainer.createCursor()) {
+            RowBuffer row = tableContainer.createRowBuffer();
             var i = 0;
             var n = 0;
             final var nodeFactoryExtensions = NodeFactoryExtensionManager.getInstance().getNodeFactoryExtensions();
@@ -140,15 +142,14 @@ public class NodeListExtractorNodeModel extends WebUINodeModel<NodeListExtractor
                 exec.setProgress(n / (double)size, String.format("Indexing \"%s\" (%d/%d)", f.getNodeName(), n, size));
                 exec.checkCanceled();
 
-                var rowWrite = writeCursor.forward();
                 int col = 0;
-                ((StringWriteValue)rowWrite.getWriteValue(col++)).setStringValue(f.getNodeName());
-                ((StringWriteValue)rowWrite.getWriteValue(col++)).setStringValue(singleNode.getCategoryPath());
-                ((StringWriteValue)rowWrite.getWriteValue(col++)).setStringValue(singleNode.getPlugInSymbolicName());
-                ((BooleanWriteValue)rowWrite.getWriteValue(col++)).setBooleanValue(singleNode.isDeprecated());
-                ((BooleanWriteValue)rowWrite.getWriteValue(col++)).setBooleanValue(singleNode.isHidden());
+                ((StringWriteValue)row.getWriteValue(col++)).setStringValue(f.getNodeName());
+                ((StringWriteValue)row.getWriteValue(col++)).setStringValue(singleNode.getCategoryPath());
+                ((StringWriteValue)row.getWriteValue(col++)).setStringValue(singleNode.getPlugInSymbolicName());
+                ((BooleanWriteValue)row.getWriteValue(col++)).setBooleanValue(singleNode.isDeprecated());
+                ((BooleanWriteValue)row.getWriteValue(col++)).setBooleanValue(singleNode.isHidden());
                 if (s.m_includeNodeFactoryID) {
-                    ((StringWriteValue)rowWrite.getWriteValue(col++)).setStringValue(singleNode.getFactoryId());
+                    ((StringWriteValue)row.getWriteValue(col++)).setStringValue(singleNode.getFactoryId());
                 }
                 if (s.m_includeNodeDescription) {
                     DataCell cell;
@@ -162,20 +163,21 @@ public class NodeListExtractorNodeModel extends WebUINodeModel<NodeListExtractor
                         cell = null;
                     }
                     if (cell != null) {
-                        ((WriteValue<DataValue>)rowWrite.getWriteValue(col++)).setValue(cell);
+                        ((WriteValue<DataValue>)row.getWriteValue(col++)).setValue(cell);
                     } else {
-                        rowWrite.setMissing(col++);
+                        row.setMissing(col++);
                     }
                 }
                 if (s.m_includeKeywords) {
                     final var keywords = f.getKeywords();
                     if (keywords.length == 0) {
-                        rowWrite.setMissing(col++);
+                        row.setMissing(col++);
                     } else {
-                        ((StringListWriteValue)rowWrite.getWriteValue(col++)).setValue(keywords);
+                        ((StringListWriteValue)row.getWriteValue(col++)).setValue(keywords);
                     }
                 }
-                rowWrite.setRowKey(RowKey.createRowKey((long)i++));
+                row.setRowKey(RowKey.createRowKey((long)i++));
+                writeCursor.commit(row);
             }
             if (messageBuilder.getIssueCount() == 1) {
                 messageBuilder.withSummary(messageBuilder.getFirstIssue().orElseThrow());

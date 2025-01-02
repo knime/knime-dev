@@ -60,6 +60,8 @@ final class FailingNodeConfiguration {
 
     private int m_failAtIndex = -1;
 
+    private boolean m_failDuringConfiguration;
+
     /** @return the failAfterNumber */
     int getFailAtIndex() {
         return m_failAtIndex;
@@ -70,16 +72,29 @@ final class FailingNodeConfiguration {
         m_failAtIndex = value;
     }
 
+    /** @return the failDuringConfiguration */
+    boolean isFailDuringConfiguration() {
+        return m_failDuringConfiguration;
+    }
+
+    /** @param value the failDuringConfiguration to set */
+    void setFailDuringConfiguration(final boolean value) {
+        m_failDuringConfiguration = value;
+    }
+
     void saveSettings(final NodeSettingsWO s) {
         s.addInt("failAtIndex", m_failAtIndex);
+        s.addBoolean("failDuringConfiguration", m_failDuringConfiguration);
     }
 
     FailingNodeConfiguration loadSettingsInModel(final NodeSettingsRO s) throws InvalidSettingsException {
         m_failAtIndex = s.getInt("failAtIndex", -1); // added in 2.12
+        m_failDuringConfiguration = s.getBoolean("failDuringConfiguration", false); // added in 5.5
         return this;
     }
 
     void loadSettingsInDialog(final NodeSettingsRO s) {
         m_failAtIndex = s.getInt("failAtIndex", -1);
+        m_failDuringConfiguration = s.getBoolean("failDuringConfiguration", false);
     }
 }

@@ -113,6 +113,9 @@ class FailingNodeModel extends NodeModel {
         if (m_configuration == null) { // auto config
             m_configuration = new FailingNodeConfiguration();
         }
+        if (m_configuration.isFailDuringConfiguration()) {
+            throw new InvalidSettingsException("This node fails during configuration.");
+        }
         return inSpecs;
     }
 

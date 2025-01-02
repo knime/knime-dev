@@ -48,10 +48,10 @@
  */
 package org.knime.testing.node.failing;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.awt.GridLayout;
 
 import javax.swing.JCheckBox;
+import javax.swing.JPanel;
 import javax.swing.JSpinner;
 import javax.swing.SpinnerNumberModel;
 
@@ -73,19 +73,30 @@ final class FailingNodeDialogPane extends NodeDialogPane {
 
     private final JSpinner m_failAtRowIndexSpinner;
     private final JCheckBox m_failAtRowIndexChecker;
+    private final JCheckBox m_failDuringConfiguration;
 
     FailingNodeDialogPane() {
         m_failAtRowIndexSpinner = new JSpinner(new SpinnerNumberModel(100, 0, Integer.MAX_VALUE, 1));
         m_failAtRowIndexChecker = new JCheckBox("Fail at row index: ");
-        m_failAtRowIndexChecker.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(final ActionEvent e) {
-                m_failAtRowIndexSpinner.setEnabled(m_failAtRowIndexChecker.isSelected());
-            }
-        });
-
+        m_failAtRowIndexChecker.addItemListener(e -> checkEnablement());
+        m_failDuringConfiguration = new JCheckBox("Fail during node configuration");
+        m_failDuringConfiguration.addItemListener(e -> checkEnablement());
         m_failAtRowIndexChecker.doClick();
-        addTab("Main", ViewUtils.getInFlowLayout(m_failAtRowIndexChecker, m_failAtRowIndexSpinner));
+        JPanel p = new JPanel(new GridLayout(0, 1));
+        p.add(ViewUtils.getInFlowLayout(m_failAtRowIndexChecker, m_failAtRowIndexSpinner));
+        p.add(ViewUtils.getInFlowLayout(m_failDuringConfiguration));
+        addTab("Main", p);
+    }
+
+    private void checkEnablement() {
+        if (m_failDuringConfiguration.isSelected()) {
+            m_failAtRowIndexChecker.setEnabled(false);
+            m_failAtRowIndexSpinner.setEnabled(false);
+        } else {
+            m_failAtRowIndexChecker.setEnabled(true);
+            m_failAtRowIndexSpinner.setEnabled(m_failAtRowIndexChecker.isSelected());
+        }
+
     }
 
     /** {@inheritDoc} */
@@ -94,6 +105,7 @@ final class FailingNodeDialogPane extends NodeDialogPane {
         int count = m_failAtRowIndexChecker.isSelected() ? (Integer)m_failAtRowIndexSpinner.getValue() : -1;
         FailingNodeConfiguration configuration = new FailingNodeConfiguration();
         configuration.setFailAtIndex(count);
+        configuration.setFailDuringConfiguration(m_failDuringConfiguration.isSelected());
         configuration.saveSettings(settings);
     }
 
@@ -108,6 +120,8 @@ final class FailingNodeDialogPane extends NodeDialogPane {
             m_failAtRowIndexChecker.doClick();
         }
         m_failAtRowIndexSpinner.setValue(count >= 0 ? count : 100);
+        m_failDuringConfiguration.setSelected(configuration.isFailDuringConfiguration());
+        checkEnablement();
     }
 
 }

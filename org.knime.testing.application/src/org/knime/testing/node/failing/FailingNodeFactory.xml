@@ -18,6 +18,10 @@
 		If enabled the node will pass through rows with an index lower as specified at fail at the row with the given
 		index (first row has index 0).
 		</option>
+		<option name="Fail during node configuration">
+		If enabled, the node will fail while the node is being configured, it will never reach the 
+		"yellow traffic light" state.
+		</option>
 	</fullDescription>
 	
 	<ports>

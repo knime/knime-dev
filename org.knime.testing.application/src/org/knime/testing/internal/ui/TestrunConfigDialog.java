@@ -103,7 +103,8 @@ class TestrunConfigDialog extends Dialog {
 
         m_loadSaveLoad = new Button(container, SWT.CHECK);
         m_loadSaveLoad.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, false, false));
-        m_loadSaveLoad.setText("Load-&save-load instead of load only");
+        // added overwrite warning due to AP-10582
+        m_loadSaveLoad.setText("Load-&save-load instead of load only (overwrites local copy)");
         m_loadSaveLoad.setSelection(m_runConfig.isLoadSaveLoad());
 
         m_reportDeprecatedNodes = new Button(container, SWT.CHECK);

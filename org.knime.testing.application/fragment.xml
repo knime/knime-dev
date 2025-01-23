@@ -151,6 +151,12 @@
             hidden="false">
       </node>
       <node
+            deprecated="false"
+            factory-class="org.knime.testing.node.metrics.MetricsReaderNodeFactory"
+            category-path="/testing"
+            hidden="false">
+      </node>
+      <node
             category-path="/testing"
             deprecated="false"
             factory-class="org.knime.testing.node.reporting2.ReportToTableNodeFactory"

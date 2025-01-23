@@ -52,9 +52,12 @@ import org.knime.core.node.InvalidSettingsException;
 import org.knime.core.node.NodeSettingsRO;
 import org.knime.core.node.NodeSettingsWO;
 import org.knime.core.webui.node.dialog.defaultdialog.DefaultNodeSettings;
-import org.knime.core.webui.node.dialog.defaultdialog.persistence.field.DefaultProvider;
-import org.knime.core.webui.node.dialog.defaultdialog.persistence.field.FieldNodeSettingsPersistor;
-import org.knime.core.webui.node.dialog.defaultdialog.persistence.field.Persist;
+import org.knime.core.webui.node.dialog.defaultdialog.persistence.api.DefaultProvider;
+import org.knime.core.webui.node.dialog.defaultdialog.persistence.api.Migrate;
+import org.knime.core.webui.node.dialog.defaultdialog.persistence.api.Migration;
+import org.knime.core.webui.node.dialog.defaultdialog.persistence.api.NodeSettingsPersistor;
+import org.knime.core.webui.node.dialog.defaultdialog.persistence.api.Persist;
+import org.knime.core.webui.node.dialog.defaultdialog.persistence.api.Persistor;
 import org.knime.core.webui.node.dialog.defaultdialog.widget.Widget;
 
 /**
@@ -64,23 +67,25 @@ import org.knime.core.webui.node.dialog.defaultdialog.widget.Widget;
 @SuppressWarnings("restriction")
 public final class NodeListExtractorNodeSettings implements DefaultNodeSettings {
 
-    @Persist(customPersistor = IncludeNodeFactoryIDPersistor.class)
-    @Widget(title = "NodeFactory ID",
-    description = "The node factory ID")
+    @Persistor(IncludeNodeFactoryIDPersistor.class)
+    @Widget(title = "NodeFactory ID", description = "The node factory ID")
     boolean m_includeNodeFactoryID;
 
-    @Persist(configKey = "includeNodeDescription", defaultProvider = TrueProvider.class)
+    @Persist(configKey = "includeNodeDescription")
+    @Migration(TrueProvider.class)
     @Widget(title = "Node Description",
-    description = "If selected, includes a column containing the full node description")
+        description = "If selected, includes a column containing the full node description")
     boolean m_includeNodeDescription;
 
-    @Persist(configKey = "includeKeywords", optional = true)
+    @Migrate(loadDefaultIfAbsent = true)
+    @Persist(configKey = "includeKeywords")
     @Widget(title = "Keywords",
-    description = "If selected, includes a column containing the keywords used during (fuzzy) node search")
+        description = "If selected, includes a column containing the keywords used during (fuzzy) node search")
     boolean m_includeKeywords;
 
-    private static final class IncludeNodeFactoryIDPersistor implements FieldNodeSettingsPersistor<Boolean> {
+    private static final class IncludeNodeFactoryIDPersistor implements NodeSettingsPersistor<Boolean> {
         private static final String INCL_ID = "includeNodeFactoryID"; // >= 5.3
+
         private static final String INCL = "includeNodeFactory"; // 5.0 until 5.2
 
         @Override
@@ -97,8 +102,8 @@ public final class NodeListExtractorNodeSettings implements DefaultNodeSettings 
         }
 
         @Override
-        public String[] getConfigKeys() {
-            return new String[] {INCL_ID};
+        public String[][] getConfigPaths() {
+            return new String[][]{{INCL_ID}};
         }
     }
 

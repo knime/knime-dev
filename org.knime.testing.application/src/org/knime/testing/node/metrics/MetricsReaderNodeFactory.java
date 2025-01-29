@@ -63,7 +63,7 @@ public final class MetricsReaderNodeFactory extends WebUINodeFactory<MetricsRead
             These metrics include statistics about thread utilization, counts for nodes in some internal states,
             and memory consumption.
             <p>
-            <strong>WARNING:</strong> The node is intended for ad-hoc diagnosis and not for regular use. The list
+            <b>WARNING:</b> The node is intended for ad-hoc diagnosis and not for regular use. The list
             of metrics is likely going to change in the future.
             </p>
             """;
@@ -78,7 +78,7 @@ public final class MetricsReaderNodeFactory extends WebUINodeFactory<MetricsRead
             .build();
 
     /**
-     * @param configuration
+     * Default constructor, setting configuration with <code>super</code>.
      */
     public MetricsReaderNodeFactory() {
         super(CONFIG);

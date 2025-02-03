@@ -131,7 +131,9 @@ public class TestDataNodeModel extends NodeModel {
                 i -> ZonedDateTimeCellFactory.create(createDate(i)),
                 i -> PeriodCellFactory.create(i == 0 ? Period.ZERO : Period.ofDays(createDate(i).getSecond())),
                 i -> DurationCellFactory.create(i == 0 ? Duration.ZERO : Duration.ofNanos(createDate(i).getSecond()))
-            });
+            }),
+        /** Same as V1, but indicates that the additional cells should have a unique identifier as column name */
+        V_2(Version.V_1.getTypes(), Version.V_1.m_generators.toArray(CellGenerator[]::new));
 
         private DataType[] m_types;
         private List<CellGenerator> m_generators;
@@ -253,7 +255,7 @@ public class TestDataNodeModel extends NodeModel {
     }
 
     static SettingsModelString createVersionModel() {
-        return new SettingsModelString("version", Version.V_1.name());
+        return new SettingsModelString("version", Version.V_2.name());
     }
 
     /**
@@ -760,7 +762,10 @@ public class TestDataNodeModel extends NodeModel {
 
         final Version v = Version.get(m_version);
         for (DataType type : v.getTypes()) {
-            final String name = type.getName();
+            // TODO use this or some counted name a.k.a. "extra type 1", "extra type 2". etc?
+            // technically we should use the name as a backwards-compatible option, but no date-time cells in v1 and v2
+            // are collection cells and all have a name, so the string representation is enough.
+            final var name = v == Version.V_2 ? type.getIdentifier() : type.toLegacyString();
             creator.setName(name);
             creator.setType(type);
             specs.add(creator.createSpec());

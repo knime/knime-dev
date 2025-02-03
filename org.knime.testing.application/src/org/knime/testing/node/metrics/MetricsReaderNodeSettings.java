@@ -48,10 +48,22 @@
  */
 package org.knime.testing.node.metrics;
 
+import java.util.concurrent.TimeUnit;
+
 import org.knime.core.webui.node.dialog.defaultdialog.DefaultNodeSettings;
+import org.knime.core.webui.node.dialog.defaultdialog.layout.After;
+import org.knime.core.webui.node.dialog.defaultdialog.layout.HorizontalLayout;
+import org.knime.core.webui.node.dialog.defaultdialog.layout.Layout;
+import org.knime.core.webui.node.dialog.defaultdialog.layout.Section;
 import org.knime.core.webui.node.dialog.defaultdialog.widget.Label;
+import org.knime.core.webui.node.dialog.defaultdialog.widget.NumberInputWidget;
 import org.knime.core.webui.node.dialog.defaultdialog.widget.ValueSwitchWidget;
 import org.knime.core.webui.node.dialog.defaultdialog.widget.Widget;
+import org.knime.core.webui.node.dialog.defaultdialog.widget.updates.Effect;
+import org.knime.core.webui.node.dialog.defaultdialog.widget.updates.Predicate;
+import org.knime.core.webui.node.dialog.defaultdialog.widget.updates.PredicateProvider;
+import org.knime.core.webui.node.dialog.defaultdialog.widget.updates.Reference;
+import org.knime.core.webui.node.dialog.defaultdialog.widget.updates.ValueReference;
 
 /**
  *
@@ -60,14 +72,128 @@ import org.knime.core.webui.node.dialog.defaultdialog.widget.Widget;
 @SuppressWarnings("restriction")
 public final class MetricsReaderNodeSettings implements DefaultNodeSettings {
 
+
+    interface OutputRepresentationModeRef extends Reference<OutputRepresentation> {
+    }
+
+    interface SeriesWatchModeRef extends Reference<Series> {
+    }
+
+    static final class OutputRepresentationPredicateProvider implements PredicateProvider {
+        @Override
+        public Predicate init(final PredicateInitializer i) {
+            return i.getEnum(OutputRepresentationModeRef.class).isOneOf(OutputRepresentation.Rows);
+        }
+    }
+
+    static final class EnableWatchPredicateProvider implements PredicateProvider {
+        @Override
+        public Predicate init(final PredicateInitializer i) {
+            return i.getPredicate(OutputRepresentationPredicateProvider.class) //
+                    .and(i.getEnum(SeriesWatchModeRef.class).isOneOf(Series.TimeSeries));
+        }
+    }
+
     enum OutputRepresentation {
-        @Label("Single Column (Single Measure)")
+        @Label("Single Column")
         Column,
-        @Label("Rows (Multiple Measures)")
+        @Label("Rows")
         Rows;
     }
-    @Widget(title = "Output Representation", description = "How measures will be represented in the output")
+
+    enum Series {
+        @Label("Snapshot")
+        Snapshot,
+        @Label("Time Series")
+        TimeSeries
+    }
+
+    enum Unit {
+        @Label("Seconds")
+        Seconds(TimeUnit.SECONDS),
+        @Label("Minutes")
+        Minutes(TimeUnit.MINUTES),
+        @Label("Hours")
+        Hours(TimeUnit.HOURS);
+
+        private final TimeUnit m_timeUnit;
+
+        Unit(final TimeUnit timeUnit) {
+            m_timeUnit = timeUnit;
+        }
+
+        TimeUnit toTimeUnit() {
+            return m_timeUnit;
+        }
+    }
+
+    @Section(title = "Time Range", description = "The time range over which measurements are collected.")
+    interface TimeRangeSection {
+        @HorizontalLayout
+        interface TimeRangeRowLayout { }
+    }
+
+    @Section(title = "Reporting Period", description = "The time period over which measurements are aggregated. "
+        + "The period needs to be smaller than the time range.")
+    @After(TimeRangeSection.class   )
+    interface ReportingPeriodSection {
+        @HorizontalLayout
+        interface ReportingPeriodRowLayout { }
+    }
+
+    @Widget(title = "Output Representation", description = "How measures will be represented in the output.")
     @ValueSwitchWidget
+    @ValueReference(OutputRepresentationModeRef.class)
     OutputRepresentation m_outputRepresentation = OutputRepresentation.Column;
+
+    @Widget(title = "Data Collection Method", description = "Choose <tt>Snapshot</tt> to capture a single, current "
+        + "measurement, or <tt>Time Series</tt> to continuously record measurements over a period.")
+    @ValueSwitchWidget
+    @Effect(predicate = OutputRepresentationPredicateProvider.class, type = Effect.EffectType.ENABLE)
+    @ValueReference(SeriesWatchModeRef.class)
+    Series m_series = Series.TimeSeries;
+
+    @Layout(TimeRangeSection.class)
+    @Effect(predicate = EnableWatchPredicateProvider.class, type = Effect.EffectType.ENABLE)
+    TimeRange m_timeRange = new TimeRange();
+
+    @Layout(ReportingPeriodSection.class)
+    @Effect(predicate = EnableWatchPredicateProvider.class, type = Effect.EffectType.ENABLE)
+    ReportingPeriod m_reportingPeriod = new ReportingPeriod();
+
+    static final class TimeRange implements DefaultNodeSettings {
+
+        @Widget(title = "Value", description = " ")
+        @NumberInputWidget(min = 1, max = Integer.MAX_VALUE)
+        @Layout(TimeRangeSection.TimeRangeRowLayout.class)
+        int m_timeRangeValue = 1;
+
+        @Widget(title = "Unit", description = " ")
+        @Effect(predicate = EnableWatchPredicateProvider.class, type = Effect.EffectType.ENABLE)
+        @Layout(TimeRangeSection.TimeRangeRowLayout.class)
+        Unit m_timeRangeUnit = Unit.Minutes;
+
+        long toSeconds() {
+            return m_timeRangeUnit.toTimeUnit().toSeconds(m_timeRangeValue);
+        }
+
+    }
+
+    static final class ReportingPeriod implements DefaultNodeSettings {
+
+        @Widget(title = "Value", description = " ")
+        @NumberInputWidget(min = 1, max = Integer.MAX_VALUE)
+        @Layout(ReportingPeriodSection.ReportingPeriodRowLayout.class)
+        int m_reportingPeriodValue = 5;
+
+        @Widget(title = "Unit", description = " ")
+        @Effect(predicate = EnableWatchPredicateProvider.class, type = Effect.EffectType.ENABLE)
+        @Layout(ReportingPeriodSection.ReportingPeriodRowLayout.class)
+        Unit m_reportingPeriodUnit = Unit.Seconds;
+
+        long toSeconds() {
+            return m_reportingPeriodUnit.toTimeUnit().toSeconds(m_reportingPeriodValue);
+        }
+    }
 
 }

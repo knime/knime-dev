@@ -95,8 +95,14 @@ final class Metrics {
                 new Metric("Thread Pool Load (1min)", DoubleCell.TYPE, getGlobalThreadPoolLoadAverages()::avg1Min), //
                 new Metric("Thread Pool Load (5min)", DoubleCell.TYPE, getGlobalThreadPoolLoadAverages()::avg5Min), //
                 new Metric("Thread Pool Load (15min)", DoubleCell.TYPE, getGlobalThreadPoolLoadAverages()::avg15Min), //
+                new Metric("Thread Pool Queue Size (1min)", DoubleCell.TYPE,
+                    ApplicationHealth.getGlobalThreadPoolQueuedAverages()::avg1Min), //
+                new Metric("Thread Pool Queue Size (5min)", DoubleCell.TYPE,
+                    ApplicationHealth.getGlobalThreadPoolQueuedAverages()::avg5Min), //
+                new Metric("Thread Pool Queue Size (15min)", DoubleCell.TYPE,
+                    ApplicationHealth.getGlobalThreadPoolQueuedAverages()::avg15Min), //
                 new Metric("Nodes in state 'executed'", IntCell.TYPE, ApplicationHealth::getNodeStateExecutedCount), //
-                new Metric("Nodes in state 'executing'", IntCell.TYPE, ApplicationHealth::getNodeStateExecutingCount), //
+                new Metric("Nodes in state 'executing'", IntCell.TYPE, ApplicationHealth::getNodeStateExecutingCount),//
                 new Metric("Nodes in state other", IntCell.TYPE, ApplicationHealth::getNodeStateOtherCount) //
             ), //
             ApplicationHealth.getInstanceCounters().stream() //

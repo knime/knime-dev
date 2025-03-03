@@ -162,6 +162,12 @@
             factory-class="org.knime.testing.node.reporting2.ReportToTableNodeFactory"
             hidden="false">
       </node>
+      <node
+            category-path="/testing"
+            deprecated="false"
+            factory-class="org.knime.testing.node.format.FormatterToStringNodeFactory"
+            hidden="false">
+      </node>
    </extension>
    <extension
          point="org.knime.workbench.repository.categories">

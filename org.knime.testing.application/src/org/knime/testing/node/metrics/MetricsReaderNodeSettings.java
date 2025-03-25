@@ -64,6 +64,8 @@ import org.knime.core.webui.node.dialog.defaultdialog.widget.updates.Predicate;
 import org.knime.core.webui.node.dialog.defaultdialog.widget.updates.PredicateProvider;
 import org.knime.core.webui.node.dialog.defaultdialog.widget.updates.Reference;
 import org.knime.core.webui.node.dialog.defaultdialog.widget.updates.ValueReference;
+import org.knime.core.webui.node.dialog.defaultdialog.widget.validation.NumberInputWidgetValidation.MaxValidation;
+import org.knime.core.webui.node.dialog.defaultdialog.widget.validation.NumberInputWidgetValidation.MinValidation.IsPositiveIntegerValidation;
 
 /**
  *
@@ -161,10 +163,18 @@ public final class MetricsReaderNodeSettings implements DefaultNodeSettings {
     @Effect(predicate = EnableWatchPredicateProvider.class, type = Effect.EffectType.ENABLE)
     ReportingPeriod m_reportingPeriod = new ReportingPeriod();
 
+    // TODO(UIEXT-2654): Remove when it is part of the framework
+    static final class MaxIntegerMaxValidation extends MaxValidation {
+        @Override
+        protected double getMax() {
+            return Integer.MAX_VALUE;
+        }
+    }
+
     static final class TimeRange implements DefaultNodeSettings {
 
         @Widget(title = "Value", description = " ")
-        @NumberInputWidget(min = 1, max = Integer.MAX_VALUE)
+        @NumberInputWidget(validation = {IsPositiveIntegerValidation.class, MaxIntegerMaxValidation.class})
         @Layout(TimeRangeSection.TimeRangeRowLayout.class)
         int m_timeRangeValue = 1;
 
@@ -182,7 +192,7 @@ public final class MetricsReaderNodeSettings implements DefaultNodeSettings {
     static final class ReportingPeriod implements DefaultNodeSettings {
 
         @Widget(title = "Value", description = " ")
-        @NumberInputWidget(min = 1, max = Integer.MAX_VALUE)
+        @NumberInputWidget(validation = {IsPositiveIntegerValidation.class, MaxIntegerMaxValidation.class})
         @Layout(ReportingPeriodSection.ReportingPeriodRowLayout.class)
         int m_reportingPeriodValue = 5;
 

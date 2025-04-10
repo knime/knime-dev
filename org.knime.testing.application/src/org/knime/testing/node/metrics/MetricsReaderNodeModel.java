@@ -145,7 +145,8 @@ final class MetricsReaderNodeModel extends WebUINodeModel<MetricsReaderNodeSetti
     }
 
     private static BufferedDataTable createTableRows(final ExecutionContext context,
-        final MetricsReaderNodeSettings settings) throws IOException, ExecutionException, CanceledExecutionException {
+        final MetricsReaderNodeSettings settings)
+        throws IOException, ExecutionException, CanceledExecutionException, InterruptedException {
         try (var container = context.createRowContainer(createSpecRows()); var cursor = container.createCursor()) {
             final var rowBuffer = container.createRowBuffer();
             final long sleepPeriodMillis;

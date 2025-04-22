@@ -48,7 +48,6 @@
 package org.knime.testing.internal.ui;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 import org.eclipse.core.filesystem.EFS;
@@ -76,48 +75,38 @@ import org.knime.workbench.explorer.view.ContentObject;
  * @author Thorsten Meinl, KNIME AG, Zurich, Switzerland
  */
 public class RunTestflowAction implements IObjectActionDelegate {
-    private final List<LocalExplorerFileStore> m_filestores = new ArrayList<LocalExplorerFileStore>();
+    private final List<LocalExplorerFileStore> m_filestores = new ArrayList<>();
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void run(final IAction action) {
-        TestrunConfiguration runConfig = getRunConfiguration();
+        final TestrunConfiguration runConfig = getRunConfiguration();
         if (runConfig == null) {
             return;
         }
 
-        Job job = new TestflowJob(m_filestores, runConfig, PlatformUI.getWorkbench().getActiveWorkbenchWindow());
+        // AP-18195: Make a copy here to prevent concurrent modification
+        final Job job = new TestflowJob(List.copyOf(m_filestores), runConfig,
+            PlatformUI.getWorkbench().getActiveWorkbenchWindow());
         job.setUser(true);
         job.schedule();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void selectionChanged(final IAction action, final ISelection selection) {
         m_filestores.clear();
 
-        if (selection instanceof IStructuredSelection) {
-            IStructuredSelection sSel = (IStructuredSelection)selection;
-            for (@SuppressWarnings("unchecked")
-            Iterator<Object> it = sSel.iterator(); it.hasNext();) {
-                Object selectedObject = it.next();
-                if (selectedObject instanceof ContentObject) {
-                    if (((ContentObject)selectedObject).getObject() instanceof LocalExplorerFileStore) {
-                        LocalExplorerFileStore fs = (LocalExplorerFileStore)((ContentObject)selectedObject).getObject();
-                        try {
-                            processFilestore(fs);
-                        } catch (CoreException ex) {
-                            NodeLogger.getLogger(RunTestflowAction.class).error(
-                                "Cannot determine workflows in selection: " + ex.getMessage(), ex);
-                        }
+        if (selection instanceof IStructuredSelection structuredSelection) {
+            for (final Object selectedObject : structuredSelection) {
+                if (selectedObject instanceof ContentObject content
+                        && content.getObject() instanceof LocalExplorerFileStore fs) {
+                    try { // NOSONAR not too deeply nested
+                        processFilestore(fs);
+                    } catch (CoreException ex) {
+                        NodeLogger.getLogger(RunTestflowAction.class).error(
+                            "Cannot determine workflows in selection: " + ex.getMessage(), ex);
                     }
                 }
             }
-
         }
         action.setEnabled(!m_filestores.isEmpty());
     }
@@ -129,29 +118,22 @@ public class RunTestflowAction implements IObjectActionDelegate {
             m_filestores.add(fs);
         } else if (info.isWorkflowGroup()) {
             for (AbstractExplorerFileStore child : fs.childStores(EFS.NONE, null)) {
-                if (child instanceof LocalExplorerFileStore) {
-                    processFilestore((LocalExplorerFileStore)child);
+                if (child instanceof LocalExplorerFileStore localStore) {
+                    processFilestore(localStore);
                 }
             }
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void setActivePart(final IAction action, final IWorkbenchPart targetPart) {
-
+        // nothing to do here
     }
 
-    private TestrunConfiguration getRunConfiguration() {
-        TestrunConfiguration runConfig = new TestrunConfiguration();
-        TestrunConfigDialog dialog = new TestrunConfigDialog(Display.getCurrent().getActiveShell(), runConfig);
+    private static TestrunConfiguration getRunConfiguration() {
+        final var runConfig = new TestrunConfiguration();
+        final var dialog = new TestrunConfigDialog(Display.getCurrent().getActiveShell(), runConfig);
         dialog.setBlockOnOpen(true);
-        if (dialog.open() == Window.OK) {
-            return runConfig;
-        } else {
-            return null;
-        }
+        return dialog.open() == Window.OK ? runConfig : null;
     }
 }

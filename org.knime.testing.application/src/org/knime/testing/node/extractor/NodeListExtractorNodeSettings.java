@@ -56,7 +56,6 @@ import org.knime.core.webui.node.dialog.defaultdialog.persistence.api.DefaultPro
 import org.knime.core.webui.node.dialog.defaultdialog.persistence.api.Migrate;
 import org.knime.core.webui.node.dialog.defaultdialog.persistence.api.Migration;
 import org.knime.core.webui.node.dialog.defaultdialog.persistence.api.NodeSettingsPersistor;
-import org.knime.core.webui.node.dialog.defaultdialog.persistence.api.Persist;
 import org.knime.core.webui.node.dialog.defaultdialog.persistence.api.Persistor;
 import org.knime.core.webui.node.dialog.defaultdialog.widget.Widget;
 
@@ -71,17 +70,20 @@ public final class NodeListExtractorNodeSettings implements DefaultNodeSettings 
     @Widget(title = "NodeFactory ID", description = "The node factory ID")
     boolean m_includeNodeFactoryID;
 
-    @Persist(configKey = "includeNodeDescription")
     @Migration(TrueProvider.class)
     @Widget(title = "Node Description",
         description = "If selected, includes a column containing the full node description")
     boolean m_includeNodeDescription;
 
     @Migrate(loadDefaultIfAbsent = true)
-    @Persist(configKey = "includeKeywords")
     @Widget(title = "Keywords",
         description = "If selected, includes a column containing the keywords used during (fuzzy) node search")
     boolean m_includeKeywords;
+
+    @Migrate(loadDefaultIfAbsent = true)
+    @Widget(title = "Whether node dialog has a web UI",
+        description = "If selected, includes a column indicating whether the node has a web UI dialog")
+    boolean m_includeHasWebUINodeDialog;
 
     private static final class IncludeNodeFactoryIDPersistor implements NodeSettingsPersistor<Boolean> {
         private static final String INCL_ID = "includeNodeFactoryID"; // >= 5.3

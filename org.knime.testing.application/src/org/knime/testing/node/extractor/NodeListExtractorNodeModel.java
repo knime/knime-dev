@@ -88,6 +88,7 @@ import org.knime.core.node.extension.InvalidNodeFactoryExtensionException;
 import org.knime.core.node.extension.NodeFactoryExtension;
 import org.knime.core.node.extension.NodeFactoryExtensionManager;
 import org.knime.core.node.extension.NodeSetFactoryExtension;
+import org.knime.core.webui.node.dialog.NodeDialogFactory;
 import org.knime.core.webui.node.impl.WebUINodeConfiguration;
 import org.knime.core.webui.node.impl.WebUINodeModel;
 import org.w3c.dom.Element;
@@ -176,6 +177,10 @@ public class NodeListExtractorNodeModel extends WebUINodeModel<NodeListExtractor
                         ((StringListWriteValue)row.getWriteValue(col++)).setValue(keywords);
                     }
                 }
+                if (s.m_includeHasWebUINodeDialog) {
+                    final var hasWebUI = f instanceof NodeDialogFactory;
+                    ((BooleanWriteValue)row.getWriteValue(col++)).setBooleanValue(hasWebUI);
+                }
                 row.setRowKey(RowKey.createRowKey((long)i++));
                 writeCursor.commit(row);
             }
@@ -206,6 +211,9 @@ public class NodeListExtractorNodeModel extends WebUINodeModel<NodeListExtractor
         }
         if (settings.m_includeKeywords) {
             creator.addColumns(new DataColumnSpecCreator("Keywords", ListCell.getCollectionType(StringCell.TYPE)).createSpec());
+        }
+        if (settings.m_includeHasWebUINodeDialog) {
+            creator.addColumns(new DataColumnSpecCreator("Has Web UI Node Dialog", BooleanCell.TYPE).createSpec());
         }
         return creator.createSpec();
     }

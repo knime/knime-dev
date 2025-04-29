@@ -72,6 +72,8 @@ import org.knime.core.data.RowKey;
 import org.knime.core.data.collection.ListCell;
 import org.knime.core.data.def.BooleanCell;
 import org.knime.core.data.def.StringCell;
+import org.knime.core.data.json.JSONCell;
+import org.knime.core.data.json.JSONCellFactory;
 import org.knime.core.data.v2.RowBuffer;
 import org.knime.core.data.v2.WriteValue;
 import org.knime.core.data.v2.value.ValueInterfaces.BooleanWriteValue;
@@ -88,9 +90,9 @@ import org.knime.core.node.extension.InvalidNodeFactoryExtensionException;
 import org.knime.core.node.extension.NodeFactoryExtension;
 import org.knime.core.node.extension.NodeFactoryExtensionManager;
 import org.knime.core.node.extension.NodeSetFactoryExtension;
-import org.knime.core.webui.node.dialog.NodeDialogFactory;
 import org.knime.core.webui.node.impl.WebUINodeConfiguration;
 import org.knime.core.webui.node.impl.WebUINodeModel;
+import org.knime.core.webui.node.impl.analytics.WebUIDialogDetailsUtil;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
@@ -177,9 +179,30 @@ public class NodeListExtractorNodeModel extends WebUINodeModel<NodeListExtractor
                         ((StringListWriteValue)row.getWriteValue(col++)).setValue(keywords);
                     }
                 }
-                if (s.m_includeHasWebUINodeDialog) {
-                    final var hasWebUI = f instanceof NodeDialogFactory;
-                    ((BooleanWriteValue)row.getWriteValue(col++)).setBooleanValue(hasWebUI);
+                if (s.m_includeWebUIDialogDetails) {
+                    final var webUIDialogStatistics = WebUIDialogDetailsUtil.extractWebUIStatistics(f);
+                    ((BooleanWriteValue)row.getWriteValue(col++))
+                        .setBooleanValue(webUIDialogStatistics.hasWebUIDialog());
+                    if (!webUIDialogStatistics.hasWebUIModel()
+                        && webUIDialogStatistics.hasWebUIModelMessage() != null) {
+                        row.setMissing(col++);
+                    } else {
+                        ((BooleanWriteValue)row.getWriteValue(col++))
+                            .setBooleanValue(webUIDialogStatistics.hasWebUIModel());
+
+                    }
+                    if (webUIDialogStatistics.modelSettings() == null) {
+                        row.setMissing(col++);
+                        row.setMissing(col++);
+                    } else {
+                        DataCell schema =
+                            new JSONCellFactory().createCell(webUIDialogStatistics.modelSettings().schema());
+                        DataCell uiSchema =
+                            new JSONCellFactory().createCell(webUIDialogStatistics.modelSettings().uiSchema());
+                        ((WriteValue<DataValue>)row.getWriteValue(col++)).setValue(schema);
+                        ((WriteValue<DataValue>)row.getWriteValue(col++)).setValue(uiSchema);
+                    }
+
                 }
                 row.setRowKey(RowKey.createRowKey((long)i++));
                 writeCursor.commit(row);
@@ -192,7 +215,7 @@ public class NodeListExtractorNodeModel extends WebUINodeModel<NodeListExtractor
                         messageBuilder.getIssueCount()));
             }
             messageBuilder.build().ifPresent(this::setWarning);
-            return new BufferedDataTable[] {tableContainer.finish()};
+            return new BufferedDataTable[]{tableContainer.finish()};
         }
     }
 
@@ -210,10 +233,14 @@ public class NodeListExtractorNodeModel extends WebUINodeModel<NodeListExtractor
             creator.addColumns(new DataColumnSpecCreator("Node Description", XMLCell.TYPE).createSpec());
         }
         if (settings.m_includeKeywords) {
-            creator.addColumns(new DataColumnSpecCreator("Keywords", ListCell.getCollectionType(StringCell.TYPE)).createSpec());
+            creator.addColumns(
+                new DataColumnSpecCreator("Keywords", ListCell.getCollectionType(StringCell.TYPE)).createSpec());
         }
-        if (settings.m_includeHasWebUINodeDialog) {
-            creator.addColumns(new DataColumnSpecCreator("Has Web UI Node Dialog", BooleanCell.TYPE).createSpec());
+        if (settings.m_includeWebUIDialogDetails) {
+            creator.addColumns(new DataColumnSpecCreator("Has Web UI Dialog", BooleanCell.TYPE).createSpec());
+            creator.addColumns(new DataColumnSpecCreator("Has Web UI Model", BooleanCell.TYPE).createSpec());
+            creator.addColumns(new DataColumnSpecCreator("Model Settings Schema", JSONCell.TYPE).createSpec());
+            creator.addColumns(new DataColumnSpecCreator("Model Settings UI Schema", JSONCell.TYPE).createSpec());
         }
         return creator.createSpec();
     }

@@ -81,9 +81,10 @@ public final class NodeListExtractorNodeSettings implements DefaultNodeSettings 
     boolean m_includeKeywords;
 
     @Migrate(loadDefaultIfAbsent = true)
-    @Widget(title = "Whether node dialog has a web UI",
-        description = "If selected, includes a column indicating whether the node has a web UI dialog")
-    boolean m_includeHasWebUINodeDialog;
+    @Widget(title = "WebUI Dialog Details",
+        description = "If selected, includes a column indicating whether the node has a web UI dialog and if "
+            + "so further information on the node model and the model settings.")
+    boolean m_includeWebUIDialogDetails;
 
     private static final class IncludeNodeFactoryIDPersistor implements NodeSettingsPersistor<Boolean> {
         private static final String INCL_ID = "includeNodeFactoryID"; // >= 5.3

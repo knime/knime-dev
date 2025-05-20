@@ -191,14 +191,13 @@ public class NodeListExtractorNodeModel extends WebUINodeModel<NodeListExtractor
                             .setBooleanValue(webUIDialogStatistics.hasWebUIModel());
 
                     }
-                    if (webUIDialogStatistics.modelSettings() == null) {
+                    if (webUIDialogStatistics.settings() == null) {
                         row.setMissing(col++);
                         row.setMissing(col++);
                     } else {
-                        DataCell schema =
-                            new JSONCellFactory().createCell(webUIDialogStatistics.modelSettings().schema());
+                        DataCell schema = new JSONCellFactory().createCell(webUIDialogStatistics.settings().schema());
                         DataCell uiSchema =
-                            new JSONCellFactory().createCell(webUIDialogStatistics.modelSettings().uiSchema());
+                            new JSONCellFactory().createCell(webUIDialogStatistics.settings().uiSchema());
                         ((WriteValue<DataValue>)row.getWriteValue(col++)).setValue(schema);
                         ((WriteValue<DataValue>)row.getWriteValue(col++)).setValue(uiSchema);
                     }
@@ -239,8 +238,8 @@ public class NodeListExtractorNodeModel extends WebUINodeModel<NodeListExtractor
         if (settings.m_includeWebUIDialogDetails) {
             creator.addColumns(new DataColumnSpecCreator("Has Web UI Dialog", BooleanCell.TYPE).createSpec());
             creator.addColumns(new DataColumnSpecCreator("Has Web UI Model", BooleanCell.TYPE).createSpec());
-            creator.addColumns(new DataColumnSpecCreator("Model Settings Schema", JSONCell.TYPE).createSpec());
-            creator.addColumns(new DataColumnSpecCreator("Model Settings UI Schema", JSONCell.TYPE).createSpec());
+            creator.addColumns(new DataColumnSpecCreator("Settings Schema", JSONCell.TYPE).createSpec());
+            creator.addColumns(new DataColumnSpecCreator("Settings UI Schema", JSONCell.TYPE).createSpec());
         }
         return creator.createSpec();
     }

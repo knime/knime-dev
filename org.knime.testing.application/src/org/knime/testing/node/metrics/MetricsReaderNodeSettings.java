@@ -165,7 +165,7 @@ public final class MetricsReaderNodeSettings implements DefaultNodeSettings {
     static final class TimeRange implements DefaultNodeSettings {
 
         @Widget(title = "Value", description = " ")
-        @NumberInputWidget(validation = IsPositiveIntegerValidation.class)
+        @NumberInputWidget(minValidation = IsPositiveIntegerValidation.class)
         @Layout(TimeRangeSection.TimeRangeRowLayout.class)
         int m_timeRangeValue = 1;
 
@@ -183,7 +183,7 @@ public final class MetricsReaderNodeSettings implements DefaultNodeSettings {
     static final class ReportingPeriod implements DefaultNodeSettings {
 
         @Widget(title = "Value", description = " ")
-        @NumberInputWidget(validation = IsPositiveIntegerValidation.class)
+        @NumberInputWidget(minValidation = IsPositiveIntegerValidation.class)
         @Layout(ReportingPeriodSection.ReportingPeriodRowLayout.class)
         int m_reportingPeriodValue = 5;
 

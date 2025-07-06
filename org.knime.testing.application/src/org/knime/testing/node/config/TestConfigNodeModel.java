@@ -201,17 +201,26 @@ public class TestConfigNodeModel extends NodeModel {
     @Override
     protected BufferedDataTable[] execute(final BufferedDataTable[] inData,
             final ExecutionContext exec) throws Exception {
-
         final double max = m_janitors.size();
         int i = 0;
         for (TestrunJanitor j : m_janitors) {
             exec.checkCanceled();
             exec.setProgress((i++ / max), "Executing janitor " + j.getName());
+            injectJanitorCredentials(j);
             j.before();
             pushFlowVariables(j.getFlowVariables());
         }
 
         return new BufferedDataTable[0];
+    }
+
+    private void injectJanitorCredentials(final TestrunJanitor janitor) {
+        try {
+            final var janitorCredentials = getCredentialsProvider().get(TestrunJanitor.JANITOR_CREDENTIALS_NAME);
+            janitor.setJanitorCredentials(janitorCredentials);
+        } catch (IllegalArgumentException e) {
+            getLogger().info("Didn't define janitor credentials for '%s'".formatted(janitor.getName()), e);
+        }
     }
 
     /**

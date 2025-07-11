@@ -50,28 +50,28 @@ package org.knime.testing.node.metrics;
 
 import java.util.concurrent.TimeUnit;
 
-import org.knime.core.webui.node.dialog.defaultdialog.DefaultNodeSettings;
-import org.knime.core.webui.node.dialog.defaultdialog.layout.After;
-import org.knime.core.webui.node.dialog.defaultdialog.layout.HorizontalLayout;
-import org.knime.core.webui.node.dialog.defaultdialog.layout.Layout;
-import org.knime.core.webui.node.dialog.defaultdialog.layout.Section;
-import org.knime.core.webui.node.dialog.defaultdialog.widget.Label;
-import org.knime.core.webui.node.dialog.defaultdialog.widget.NumberInputWidget;
-import org.knime.core.webui.node.dialog.defaultdialog.widget.ValueSwitchWidget;
-import org.knime.core.webui.node.dialog.defaultdialog.widget.Widget;
-import org.knime.core.webui.node.dialog.defaultdialog.widget.updates.Effect;
-import org.knime.core.webui.node.dialog.defaultdialog.widget.updates.Predicate;
-import org.knime.core.webui.node.dialog.defaultdialog.widget.updates.PredicateProvider;
-import org.knime.core.webui.node.dialog.defaultdialog.widget.updates.Reference;
-import org.knime.core.webui.node.dialog.defaultdialog.widget.updates.ValueReference;
-import org.knime.core.webui.node.dialog.defaultdialog.widget.validation.NumberInputWidgetValidation.MinValidation.IsPositiveIntegerValidation;
+import org.knime.node.parameters.NodeParameters;
+import org.knime.node.parameters.layout.After;
+import org.knime.node.parameters.layout.HorizontalLayout;
+import org.knime.node.parameters.layout.Layout;
+import org.knime.node.parameters.layout.Section;
+import org.knime.node.parameters.widget.Widget;
+import org.knime.node.parameters.widget.number.NumberInputWidget;
+import org.knime.node.parameters.widget.number.NumberInputWidgetValidation.MinValidation.IsPositiveIntegerValidation;
+import org.knime.node.parameters.widget.singleselection.Label;
+import org.knime.node.parameters.widget.singleselection.ValueSwitchWidget;
+import org.knime.node.parameters.widget.updates.Effect;
+import org.knime.node.parameters.widget.updates.Predicate;
+import org.knime.node.parameters.widget.updates.PredicateProvider;
+import org.knime.node.parameters.widget.updates.Reference;
+import org.knime.node.parameters.widget.updates.ValueReference;
 
 /**
  *
  * @author wiswedel
  */
 @SuppressWarnings("restriction")
-public final class MetricsReaderNodeSettings implements DefaultNodeSettings {
+public final class MetricsReaderNodeSettings implements NodeParameters {
 
 
     interface OutputRepresentationModeRef extends Reference<OutputRepresentation> {
@@ -162,7 +162,7 @@ public final class MetricsReaderNodeSettings implements DefaultNodeSettings {
     @Effect(predicate = EnableWatchPredicateProvider.class, type = Effect.EffectType.ENABLE)
     ReportingPeriod m_reportingPeriod = new ReportingPeriod();
 
-    static final class TimeRange implements DefaultNodeSettings {
+    static final class TimeRange implements NodeParameters {
 
         @Widget(title = "Value", description = " ")
         @NumberInputWidget(minValidation = IsPositiveIntegerValidation.class)
@@ -180,7 +180,7 @@ public final class MetricsReaderNodeSettings implements DefaultNodeSettings {
 
     }
 
-    static final class ReportingPeriod implements DefaultNodeSettings {
+    static final class ReportingPeriod implements NodeParameters {
 
         @Widget(title = "Value", description = " ")
         @NumberInputWidget(minValidation = IsPositiveIntegerValidation.class)

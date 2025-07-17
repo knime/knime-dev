@@ -48,7 +48,7 @@
  */
 package org.knime.testing.node.filestore.create.port;
 
-import org.knime.core.webui.node.dialog.defaultdialog.DefaultNodeSettings;
+import org.knime.node.parameters.NodeParameters;
 import org.knime.node.parameters.Widget;
 import org.knime.node.parameters.widget.choices.Label;
 import org.knime.node.parameters.widget.choices.ValueSwitchWidget;
@@ -57,7 +57,7 @@ import org.knime.node.parameters.widget.choices.ValueSwitchWidget;
  *
  * @author wiswedel
  */
-final class FileStorePortCreateNodeSettings implements DefaultNodeSettings {
+final class FileStorePortCreateNodeSettings implements NodeParameters {
 
     /**
      * Enum used for the UI switch for the "Line Break" option

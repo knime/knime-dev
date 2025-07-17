@@ -50,7 +50,7 @@ package org.knime.testing.node.metrics;
 
 import java.util.concurrent.TimeUnit;
 
-import org.knime.core.webui.node.dialog.defaultdialog.DefaultNodeSettings;
+import org.knime.node.parameters.NodeParameters;
 import org.knime.node.parameters.Widget;
 import org.knime.node.parameters.layout.After;
 import org.knime.node.parameters.layout.HorizontalLayout;
@@ -71,7 +71,7 @@ import org.knime.node.parameters.widget.number.NumberInputWidgetValidation.MinVa
  * @author wiswedel
  */
 @SuppressWarnings("restriction")
-public final class MetricsReaderNodeSettings implements DefaultNodeSettings {
+public final class MetricsReaderNodeSettings implements NodeParameters {
 
 
     interface OutputRepresentationModeRef extends Reference<OutputRepresentation> {
@@ -162,7 +162,7 @@ public final class MetricsReaderNodeSettings implements DefaultNodeSettings {
     @Effect(predicate = EnableWatchPredicateProvider.class, type = Effect.EffectType.ENABLE)
     ReportingPeriod m_reportingPeriod = new ReportingPeriod();
 
-    static final class TimeRange implements DefaultNodeSettings {
+    static final class TimeRange implements NodeParameters {
 
         @Widget(title = "Value", description = " ")
         @NumberInputWidget(minValidation = IsPositiveIntegerValidation.class)
@@ -180,7 +180,7 @@ public final class MetricsReaderNodeSettings implements DefaultNodeSettings {
 
     }
 
-    static final class ReportingPeriod implements DefaultNodeSettings {
+    static final class ReportingPeriod implements NodeParameters {
 
         @Widget(title = "Value", description = " ")
         @NumberInputWidget(minValidation = IsPositiveIntegerValidation.class)

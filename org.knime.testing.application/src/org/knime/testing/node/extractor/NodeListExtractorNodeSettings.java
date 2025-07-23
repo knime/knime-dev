@@ -51,20 +51,20 @@ package org.knime.testing.node.extractor;
 import org.knime.core.node.InvalidSettingsException;
 import org.knime.core.node.NodeSettingsRO;
 import org.knime.core.node.NodeSettingsWO;
-import org.knime.core.webui.node.dialog.defaultdialog.DefaultNodeSettings;
-import org.knime.core.webui.node.dialog.defaultdialog.persistence.api.DefaultProvider;
-import org.knime.core.webui.node.dialog.defaultdialog.persistence.api.Migrate;
-import org.knime.core.webui.node.dialog.defaultdialog.persistence.api.Migration;
-import org.knime.core.webui.node.dialog.defaultdialog.persistence.api.NodeSettingsPersistor;
-import org.knime.core.webui.node.dialog.defaultdialog.persistence.api.Persistor;
-import org.knime.core.webui.node.dialog.defaultdialog.widget.Widget;
+import org.knime.node.parameters.NodeParameters;
+import org.knime.node.parameters.Widget;
+import org.knime.node.parameters.migration.DefaultProvider;
+import org.knime.node.parameters.migration.Migrate;
+import org.knime.node.parameters.migration.Migration;
+import org.knime.node.parameters.persistence.NodeParametersPersistor;
+import org.knime.node.parameters.persistence.Persistor;
 
 /**
  *
  * @author wiswedel
  */
 @SuppressWarnings("restriction")
-public final class NodeListExtractorNodeSettings implements DefaultNodeSettings {
+public final class NodeListExtractorNodeSettings implements NodeParameters {
 
     @Persistor(IncludeNodeFactoryIDPersistor.class)
     @Widget(title = "NodeFactory ID", description = "The node factory ID")
@@ -86,7 +86,7 @@ public final class NodeListExtractorNodeSettings implements DefaultNodeSettings 
             + "so further information on the node model and the model settings.")
     boolean m_includeWebUIDialogDetails;
 
-    private static final class IncludeNodeFactoryIDPersistor implements NodeSettingsPersistor<Boolean> {
+    private static final class IncludeNodeFactoryIDPersistor implements NodeParametersPersistor<Boolean> {
         private static final String INCL_ID = "includeNodeFactoryID"; // >= 5.3
 
         private static final String INCL = "includeNodeFactory"; // 5.0 until 5.2

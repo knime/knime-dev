@@ -14,6 +14,10 @@
   <artifactId>org.knime.testing.application</artifactId>
   <packaging>eclipse-plugin</packaging>
 
+  <properties>
+    <revision>5.5.2</revision>
+  </properties>
+  
   <build>
     <plugins>
       <plugin>

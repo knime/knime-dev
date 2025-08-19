@@ -55,8 +55,8 @@ import java.lang.management.MemoryUsage;
 
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.NullProgressMonitor;
-import org.knime.core.internal.KNIMEPath;
 import org.knime.core.node.KNIMEConstants;
+import org.knime.core.workbench.KNIMEWorkspacePath;
 
 import junit.framework.TestResult;
 
@@ -247,8 +247,8 @@ public abstract class WorkflowTest implements TestWithName {
      *         already the set one
      */
     protected static boolean setCustomWorkspaceDirPath(final File wsDir) {
-        if (!KNIMEPath.getWorkspaceDirPath().equals(wsDir)) {
-            KNIMEPath.setWorkspaceDirPath(wsDir);
+        if (!KNIMEWorkspacePath.getWorkspaceDirPath().equals(wsDir)) {
+            KNIMEWorkspacePath.setWorkspaceDirPath(wsDir);
             return true;
         } else {
             return false;
@@ -259,6 +259,6 @@ public abstract class WorkflowTest implements TestWithName {
      * Resets the workspace directory path to the default one.
      */
     protected static void setDefaultWorkspaceDirPath() {
-        KNIMEPath.setWorkspaceDirPath(null);
+        KNIMEWorkspacePath.setWorkspaceDirPath(null);
     }
 }

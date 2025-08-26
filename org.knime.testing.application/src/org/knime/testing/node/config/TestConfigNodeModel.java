@@ -68,6 +68,7 @@ import org.knime.core.node.NodeSettingsRO;
 import org.knime.core.node.NodeSettingsWO;
 import org.knime.core.node.workflow.FlowVariable;
 import org.knime.core.node.workflow.NodeContext;
+import org.knime.core.node.workflow.VariableType;
 import org.knime.core.node.workflow.WorkflowContext;
 import org.knime.testing.core.TestrunJanitor;
 
@@ -183,6 +184,7 @@ public class TestConfigNodeModel extends NodeModel {
             exec.checkCanceled();
             exec.setProgress((i++ / max), "Executing janitor " + j.getName());
             j.injectCredentials(credentialsProvider);
+            j.injectFlowVariables(getAvailableFlowVariables(VariableType.StringType.INSTANCE));
             j.before();
             pushFlowVariables(j.getFlowVariables());
         }

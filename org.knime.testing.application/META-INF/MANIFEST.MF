@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Test-Node extension for KNIME Workbench
 Bundle-SymbolicName: org.knime.testing.application;singleton:=true
-Fragment-Host: org.knime.testing;bundle-version="[5.6.0,6.0.0)"
+Fragment-Host: org.knime.testing;bundle-version="[5.7.0,6.0.0)"
 Bundle-Version: 5.7.0.qualifier
 Bundle-ClassPath: .
 Bundle-Vendor: KNIME AG, Zurich, Switzerland

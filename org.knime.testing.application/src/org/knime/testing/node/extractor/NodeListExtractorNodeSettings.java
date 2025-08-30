@@ -58,12 +58,19 @@ import org.knime.node.parameters.migration.Migrate;
 import org.knime.node.parameters.migration.Migration;
 import org.knime.node.parameters.persistence.NodeParametersPersistor;
 import org.knime.node.parameters.persistence.Persistor;
+import org.knime.node.parameters.updates.Effect;
+import org.knime.node.parameters.updates.Effect.EffectType;
+import org.knime.node.parameters.updates.EffectPredicate;
+import org.knime.node.parameters.updates.EffectPredicateProvider;
+import org.knime.node.parameters.updates.ParameterReference;
+import org.knime.node.parameters.updates.ValueReference;
 
 /**
+ * Settings for the Node List Extractor node that defines which information
+ * to include when extracting node details from the KNIME registry.
  *
  * @author wiswedel
  */
-@SuppressWarnings("restriction")
 public final class NodeListExtractorNodeSettings implements NodeParameters {
 
     @Persistor(IncludeNodeFactoryIDPersistor.class)
@@ -84,7 +91,15 @@ public final class NodeListExtractorNodeSettings implements NodeParameters {
     @Widget(title = "WebUI Dialog Details",
         description = "If selected, includes a column indicating whether the node has a web UI dialog and if "
             + "so further information on the node model and the model settings.")
+    @ValueReference(WebUIDialogDetailsParameterReference.class)
     boolean m_includeWebUIDialogDetails;
+
+    @Migrate(loadDefaultIfAbsent = true)
+    @Widget(title = "Legacy Swing Dialog Details",
+    description = "If selected, adds columns having information about the legacy Swing/ClassicUI dialog, and whether"
+        + "the dialog is a 'standard' node (extending `DefaultNodeSettingsPane'")
+    @Effect(predicate = WebUICheckerIsCheckedPredicateProvider.class, type = EffectType.ENABLE)
+    boolean m_includeClassicUIDialogDetails;
 
     private static final class IncludeNodeFactoryIDPersistor implements NodeParametersPersistor<Boolean> {
         private static final String INCL_ID = "includeNodeFactoryID"; // >= 5.3
@@ -116,5 +131,17 @@ public final class NodeListExtractorNodeSettings implements NodeParameters {
             return true;
         }
 
+    }
+
+    private static final class WebUIDialogDetailsParameterReference implements ParameterReference<Boolean> {
+
+    }
+
+    private static final class WebUICheckerIsCheckedPredicateProvider implements EffectPredicateProvider {
+
+        @Override
+        public EffectPredicate init(final PredicateInitializer i) {
+            return i.getBoolean(WebUIDialogDetailsParameterReference.class).isTrue();
+        }
     }
 }

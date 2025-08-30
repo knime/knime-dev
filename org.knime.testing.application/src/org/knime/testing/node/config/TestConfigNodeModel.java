@@ -68,17 +68,18 @@ import org.knime.core.node.NodeSettingsRO;
 import org.knime.core.node.NodeSettingsWO;
 import org.knime.core.node.workflow.FlowVariable;
 import org.knime.core.node.workflow.NodeContext;
+import org.knime.core.node.workflow.VariableType;
 import org.knime.core.node.workflow.WorkflowContext;
 import org.knime.testing.core.TestrunJanitor;
 
 /**
- * This is the node model for the testflow configuration node. The model
- * essentially does nothing except for checking if the owner's mail address has
- * been provided.
+ * This is the node model for the testflow configuration node. The model essentially does nothing except for checking if
+ * the owner's mail address has been provided.
  *
  * @author Thorsten Meinl, University of Konstanz
  */
 public class TestConfigNodeModel extends NodeModel {
+
     private final TestConfigSettings m_settings = new TestConfigSettings();
 
     private final List<TestrunJanitor> m_janitors = new ArrayList<>();
@@ -90,57 +91,35 @@ public class TestConfigNodeModel extends NodeModel {
         super(0, 0);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
-    protected void loadInternals(final File nodeInternDir,
-            final ExecutionMonitor exec) throws IOException,
-            CanceledExecutionException {
+    protected void loadInternals(final File nodeInternDir, final ExecutionMonitor exec)
+        throws IOException, CanceledExecutionException {
+        // nothing to do
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
-    protected void saveInternals(final File nodeInternDir,
-            final ExecutionMonitor exec) throws IOException,
-            CanceledExecutionException {
+    protected void saveInternals(final File nodeInternDir, final ExecutionMonitor exec)
+        throws IOException, CanceledExecutionException {
+        // nothing to do
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     protected void saveSettingsTo(final NodeSettingsWO settings) {
         m_settings.saveSettings(settings);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
-    protected void validateSettings(final NodeSettingsRO settings)
-            throws InvalidSettingsException {
-        TestConfigSettings s = new TestConfigSettings();
-        s.loadSettings(settings);
+    protected void validateSettings(final NodeSettingsRO settings) throws InvalidSettingsException {
+        new TestConfigSettings().loadSettings(settings);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
-    protected void loadValidatedSettingsFrom(final NodeSettingsRO settings)
-            throws InvalidSettingsException {
+    protected void loadValidatedSettingsFrom(final NodeSettingsRO settings) throws InvalidSettingsException {
         m_settings.loadSettings(settings);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
-    protected DataTableSpec[] configure(final DataTableSpec[] inSpecs)
-            throws InvalidSettingsException {
+    protected DataTableSpec[] configure(final DataTableSpec[] inSpecs) throws InvalidSettingsException {
         if ((m_settings.owner() == null)
                 || (m_settings.owner().trim().length() < 1)) {
             throw new InvalidSettingsException("No workflow owner set");
@@ -195,18 +174,17 @@ public class TestConfigNodeModel extends NodeModel {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     protected BufferedDataTable[] execute(final BufferedDataTable[] inData,
             final ExecutionContext exec) throws Exception {
-
         final double max = m_janitors.size();
+        final var credentialsProvider = getCredentialsProvider();
         int i = 0;
         for (TestrunJanitor j : m_janitors) {
             exec.checkCanceled();
             exec.setProgress((i++ / max), "Executing janitor " + j.getName());
+            j.injectCredentials(credentialsProvider);
+            j.injectFlowVariables(getAvailableFlowVariables(VariableType.StringType.INSTANCE));
             j.before();
             pushFlowVariables(j.getFlowVariables());
         }
@@ -214,18 +192,12 @@ public class TestConfigNodeModel extends NodeModel {
         return new BufferedDataTable[0];
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     protected void reset() {
         runAfterJanitors();
         m_janitors.clear();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     protected void onDispose() {
         runAfterJanitors();

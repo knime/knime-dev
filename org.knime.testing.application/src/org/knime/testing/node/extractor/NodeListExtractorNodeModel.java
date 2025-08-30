@@ -49,7 +49,9 @@
 package org.knime.testing.node.extractor;
 
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.lang.reflect.Method;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
@@ -71,21 +73,29 @@ import org.knime.core.data.DataValue;
 import org.knime.core.data.RowKey;
 import org.knime.core.data.collection.ListCell;
 import org.knime.core.data.def.BooleanCell;
+import org.knime.core.data.def.IntCell;
 import org.knime.core.data.def.StringCell;
 import org.knime.core.data.json.JSONCell;
 import org.knime.core.data.json.JSONCellFactory;
 import org.knime.core.data.v2.RowBuffer;
 import org.knime.core.data.v2.WriteValue;
 import org.knime.core.data.v2.value.ValueInterfaces.BooleanWriteValue;
+import org.knime.core.data.v2.value.ValueInterfaces.IntWriteValue;
 import org.knime.core.data.v2.value.ValueInterfaces.StringListWriteValue;
 import org.knime.core.data.v2.value.ValueInterfaces.StringWriteValue;
 import org.knime.core.data.xml.XMLCell;
 import org.knime.core.data.xml.XMLCellFactory;
 import org.knime.core.node.BufferedDataTable;
+import org.knime.core.node.ConfigurableNodeFactory;
+import org.knime.core.node.EmptyNodeDialogPane;
 import org.knime.core.node.ExecutionContext;
 import org.knime.core.node.InvalidSettingsException;
+import org.knime.core.node.Node;
+import org.knime.core.node.NodeDialogPane;
 import org.knime.core.node.NodeFactory;
 import org.knime.core.node.NodeModel;
+import org.knime.core.node.context.NodeCreationConfiguration;
+import org.knime.core.node.defaultnodesettings.DefaultNodeSettingsPane;
 import org.knime.core.node.extension.InvalidNodeFactoryExtensionException;
 import org.knime.core.node.extension.NodeFactoryExtension;
 import org.knime.core.node.extension.NodeFactoryExtensionManager;
@@ -201,7 +211,10 @@ public class NodeListExtractorNodeModel extends WebUINodeModel<NodeListExtractor
                         ((WriteValue<DataValue>)row.getWriteValue(col++)).setValue(schema);
                         ((WriteValue<DataValue>)row.getWriteValue(col++)).setValue(uiSchema);
                     }
-
+                    if (s.m_includeClassicUIDialogDetails) {
+                        final var classicUIDialogDetails = determineClassicUIDialogDetails(f);
+                        col = classicUIDialogDetails.fill(row, col);
+                    }
                 }
                 row.setRowKey(RowKey.createRowKey((long)i++));
                 writeCursor.commit(row);
@@ -240,6 +253,14 @@ public class NodeListExtractorNodeModel extends WebUINodeModel<NodeListExtractor
             creator.addColumns(new DataColumnSpecCreator("Has Web UI Model", BooleanCell.TYPE).createSpec());
             creator.addColumns(new DataColumnSpecCreator("Settings Schema", JSONCell.TYPE).createSpec());
             creator.addColumns(new DataColumnSpecCreator("Settings UI Schema", JSONCell.TYPE).createSpec());
+            if (settings.m_includeClassicUIDialogDetails) {
+                // add columns for classic UI dialog details
+                creator.addColumns(new DataColumnSpecCreator("Classic UI Dialog Type", StringCell.TYPE).createSpec());
+                creator.addColumns(new DataColumnSpecCreator("Is Default Node Settings Pane",
+                    BooleanCell.TYPE).createSpec());
+                creator.addColumns(new DataColumnSpecCreator("Number of Tabs", IntCell.TYPE).createSpec());
+                creator.addColumns(new DataColumnSpecCreator("Error", StringCell.TYPE).createSpec());
+            }
         }
         return creator.createSpec();
     }
@@ -255,6 +276,69 @@ public class NodeListExtractorNodeModel extends WebUINodeModel<NodeListExtractor
         StreamResult sr = new StreamResult(sw);
         transformer.transform(domSource, sr);
         return XMLCellFactory.create(sw.toString());
+    }
+
+    /** Details about a classic UI dialog pane including its type, settings pane status, tab count, and any errors. */
+    record ClassicUIDialogDetails(String type, boolean isDefaultNodeSettingsPane, int nrTabs, String error) {
+
+        int fill(final RowBuffer row, int col) {
+            if (type == null) {
+                row.setMissing(col++);
+                row.setMissing(col++);
+                row.setMissing(col++);
+                ((StringWriteValue)row.getWriteValue(col++)).setStringValue(error());
+            } else {
+                ((StringWriteValue)row.getWriteValue(col++)).setStringValue(type());
+                ((BooleanWriteValue)row.getWriteValue(col++)).setBooleanValue(isDefaultNodeSettingsPane());
+                ((IntWriteValue)row.getWriteValue(col++)).setIntValue(nrTabs());
+                row.setMissing(col++); // no error
+            }
+            return col;
+        }
+    }
+
+    /** a static utility method that access NodeDialogPane#getTableTiles() via reflection and returns the size */
+    static int getNrTabs(final NodeDialogPane dialogPane) {
+        if (dialogPane instanceof EmptyNodeDialogPane) {
+            return 0;
+        }
+        try {
+            final Method getTabTitlesMethod = NodeDialogPane.class.getDeclaredMethod("getTabTitles");
+            getTabTitlesMethod.setAccessible(true);
+            return ((List<String>)getTabTitlesMethod.invoke(dialogPane, new Object[0])).size();
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException("Unable to access getTabTitles() method on " + dialogPane.getClass(), e);
+        }
+    }
+
+    /**
+     * Determines the classic UI dialog details for a given node factory.
+     *
+     * @param factory the node factory to analyze
+     * @return a {@link ClassicUIDialogDetails} object containing the dialog details
+     */
+    private static ClassicUIDialogDetails
+        determineClassicUIDialogDetails(final NodeFactory<? extends NodeModel> factory) {
+        final NodeDialogPane dialogPane;
+        try {
+            NodeCreationConfiguration creationConfig = factory instanceof ConfigurableNodeFactory cnf ?
+                cnf.createNodeCreationConfig() : null;
+            dialogPane= Node.createDialogPane((NodeFactory<NodeModel>)factory, 0, false, creationConfig);
+        } catch (Throwable e) {
+            try (StringWriter sw = new StringWriter(); PrintWriter pw = new PrintWriter(sw)) {
+                e.printStackTrace(pw);
+                return new ClassicUIDialogDetails(null, false, 0, sw.toString());
+            } catch (IOException ioe) {
+                // should not happen
+                return new ClassicUIDialogDetails(null, false, 0, ioe.getMessage());
+            }
+        }
+        if (dialogPane instanceof EmptyNodeDialogPane || dialogPane == null) {
+            return new ClassicUIDialogDetails("<none>", false, 0, null);
+        }
+        String type = dialogPane instanceof DefaultNodeSettingsPane ? "DefaultNodeSettingsPane" : "Custom";
+        return new ClassicUIDialogDetails(type, dialogPane instanceof DefaultNodeSettingsPane, getNrTabs(dialogPane),
+            null);
     }
 
     interface SingleNode {

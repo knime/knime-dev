@@ -75,6 +75,8 @@ class TestrunConfigDialog extends Dialog {
 
     private Button m_testDialogs;
 
+    private Button m_testMUIDialogs;
+
     private Button m_testViews;
 
     private Button m_loadSaveLoad;
@@ -116,6 +118,11 @@ class TestrunConfigDialog extends Dialog {
         m_testViews.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, false, false));
         m_testViews.setText("Test &views (open && close)");
         m_testViews.setSelection(m_runConfig.isTestViews());
+
+        m_testMUIDialogs = new Button(container, SWT.CHECK);
+        m_testMUIDialogs.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, false, false));
+        m_testMUIDialogs.setText("Test &MUI dialogs before execution (load && apply)");
+        m_testMUIDialogs.setSelection(m_runConfig.isTestMUIDialogs());
 
         m_testDialogs = new Button(container, SWT.CHECK);
         m_testDialogs.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, false, false));
@@ -166,6 +173,7 @@ class TestrunConfigDialog extends Dialog {
         m_runConfig.setTestDialogs(m_testDialogs.getSelection());
         m_runConfig.setTestViews(m_testViews.getSelection());
         m_runConfig.setEnableStreamingMode(m_enableStreamingTests.getSelection());
+        m_runConfig.setTestMUIDialogs(m_testMUIDialogs.getSelection());
         m_runConfig.setTimeout(m_defaultTimeout.getSelection());
         super.okPressed();
     }

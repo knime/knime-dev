@@ -179,6 +179,10 @@ public class WorkflowTestSuite extends WorkflowTest {
             m_allTests.add(new WorkflowOpenViewsTest(m_workflowName, m_progressMonitor, m_context));
         }
 
+        if (runConfig.isTestMUIDialogs()) {
+            m_allTests.add(new WorkflowModernUIDialogTest(m_workflowName, m_progressMonitor, m_context));
+        }
+
         m_allTests.add(new WorkflowExecuteTest(testcaseRoot, m_workflowName, m_progressMonitor, runConfig, m_context));
 
         if (runConfig.isCheckNodeMessages()) {

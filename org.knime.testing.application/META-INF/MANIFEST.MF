@@ -2,8 +2,8 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Test-Node extension for KNIME Workbench
 Bundle-SymbolicName: org.knime.testing.application;singleton:=true
-Fragment-Host: org.knime.testing;bundle-version="[5.7.0,6.0.0)"
-Bundle-Version: 5.7.0.qualifier
+Fragment-Host: org.knime.testing;bundle-version="[5.8.0,6.0.0)"
+Bundle-Version: 5.8.0.qualifier
 Bundle-ClassPath: .
 Bundle-Vendor: KNIME AG, Zurich, Switzerland
 Export-Package: org.knime.testing,
@@ -26,7 +26,7 @@ Export-Package: org.knime.testing,
 Require-Bundle: org.eclipse.core.filesystem;bundle-version="[1.7.0,2.0.0)",
  org.eclipse.ui.ide;bundle-version="[3.13.1,4.0.0)",
  org.eclipse.jdt.junit.core;bundle-version="[3.9.100,4.0.0)",
- org.knime.core.ui;bundle-version="[5.7.0,6.0.0)",
+ org.knime.core.ui;bundle-version="[5.8.0,6.0.0)",
  org.knime.base;bundle-version="[5.7.0,6.0.0)",
  org.knime.product;bundle-version="[5.7.0,6.0.0)",
  org.knime.time;bundle-version="[5.7.0,6.0.0)",

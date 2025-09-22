@@ -47,7 +47,11 @@
  */
 package org.knime.testing.core.ng;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.knime.core.node.InvalidSettingsException;
 import org.knime.core.node.NodeFactory;
 import org.knime.core.node.NodeLogger;
 import org.knime.core.node.NodeModel;
@@ -58,24 +62,40 @@ import org.knime.core.node.workflow.NodeContext;
 import org.knime.core.node.workflow.SingleNodeContainer.SingleNodeContainerSettings;
 import org.knime.core.node.workflow.SubNodeContainer;
 import org.knime.core.node.workflow.WorkflowManager;
+import org.knime.core.webui.data.util.InputPortUtil;
+import org.knime.core.webui.node.DataServiceManager;
+import org.knime.core.webui.node.NodeWrapper;
 import org.knime.core.webui.node.dialog.NodeDialogFactory;
+import org.knime.core.webui.node.dialog.NodeDialogManager;
 import org.knime.core.webui.node.dialog.SettingsType;
+import org.knime.core.webui.node.dialog.VariableSettingsRO;
 import org.knime.core.webui.node.dialog.defaultdialog.DefaultNodeDialog;
 import org.knime.core.webui.node.dialog.defaultdialog.NodeParametersUtil;
+import org.knime.core.webui.node.dialog.defaultdialog.UpdatesUtil;
+import org.knime.core.webui.node.dialog.defaultdialog.jsonforms.JsonFormsSettingsImpl;
+import org.knime.core.webui.node.dialog.defaultdialog.settingsconversion.VariableSettingsUtil;
+import org.knime.core.webui.node.dialog.internal.VariableSettings;
 import org.knime.node.parameters.NodeParameters;
+import org.knime.node.parameters.NodeParametersInput;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import junit.framework.AssertionFailedError;
 import junit.framework.TestResult;
 
 /**
- * Before execution, all nodes having a modern UI dialog backed by {@link NodeParameters} are loading & applying
- * their settings via the dialog's {@link NodeParameters} class. Checks that "modern ui" (MUI) migration does
- * not break the dialog's load/save settings functionality.
+ * Before execution, all nodes having a modern UI dialog backed by {@link NodeParameters} are loading & applying their
+ * settings via the dialog's {@link NodeParameters} class. Checks that "modern ui" (MUI) migration does not break the
+ * dialog's load/save settings functionality.
  *
  * @author Bernd Wiswedel, KNIME GmbH, Konstanz, Germany
  */
 class WorkflowModernUIDialogTest extends WorkflowTest {
     private static final NodeLogger LOGGER = NodeLogger.getLogger(WorkflowModernUIDialogTest.class);
+
+    private static final ObjectMapper MAPPER = new ObjectMapper();
 
     WorkflowModernUIDialogTest(final String workflowName, final IProgressMonitor monitor,
         final WorkflowTestContext context) {
@@ -127,33 +147,46 @@ class WorkflowModernUIDialogTest extends WorkflowTest {
         try {
             WorkflowManager wfm = nnc.getParent();
             NodeFactory<NodeModel> nodeFactory = nnc.getNode().getFactory();
+            final var dataServiceManager = NodeDialogManager.getInstance().getDataServiceManager();
             if (nodeFactory instanceof NodeDialogFactory ndf && ndf.hasNodeDialog()
                 && ndf.createNodeDialog() instanceof DefaultNodeDialog nodeDialog) {
-                Class<? extends NodeParameters> settingsClass = nodeDialog.getSettingsClass(SettingsType.MODEL);
-                if (settingsClass == null) {
-                    LOGGER.debugWithFormat(
-                        "Skipping dialog of node %s because node does not provide a settings class", nnc.getName());
-                    return false;
-                }
-                LOGGER.debugWithFormat("Loading node settings into NodeParameters (%s)", nnc.getName());
                 long start = System.currentTimeMillis();
+
+                LOGGER.debugWithFormat("Loading node settings into NodeParameters (%s)", nnc.getName());
                 final var nodeSettings = new NodeSettings("original");
                 wfm.saveNodeSettings(nnc.getID(), nodeSettings);
                 final SingleNodeContainerSettings sncs = new SingleNodeContainerSettings(nodeSettings);
-                final var nodeParameters = NodeParametersUtil.loadSettings(sncs.getModelSettings(), settingsClass);
-                final var nodeSettingsCopy = new NodeSettings("washed");
-                NodeParametersUtil.saveSettings(settingsClass, nodeParameters, nodeSettingsCopy);
-                sncs.setModelSettings(nodeSettingsCopy);
-                NodeSettings temp = new NodeSettings("temp");
-                sncs.save(temp);
-                wfm.loadNodeSettings(nnc.getID(), temp);
+                final var settingsClasses = nodeDialog.getSettingsClasses();
+                final Map<SettingsType, NodeParameters> loadedSettings = new HashMap<>();
+                Map<SettingsType, VariableSettingsRO> variableSettings = new HashMap<>();
+                if (settingsClasses.containsKey(SettingsType.MODEL)) {
+                    loadedSettings.put(SettingsType.MODEL, NodeParametersUtil.loadSettings(sncs.getModelSettings(),
+                        settingsClasses.get(SettingsType.MODEL)));
+                    variableSettings.put(SettingsType.MODEL, new VariableSettings(nodeSettings, SettingsType.MODEL));
+                }
+                if (settingsClasses.containsKey(SettingsType.VIEW) && sncs.getViewSettings() != null) {
+                    loadedSettings.put(SettingsType.VIEW, NodeParametersUtil.loadSettings(sncs.getViewSettings(),
+                        settingsClasses.get(SettingsType.VIEW)));
+                    variableSettings.put(SettingsType.VIEW, new VariableSettings(nodeSettings, SettingsType.VIEW));
+                }
+
+                final var input = NodeParametersUtil
+                    .createDefaultNodeSettingsContext(InputPortUtil.getInputSpecsExcludingVariablePort(nnc));
+                /**
+                 * Check that (at least) the initially computed dialog states (e.g. choices of a dropdown) don't throw
+                 * an error.
+                 */
+                UpdatesUtil.constructTreesAndAddUpdates(MAPPER.createObjectNode(), loadedSettings, input);
+                final var data = new JsonFormsSettingsImpl(loadedSettings, input).getData();
+                applyData(nnc, dataServiceManager, data, variableSettings, input);
+
                 long delay = System.currentTimeMillis() - start;
                 LOGGER.debugWithFormat("Applying NodeParamters took %d ms (%s)", delay, nnc.getName());
                 return true;
             }
         } catch (final Exception e) {
-            String msg = "Dialog of node '" + nnc.getNameWithID() + "' has thrown an "
-                    + e.getClass().getSimpleName() + ": " + e.getMessage();
+            String msg = "Dialog of node '" + nnc.getNameWithID() + "' has thrown an " + e.getClass().getSimpleName()
+                + ": " + e.getMessage();
             final var error = new AssertionFailedError(msg);
             error.initCause(e);
             result.addFailure(this, error);
@@ -162,4 +195,33 @@ class WorkflowModernUIDialogTest extends WorkflowTest {
         }
         return false;
     }
+
+    private static void applyData(final NativeNodeContainer nnc,
+        final DataServiceManager<NodeWrapper> dataServiceManager, final JsonNode data,
+        final Map<SettingsType, VariableSettingsRO> variableSettings, final NodeParametersInput input)
+        throws JsonProcessingException, InvalidSettingsException {
+        final var applyData = toApplyData(data, variableSettings, input);
+        final var nodeWrapper = NodeWrapper.of(nnc);
+        final var applyDataResult = dataServiceManager.callApplyDataService(nodeWrapper, applyData);
+        // "isApplied" comes from {@link ApplyDataService#IS_APPLIED}
+        final var isApplied = MAPPER.readTree(applyDataResult).path("isApplied").asBoolean(false);
+        if (!isApplied) {
+            // "error" comes from {@link ApplyDataService#ERROR}
+            final var errorString = MAPPER.readTree(applyDataResult).path("error").asText();
+
+            throw new InvalidSettingsException(
+                String.format("Dialog of node '%s' could not apply settings via NodeParameters. Error message: %s",
+                    nnc.getNameWithID(), errorString));
+        }
+
+    }
+
+    private static String toApplyData(final JsonNode data, final Map<SettingsType, VariableSettingsRO> variableSettings,
+        final NodeParametersInput input) throws JsonProcessingException {
+        final var applyData = MAPPER.createObjectNode();
+        applyData.set("data", data);
+        VariableSettingsUtil.addVariableSettingsToRootJson(applyData, variableSettings, input);
+        return MAPPER.writeValueAsString(applyData);
+    }
+
 }

@@ -16,7 +16,19 @@ try {
     knimetools.defaultTychoBuild('org.knime.update.dev')
 
     workflowTests.runTests(dependencies: [
-        repositories: ['knime-dev', 'knime-jfreechart', 'knime-streaming', 'knime-js-base', 'knime-xml', 'knime-distance']
+        repositories: [
+            'knime-dev',
+            'knime-jfreechart',
+            'knime-streaming',
+            'knime-js-base',
+            'knime-xml',
+            'knime-distance',
+            'knime-base-expressions',
+            'knime-scripting-editor'
+        ],
+        ius: [
+            'org.eclipse.jgit' /* for diffing in `testWorkflowSummary` */
+        ]
     ])
 
     stage('Sonarqube analysis') {

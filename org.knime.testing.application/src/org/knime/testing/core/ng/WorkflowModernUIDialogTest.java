@@ -159,6 +159,15 @@ class WorkflowModernUIDialogTest extends WorkflowTest {
                 final var settingsClasses = nodeDialog.getSettingsClasses();
                 final Map<SettingsType, NodeParameters> loadedSettings = new HashMap<>();
                 Map<SettingsType, VariableSettingsRO> variableSettings = new HashMap<>();
+                try {
+                    // some test cases have invalid settings stored,
+                    // and these nodes are expected to fail (or not even be executed)
+                    nnc.getNode().validateModelSettings(sncs.getModelSettings());
+                } catch (InvalidSettingsException e) {
+                    LOGGER.infoWithFormat("Skipping \"%s\" for node \"%s\" as its stored settings are invalid",
+                        getName(), nnc.getNameWithID());
+                    return false;
+                }
                 if (settingsClasses.containsKey(SettingsType.MODEL)) {
                     loadedSettings.put(SettingsType.MODEL, NodeParametersUtil.loadSettings(sncs.getModelSettings(),
                         settingsClasses.get(SettingsType.MODEL)));

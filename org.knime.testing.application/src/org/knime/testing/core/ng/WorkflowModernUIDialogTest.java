@@ -47,6 +47,7 @@
  */
 package org.knime.testing.core.ng;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -126,7 +127,8 @@ class WorkflowModernUIDialogTest extends WorkflowTest {
 
     private boolean checkMUIDialogsRecursively(final TestResult result, final WorkflowManager wfm) {
         var hasAppliedToAtLeastOneNode = false;
-        for (final NodeContainer node : wfm.getNodeContainers()) {
+        // copy of list because setting re-configuration might cause node to be replaced (dynamic ports)
+        for (final NodeContainer node : new ArrayList<>(wfm.getNodeContainers())) {
             if (m_context.isPreExecutedNode(node)) {
                 continue;
             }

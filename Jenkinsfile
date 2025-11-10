@@ -24,7 +24,6 @@ try {
             'knime-xml',
             'knime-distance',
             'knime-base-expressions',
-            'knime-scripting-editor'
         ],
         ius: [
             'org.eclipse.jgit' /* for diffing in `testWorkflowSummary` */

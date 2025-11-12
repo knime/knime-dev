@@ -45,7 +45,6 @@
 package org.knime.testing.core.ng;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -75,7 +74,7 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.PlatformUI;
 import org.knime.core.node.NodeLogger;
 import org.knime.core.node.NodeLogger.LEVEL;
-import org.knime.core.node.workflow.BatchExecutor;
+import org.knime.core.util.EclipseUtil;
 import org.knime.product.profiles.ProfileManager;
 
 /**
@@ -287,9 +286,9 @@ public class UnittestRunnerApplication implements IApplication {
      * @return true if the members were set according to the command line arguments, false, if an error message was
      *         printed and the application must exit.
      * @throws CoreException if preferences cannot be imported
-     * @throws FileNotFoundException if the specified preferences file does not exist
+     * @throws IOException if the specified preferences file does not exist
      */
-    private boolean extractCommandLineArgs(final Object args) throws FileNotFoundException, CoreException {
+    private boolean extractCommandLineArgs(final Object args) throws IOException, CoreException {
         String[] stringArgs;
         if (args instanceof String[]) {
             stringArgs = (String[])args;
@@ -332,7 +331,7 @@ public class UnittestRunnerApplication implements IApplication {
                     return false;
                 }
                 File prefsFile = new File(stringArgs[i++]);
-                BatchExecutor.setPreferences(prefsFile);
+                EclipseUtil.setPreferences(prefsFile);
             } else if (stringArgs[i].equals("-outputToSeparateFile")) {
                 i++;
                 m_outputToSeparateFile = true;

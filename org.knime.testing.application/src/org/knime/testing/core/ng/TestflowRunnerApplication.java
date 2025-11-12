@@ -45,9 +45,9 @@
 package org.knime.testing.core.ng;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.io.StringReader;
 import java.net.URISyntaxException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -73,10 +73,12 @@ import org.eclipse.ui.PlatformUI;
 import org.knime.core.internal.CorePlugin;
 import org.knime.core.node.KNIMEConstants;
 import org.knime.core.node.util.ViewUtils;
-import org.knime.core.node.workflow.BatchExecutor;
 import org.knime.core.node.workflow.FlowVariable;
+import org.knime.core.util.EclipseUtil;
 import org.knime.core.util.FileUtil;
 import org.knime.core.util.IEarlyStartup;
+import org.knime.core.util.tokenizer.Tokenizer;
+import org.knime.core.util.tokenizer.TokenizerSettings;
 import org.knime.product.profiles.ProfileManager;
 import org.knime.testing.core.TestrunConfiguration;
 import org.knime.workbench.core.util.ImageRepository;
@@ -317,9 +319,9 @@ public class TestflowRunnerApplication implements IApplication {
      * @return <code>true</code> if the members were set according to the command line arguments, <code>false</code>, if
      *         an error message was printed and the application must exit.
      * @throws CoreException if preferences cannot be imported
-     * @throws FileNotFoundException if the specified preferences file does not exist
+     * @throws IOException if the specified preferences file does not exist
      */
-    private boolean extractCommandLineArgs(final Object args) throws FileNotFoundException, CoreException {
+    private boolean extractCommandLineArgs(final Object args) throws IOException, CoreException {
         String[] stringArgs;
         if (args instanceof String[]) {
             stringArgs = (String[])args;
@@ -504,7 +506,7 @@ public class TestflowRunnerApplication implements IApplication {
                     return false;
                 }
                 File prefsFile = new File(stringArgs[i++]);
-                BatchExecutor.setPreferences(prefsFile);
+                EclipseUtil.setPreferences(prefsFile);
             } else if (stringArgs[i].equals("-workflow.variable")) {
                 i++;
                 // requires another argument
@@ -513,10 +515,10 @@ public class TestflowRunnerApplication implements IApplication {
                     return false;
                 }
 
-                String[] parts = BatchExecutor.splitWorkflowVariableArg(stringArgs[i]);
+                String[] parts = splitWorkflowVariableArg(stringArgs[i]);
                 FlowVariable var = null;
                 try {
-                    var = BatchExecutor.createWorkflowVariable(parts);
+                    var = createWorkflowVariable(parts);
                 } catch (Exception e) {
                     System.err.println("Couldn't parse -workflow.variable argument: " + stringArgs[i] + ": "
                         + e.getMessage());
@@ -586,6 +588,59 @@ public class TestflowRunnerApplication implements IApplication {
                 +  "of \"String\", \"int\" or \"double\".");
 
     }
+
+    /**
+     * Splits the argument to -workflow.variable into its sub-components (name, value, type) and returns it as array.
+     *
+     * @param arg The string to split
+     * @return The components of the string, no validation is done.
+     * @since 2.11
+     */
+    private static String[] splitWorkflowVariableArg(final String arg) {
+        Tokenizer tokenizer = new Tokenizer(new StringReader(arg));
+        TokenizerSettings settings = new TokenizerSettings();
+        settings.addQuotePattern("\"", "\"", '\\');
+        settings.addQuotePattern("'", "'", '\\');
+        settings.addDelimiterPattern(",",
+        /* combine multiple= */false,
+        /* return as token= */false,
+        /* include in token= */false);
+        tokenizer.setSettings(settings);
+        ArrayList<String> tokenList = new ArrayList<String>();
+        String token;
+        while ((token = tokenizer.nextToken()) != null) {
+            tokenList.add(token);
+        }
+        return tokenList.toArray(new String[tokenList.size()]);
+    }
+
+    /**
+     * Creates a new flow variable from the sub-components of the -workflow.variables commandline argument. If the
+     * string array does not meet the requirements (e.g. length = 3), an exception is thrown.
+     *
+     * @param args The arguments for the variable.
+     * @return A new flow variable.
+     * @throws IllegalArgumentException ...
+     * @since 2.11
+     */
+    private static FlowVariable createWorkflowVariable(final String[] args) {
+        if (args.length != 3) {
+            throw new IndexOutOfBoundsException("Invalid argument list");
+        }
+        String name = args[0];
+        String value = args[1];
+        String type = args[2];
+        if ("String".equals(type)) {
+            return new FlowVariable(name, value);
+        } else if ("int".equals(type)) {
+            return new FlowVariable(name, Integer.parseInt(value));
+        } else if ("double".equals(type)) {
+            return new FlowVariable(name, Double.parseDouble(value));
+        } else {
+            throw new IllegalArgumentException("Invalid type for workflow variable " + name + ": " + type);
+        }
+    }
+
 
     @Override
     public void stop() {

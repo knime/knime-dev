@@ -211,6 +211,15 @@ public class NodeListExtractorNodeModel extends WebUINodeModel<NodeListExtractor
                         ((WriteValue<DataValue>)row.getWriteValue(col++)).setValue(schema);
                         ((WriteValue<DataValue>)row.getWriteValue(col++)).setValue(uiSchema);
                     }
+                    if (s.m_includeInitialValueUpdates) {
+                        if (webUIDialogStatistics.settings() == null) {
+                            row.setMissing(col++);
+                        } else {
+                            final var cell = new JSONCellFactory()
+                                .createCell(webUIDialogStatistics.settings().initialValueUpdates());
+                            ((WriteValue<DataValue>)row.getWriteValue(col++)).setValue(cell);
+                        }
+                    }
                     if (s.m_includeClassicUIDialogDetails) {
                         final var classicUIDialogDetails = determineClassicUIDialogDetails(f);
                         col = classicUIDialogDetails.fill(row, col);
@@ -253,6 +262,10 @@ public class NodeListExtractorNodeModel extends WebUINodeModel<NodeListExtractor
             creator.addColumns(new DataColumnSpecCreator("Has Web UI Model", BooleanCell.TYPE).createSpec());
             creator.addColumns(new DataColumnSpecCreator("Settings Schema", JSONCell.TYPE).createSpec());
             creator.addColumns(new DataColumnSpecCreator("Settings UI Schema", JSONCell.TYPE).createSpec());
+            if (settings.m_includeInitialValueUpdates) {
+                creator.addColumns(
+                    new DataColumnSpecCreator("Settings Initial Value Updates", JSONCell.TYPE).createSpec());
+            }
             if (settings.m_includeClassicUIDialogDetails) {
                 // add columns for classic UI dialog details
                 creator.addColumns(new DataColumnSpecCreator("Classic UI Dialog Type", StringCell.TYPE).createSpec());

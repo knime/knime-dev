@@ -51,6 +51,7 @@ package org.knime.testing.node.extractor;
 import org.knime.core.node.InvalidSettingsException;
 import org.knime.core.node.NodeSettingsRO;
 import org.knime.core.node.NodeSettingsWO;
+import org.knime.node.parameters.Advanced;
 import org.knime.node.parameters.NodeParameters;
 import org.knime.node.parameters.Widget;
 import org.knime.node.parameters.migration.DefaultProvider;
@@ -88,6 +89,7 @@ public final class NodeListExtractorNodeSettings implements NodeParameters {
     boolean m_includeKeywords;
 
     @Migrate(loadDefaultIfAbsent = true)
+    @Advanced
     @Widget(title = "WebUI Dialog Details",
         description = "If selected, includes a column indicating whether the node has a web UI dialog and if "
             + "so further information on the node model and the model settings.")
@@ -95,6 +97,16 @@ public final class NodeListExtractorNodeSettings implements NodeParameters {
     boolean m_includeWebUIDialogDetails;
 
     @Migrate(loadDefaultIfAbsent = true)
+    @Advanced
+    @Widget(title = "Initial Value Updates",
+        description = "If selected, adds a JSON column containing the value-based state provider updates that are "
+            + "triggered before or after the dialog is opened. These updates can cause the dialog to appear dirty "
+            + "immediately after opening.")
+    @Effect(predicate = WebUICheckerIsCheckedPredicateProvider.class, type = EffectType.ENABLE)
+    boolean m_includeInitialValueUpdates;
+
+    @Migrate(loadDefaultIfAbsent = true)
+    @Advanced
     @Widget(title = "Legacy Swing Dialog Details",
     description = "If selected, adds columns having information about the legacy Swing/ClassicUI dialog, and whether"
         + "the dialog is a 'standard' node (extending `DefaultNodeSettingsPane'")
